@@ -7,10 +7,12 @@ import Layout from "../components/Layout.jsx";
 import SelectInput from "../components/SelectInput.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { assessmentService } from "../services/assessmentService.js";
 import { helpText } from "../utils/helpText.js";
 import { goalPaths } from "../utils/onboarding.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const mainLifts = [
   "Bench Press",
@@ -176,16 +178,19 @@ const AssessmentPage = () => {
   return (
     <Layout>
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6">
+        <div data-tour-id="assessment-overview" className="mb-6">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">ForgeLift Assessment</p>
           <h1 className="mt-2 text-3xl font-black text-white">Personalise your starting point</h1>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Complete your ForgeLift Assessment so we can estimate your current level and personalise your starting
             recommendations.
           </p>
+          <div className="mt-4">
+            <TutorialLauncher pageKey="assessment" steps={getTutorialSteps("assessment")} />
+          </div>
         </div>
 
-        <div className="mb-5 rounded-full bg-black/30 p-1">
+        <div data-tour-id="assessment-progress" className="mb-5 rounded-full bg-black/30 p-1">
           <div className="h-2 rounded-full bg-forge-ember transition-all" style={{ width: `${progress}%` }} />
         </div>
 

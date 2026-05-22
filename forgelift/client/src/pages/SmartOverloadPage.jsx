@@ -6,10 +6,12 @@ import OverloadRecommendationCard from "../components/overload/OverloadRecommend
 import SelectInput from "../components/SelectInput.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { deloadService } from "../services/deloadService.js";
 import { overloadService } from "../services/overloadService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const typeOptions = [
   { value: "", label: "All types" },
@@ -114,6 +116,7 @@ const SmartOverloadPage = () => {
           <RefreshCw className="h-4 w-4" />
           Recalculate
         </Button>
+        <TutorialLauncher pageKey="smart_overload" steps={getTutorialSteps("smart_overload")} />
       </div>
 
       {user?.beginnerTipsEnabled !== false ? (
@@ -192,8 +195,8 @@ const SmartOverloadPage = () => {
         </div>
       ) : null}
 
-      <div className="space-y-5">
-        {filteredRecommendations.map((recommendation) => {
+      <div data-tour-id="overload-recommendations" className="space-y-5">
+        {filteredRecommendations.map((recommendation, index) => {
           const activeDeload = deloadRecommendations.find(
             (deload) =>
               deload.exerciseName === recommendation.exerciseName ||
@@ -202,12 +205,13 @@ const SmartOverloadPage = () => {
           );
 
           return (
-            <OverloadRecommendationCard
-              activeDeload={activeDeload}
-              key={recommendation._id}
-              recommendation={recommendation}
-              onStatusChange={handleStatusChange}
-            />
+            <div data-tour-id={index === 0 ? "overload-card" : undefined} key={recommendation._id}>
+              <OverloadRecommendationCard
+                activeDeload={activeDeload}
+                recommendation={recommendation}
+                onStatusChange={handleStatusChange}
+              />
+            </div>
           );
         })}
       </div>

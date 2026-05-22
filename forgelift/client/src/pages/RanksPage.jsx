@@ -5,8 +5,10 @@ import Layout from "../components/Layout.jsx";
 import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { rankService } from "../services/rankService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const RanksPage = () => {
   const [rankData, setRankData] = useState(null);
@@ -60,12 +62,13 @@ const RanksPage = () => {
         <Button loading={recalculating} onClick={recalculateRanks}>
           Recalculate ranks
         </Button>
+        <TutorialLauncher pageKey="ranks" steps={getTutorialSteps("ranks")} />
       </div>
 
       {loading ? <p className="text-forge-steel">Loading ranks...</p> : null}
       {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
 
-      <div className="mb-6 flex flex-wrap gap-3 text-sm text-slate-300">
+      <div data-tour-id="ranks-overview" className="mb-6 flex flex-wrap gap-3 text-sm text-slate-300">
         <span>XP <HelpTooltip {...helpText.xp} size="xs" /></span>
         <span>Rank score <HelpTooltip title="Rank Score" content="A points score based mostly on real workout history, strength, volume, consistency, and PRs." example="Strength baselines do not strongly inflate rank." size="xs" /></span>
         <span>Progress to next rank <HelpTooltip title="Progress to Next Rank" content="How close your current score is to the next rank." example="64% to Gold means you are over halfway through Silver." size="xs" /></span>

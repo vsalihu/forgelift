@@ -7,9 +7,11 @@ import PlateauCard from "../components/deload/PlateauCard.jsx";
 import Layout from "../components/Layout.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { deloadService } from "../services/deloadService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const DeloadPage = () => {
   const { user } = useAuth();
@@ -86,6 +88,7 @@ const DeloadPage = () => {
           <RefreshCw className="h-4 w-4" />
           Recalculate
         </Button>
+        <TutorialLauncher pageKey="deload" steps={getTutorialSteps("deload")} />
       </div>
 
       {user?.beginnerTipsEnabled !== false ? (
@@ -108,9 +111,11 @@ const DeloadPage = () => {
 
       {!loading && !error ? (
         <div className="space-y-6">
-          <FatigueSummaryCard fatigue={fatigue} />
+          <div data-tour-id="deload-fatigue">
+            <FatigueSummaryCard fatigue={fatigue} />
+          </div>
 
-          <section className="metal-panel rounded-lg p-5">
+          <section data-tour-id="deload-active" className="metal-panel rounded-lg p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Active Plans</p>
@@ -138,7 +143,7 @@ const DeloadPage = () => {
             )}
           </section>
 
-          <section className="metal-panel rounded-lg p-5">
+          <section data-tour-id="deload-plateaus" className="metal-panel rounded-lg p-5">
             <div className="mb-5">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Plateaus</p>
               <h2 className="mt-2 text-xl font-black text-white">Exercise trend checks</h2>

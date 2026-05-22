@@ -7,8 +7,10 @@ import StrengthTrendChart from "../components/analytics/StrengthTrendChart.jsx";
 import VolumeTrendChart from "../components/analytics/VolumeTrendChart.jsx";
 import Layout from "../components/Layout.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { advancedAnalyticsService } from "../services/advancedAnalyticsService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const AdvancedAnalyticsPage = () => {
   const [period, setPeriod] = useState("month");
@@ -59,7 +61,10 @@ const AdvancedAnalyticsPage = () => {
             Progress insights <HelpTooltip title="Progress Insights" content="Long-term summaries that help you see what is improving and what needs attention." />
           </h1>
         </div>
-        <PeriodSelector value={period} onChange={setPeriod} />
+        <div className="flex flex-wrap gap-2">
+          <PeriodSelector value={period} onChange={setPeriod} />
+          <TutorialLauncher pageKey="analytics" steps={getTutorialSteps("analytics")} />
+        </div>
       </div>
 
       {loading ? <p className="text-forge-steel">Loading advanced analytics...</p> : null}
@@ -67,11 +72,13 @@ const AdvancedAnalyticsPage = () => {
 
       {!loading && !error ? (
         <div className="space-y-6">
+          <div data-tour-id="analytics-overview">
           {overview?.totalWorkouts === 0 ? (
             <div className="metal-panel rounded-lg p-8 text-center text-slate-400">
               No analytics yet. Log workouts to start building progress insights.
             </div>
           ) : null}
+          </div>
 
           <AnalyticsOverviewCards overview={overview} />
 

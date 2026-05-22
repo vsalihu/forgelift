@@ -7,8 +7,8 @@ const variants = {
   neutral: "border-white/10 bg-black/20 shadow-black/20"
 };
 
-const StatusGlowCard = ({ children, variant = "neutral", className = "" }) => (
-  <div className={`rounded-xl border p-4 shadow-lg ${variants[variant] || variants.neutral} ${className}`}>
+const StatusGlowCard = ({ children, variant = "neutral", className = "", ...props }) => (
+  <div className={`rounded-xl border p-4 shadow-lg ${variants[variant] || variants.neutral} ${className}`} {...props}>
     {children}
   </div>
 );

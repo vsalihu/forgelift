@@ -4,9 +4,11 @@ import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
 import ConfirmDangerModal from "../components/ui/ConfirmDangerModal.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
 import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
 import { dataManagementService } from "../services/dataManagementService.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatDate = (date) =>
   date ? new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(date)) : "None";
@@ -81,6 +83,7 @@ const DataManagementPage = () => {
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
+        <TutorialLauncher pageKey="data_management" steps={getTutorialSteps("data_management")} />
       </div>
 
       {error ? <div className="mb-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
@@ -93,7 +96,7 @@ const DataManagementPage = () => {
         <IconMetricCard icon={Database} label="Reports" value={summary?.reports ?? "-"} status="Monthly reports" variant="neutral" />
       </VisualSummaryGrid>
 
-      <section className="metal-panel mb-6 rounded-lg p-5">
+      <section data-tour-id="data-summary" className="metal-panel mb-6 rounded-lg p-5">
         <h2 className="text-xl font-black text-white">Data summary</h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-md bg-black/20 p-3"><dt className="text-slate-400">First workout</dt><dd className="mt-1 font-bold text-white">{formatDate(summary?.firstWorkoutDate)}</dd></div>
@@ -104,7 +107,7 @@ const DataManagementPage = () => {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="metal-panel rounded-lg p-5">
+        <div data-tour-id="delete-date-range" className="metal-panel rounded-lg p-5">
           <h2 className="flex items-center gap-2 text-xl font-black text-white">
             <CalendarX className="h-5 w-5 text-forge-ember" />
             Delete by date range
@@ -173,7 +176,7 @@ const DataManagementPage = () => {
             </Button>
           </div>
 
-          <div className="rounded-lg border border-red-400/25 bg-red-500/10 p-5">
+          <div data-tour-id="reset-training-data" className="rounded-lg border border-red-400/25 bg-red-500/10 p-5">
             <h2 className="flex items-center gap-2 text-xl font-black text-white">
               <Trash2 className="h-5 w-5 text-red-200" />
               Reset All Training Data

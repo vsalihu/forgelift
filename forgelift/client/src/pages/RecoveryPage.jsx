@@ -8,9 +8,11 @@ import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
 import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { recoveryService } from "../services/recoveryService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 import { Activity, AlertTriangle, Dumbbell, HeartPulse } from "lucide-react";
 
 const RecoveryPage = () => {
@@ -81,6 +83,7 @@ const RecoveryPage = () => {
         <Button loading={recalculating} onClick={recalculate}>
           Recalculate recovery
         </Button>
+        <TutorialLauncher pageKey="recovery" steps={getTutorialSteps("recovery")} />
       </div>
 
       {loading ? <p className="text-forge-steel">Loading recovery scores...</p> : null}
@@ -117,7 +120,9 @@ const RecoveryPage = () => {
         </div>
       ) : null}
 
-      {todayRecommendation ? <TodayRecommendationCard recommendation={todayRecommendation} /> : null}
+      <div data-tour-id="recovery-summary">
+        {todayRecommendation ? <TodayRecommendationCard recommendation={todayRecommendation} /> : null}
+      </div>
 
       <VisualSummaryGrid className="mt-6">
         <IconMetricCard icon={Dumbbell} label="Best today" value={todayRecommendation?.bestWorkoutType || "Any Workout"} status="Recommended workout type" variant="info" />
@@ -127,11 +132,15 @@ const RecoveryPage = () => {
       </VisualSummaryGrid>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <MuscleAvoidList title="Ready to train" muscles={readyMuscles.slice(0, 8)} tone="ready" />
-        <MuscleAvoidList title="Avoid heavy work" muscles={avoidMuscles.slice(0, 8)} />
+        <div data-tour-id="recovery-ready-groups">
+          <MuscleAvoidList title="Ready to train" muscles={readyMuscles.slice(0, 8)} tone="ready" />
+        </div>
+        <div data-tour-id="recovery-avoid-groups">
+          <MuscleAvoidList title="Avoid heavy work" muscles={avoidMuscles.slice(0, 8)} />
+        </div>
       </div>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section data-tour-id="recovery-card" className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {visibleScoresWithData.map((recovery) => (
           <RecoveryCard key={recovery.muscleGroup} recovery={recovery} />
         ))}

@@ -12,6 +12,7 @@ import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import ProgressRing from "../components/visuals/ProgressRing.jsx";
 import StatPill from "../components/visuals/StatPill.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { overloadService } from "../services/overloadService.js";
@@ -20,6 +21,7 @@ import { workoutService } from "../services/workoutService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { helpText } from "../utils/helpText.js";
 import { copySetForNext, createEmptySet, describeSetLoad, isSetValid, normalizeSetForSave } from "../utils/workoutSetUtils.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const restOptions = [60, 90, 120, 180];
 const rpeOptions = [6, 7, 8, 9, 10];
@@ -556,7 +558,10 @@ const GymModePage = () => {
             <div className="rounded-lg bg-black/25 p-3 text-center"><p className="text-xs text-slate-400">Duration</p><p className="font-black text-white">{durationMinutes}m</p></div>
             <div className="rounded-lg bg-black/25 p-3 text-center"><p className="text-xs text-slate-400">Exercises</p><p className="font-black text-white">{workout.exercises.length}</p></div>
             <div className="rounded-lg bg-black/25 p-3 text-center"><p className="text-xs text-slate-400">Sets</p><p className="font-black text-white">{totalLoggedSets}</p></div>
-            <Button type="button" variant="danger" onClick={() => setShowResetConfirm(true)}>Reset</Button>
+            <div data-tour-id="gym-reset-workout">
+              <Button type="button" variant="danger" onClick={() => setShowResetConfirm(true)}>Reset</Button>
+            </div>
+            <TutorialLauncher autoStart pageKey="gym_mode" steps={getTutorialSteps("gym_mode")} />
           </div>
         </div>
       </section>
@@ -565,7 +570,7 @@ const GymModePage = () => {
         <section className="metal-panel rounded-xl p-6">
           <EmptyState title="Ready to start?" description="Add your first exercise or start from a workout template." />
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Button type="button" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
+            <Button data-tour-id="gym-add-exercise" type="button" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
             {templates[0] ? <Button type="button" variant="secondary" onClick={() => applyTemplate(templates[0])}>Use Template</Button> : null}
           </div>
           <div className="mt-6 space-y-4">
@@ -609,12 +614,12 @@ const GymModePage = () => {
         </section>
       ) : (
         <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3" data-tour-id="gym-exercise-list">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Exercise List</p>
               <h1 className="mt-1 text-2xl font-black text-white">Live workout</h1>
             </div>
-            <Button type="button" variant="secondary" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
+            <Button data-tour-id="gym-add-exercise" type="button" variant="secondary" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
           </div>
 
           {workout.exercises.map((exercise, exerciseIndex) => {
@@ -626,6 +631,7 @@ const GymModePage = () => {
 
             return (
               <article
+                data-tour-id={isActive ? "gym-active-exercise" : undefined}
                 className={`rounded-xl border p-4 transition ${
                   isActive
                     ? "border-forge-copper/70 bg-forge-copper/10 shadow-metal"
@@ -701,10 +707,10 @@ const GymModePage = () => {
                       </p>
                     ) : null}
                     <div className="grid grid-cols-2 gap-2">
-                      <Button className="min-h-12" disabled={!currentSetValid(exercise)} type="button" onClick={() => addSet(exerciseIndex)}>Add Set</Button>
-                      <Button className="min-h-12" disabled={!currentSetValid(exercise)} type="button" variant="secondary" onClick={() => repeatLastSet(exerciseIndex)}>Repeat Last Set</Button>
+                      <Button data-tour-id="gym-add-set" className="min-h-12" disabled={!currentSetValid(exercise)} type="button" onClick={() => addSet(exerciseIndex)}>Add Set</Button>
+                      <Button data-tour-id="gym-repeat-set" className="min-h-12" disabled={!currentSetValid(exercise)} type="button" variant="secondary" onClick={() => repeatLastSet(exerciseIndex)}>Repeat Last Set</Button>
                       <Button type="button" variant="secondary" onClick={() => focusExercise(Math.max(0, exerciseIndex - 1))}>Previous</Button>
-                      <Button type="button" variant="secondary" onClick={nextExercise}>Next Exercise</Button>
+                      <Button data-tour-id="gym-next-exercise" type="button" variant="secondary" onClick={nextExercise}>Next Exercise</Button>
                     </div>
                     {lastSet ? <p className="text-xs text-slate-500">Current input: {describeSetLoad(lastSet)} x {lastSet.reps || 0} reps.</p> : null}
                   </div>
@@ -715,7 +721,7 @@ const GymModePage = () => {
         </section>
       )}
 
-      <section className="metal-panel mt-5 rounded-lg p-4">
+      <section data-tour-id="gym-rest-timer" className="metal-panel mt-5 rounded-lg p-4">
         <div className="flex items-center justify-between gap-3">
           <ProgressRing label="Rest" size={96} sublabel={remainingSeconds <= 10 ? "Ready" : "Timer"} value={timerProgress} variant={remainingSeconds <= 10 ? "success" : "info"} />
           <div>
@@ -739,9 +745,9 @@ const GymModePage = () => {
 
       <div className="sticky bottom-20 z-20 mt-5 rounded-t-xl bg-forge-black/95 p-2 pb-3 backdrop-blur lg:bottom-4 lg:rounded-xl">
         <div className="grid grid-cols-3 gap-2">
-          <Button className="min-h-12" type="button" variant="secondary" onClick={() => setPickerOpen(true)}>Add Exercise</Button>
+          <Button data-tour-id="gym-add-exercise" className="min-h-12" type="button" variant="secondary" onClick={() => setPickerOpen(true)}>Add Exercise</Button>
           <Button className="min-h-12" disabled={!workout.exercises.length} type="button" variant="secondary" onClick={() => focusExercise(activeExerciseIndex)}>Current Exercise</Button>
-          <Button className="min-h-12 shadow-metal" disabled={!hasValidSets} loading={saving} type="button" onClick={() => finishWorkout()}>
+          <Button data-tour-id="gym-finish-workout" className="min-h-12 shadow-metal" disabled={!hasValidSets} loading={saving} type="button" onClick={() => finishWorkout()}>
             <Save className="h-4 w-4" />
             Finish
           </Button>

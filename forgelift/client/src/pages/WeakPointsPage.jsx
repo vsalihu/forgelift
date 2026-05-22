@@ -3,9 +3,11 @@ import { AlertTriangle } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import WeakPointCard from "../components/weakPoints/WeakPointCard.jsx";
 import { weakPointService } from "../services/weakPointService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const WeakPointsPage = () => {
   const [weakPoints, setWeakPoints] = useState([]);
@@ -57,12 +59,13 @@ const WeakPointsPage = () => {
         <Button loading={recalculating} onClick={recalculate}>
           Recalculate weak points
         </Button>
+        <TutorialLauncher pageKey="weak_points" steps={getTutorialSteps("weak_points")} />
       </div>
 
       {loading ? <p className="text-forge-steel">Loading weak points...</p> : null}
       {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
 
-      <div className="mb-6 flex flex-wrap gap-3 text-sm text-slate-300">
+      <div data-tour-id="weak-points-overview" className="mb-6 flex flex-wrap gap-3 text-sm text-slate-300">
         <span>Severity <HelpTooltip title="Severity" content="How important ForgeLift thinks the weak point is right now." example="Critical means it should be addressed soon." size="xs" /></span>
         <span>Evidence <HelpTooltip title="Evidence" content="The workout data ForgeLift used to detect the weak point." example="Low direct shoulder volume or push volume much higher than pull volume." size="xs" /></span>
         <span>Recommendation <HelpTooltip title="Recommendation" content="A practical next step to fix the weak point." example="Add rows, pulldowns, or direct shoulder work this week." size="xs" /></span>

@@ -5,8 +5,10 @@ import BalanceRatioCard from "../components/trainingBalance/BalanceRatioCard.jsx
 import BalanceWarningList from "../components/trainingBalance/BalanceWarningList.jsx";
 import TrainingBalanceScoreCard from "../components/trainingBalance/TrainingBalanceScoreCard.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { trainingBalanceService } from "../services/trainingBalanceService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const TrainingBalancePage = () => {
   const [trainingBalance, setTrainingBalance] = useState(null);
@@ -58,6 +60,7 @@ const TrainingBalancePage = () => {
         <Button loading={recalculating} onClick={recalculate}>
           Recalculate balance
         </Button>
+        <TutorialLauncher pageKey="training_balance" steps={getTutorialSteps("training_balance")} />
       </div>
 
       {loading ? <p className="text-forge-steel">Loading training balance...</p> : null}
@@ -65,7 +68,9 @@ const TrainingBalancePage = () => {
 
       {trainingBalance ? (
         <>
-          <TrainingBalanceScoreCard trainingBalance={trainingBalance} />
+          <div data-tour-id="training-balance-overview">
+            <TrainingBalanceScoreCard trainingBalance={trainingBalance} />
+          </div>
           <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <BalanceRatioCard title="Push/Pull" value={trainingBalance.pushPullRatio} description="Compares pressing muscles like chest and triceps against pulling muscles like back and biceps." />
             <BalanceRatioCard title="Upper/Lower" value={trainingBalance.upperLowerRatio} description="Compares upper-body work to lower-body work." />

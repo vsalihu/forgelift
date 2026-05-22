@@ -6,8 +6,10 @@ import MonthlyReportCard from "../components/reports/MonthlyReportCard.jsx";
 import MonthlyReportSummary from "../components/reports/MonthlyReportSummary.jsx";
 import NextMonthFocusList from "../components/reports/NextMonthFocusList.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { monthlyReportService } from "../services/monthlyReportService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const now = new Date();
 
@@ -101,6 +103,9 @@ const MonthlyReportPage = () => {
         <h1 className="mt-2 flex items-center gap-2 text-3xl font-black text-white">
           Exportable progress summary <HelpTooltip {...helpText.monthlyReport} />
         </h1>
+        <div className="mt-4">
+          <TutorialLauncher pageKey="monthly_reports" steps={getTutorialSteps("monthly_reports")} />
+        </div>
       </div>
 
       {loading ? <p className="text-forge-steel">Loading monthly report...</p> : null}
@@ -109,7 +114,7 @@ const MonthlyReportPage = () => {
 
       {!loading ? (
         <div className="space-y-6">
-          <section className="metal-panel rounded-lg p-5">
+          <section data-tour-id="monthly-reports-overview" className="metal-panel rounded-lg p-5">
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
               <FormInput label="Month" max="12" min="1" type="number" value={month} onChange={(event) => setMonth(event.target.value)} />
               <FormInput label="Year" min="2000" type="number" value={year} onChange={(event) => setYear(event.target.value)} />

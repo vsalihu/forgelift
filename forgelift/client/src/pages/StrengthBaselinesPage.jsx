@@ -7,10 +7,12 @@ import Layout from "../components/Layout.jsx";
 import StrengthExerciseSelector from "../components/strength/StrengthExerciseSelector.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 const estimatedOneRepMax = (weight, reps) => {
@@ -176,6 +178,7 @@ const StrengthBaselinesPage = () => {
           <RefreshCw className="h-4 w-4" />
           Recalculate estimates
         </Button>
+        <TutorialLauncher pageKey="strength_baselines" steps={getTutorialSteps("strength_baselines")} />
       </div>
 
       <div className="mb-6 rounded-lg border border-forge-copper/30 bg-forge-copper/10 p-4 text-sm text-orange-100">
@@ -218,12 +221,14 @@ const StrengthBaselinesPage = () => {
           <h2 className="text-xl font-bold text-white">Add or update baseline</h2>
         </div>
         <form className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]" onSubmit={handleSubmit}>
+          <div data-tour-id="baseline-search">
           <StrengthExerciseSelector
             exercises={exercises}
             selectedName={form.exerciseName}
             onSelect={(exerciseName) => setForm({ ...form, exerciseName })}
           />
-          <div className="space-y-4 rounded-lg border border-white/10 bg-black/20 p-4">
+          </div>
+          <div data-tour-id="baseline-add-form" className="space-y-4 rounded-lg border border-white/10 bg-black/20 p-4">
             <div>
               <p className="text-sm font-bold text-slate-300">Selected exercise</p>
               <p className="mt-1 text-xl font-black text-white">{form.exerciseName || "Choose an exercise"}</p>
@@ -259,7 +264,7 @@ const StrengthBaselinesPage = () => {
 
       {!loading ? (
         <div className="grid gap-6 xl:grid-cols-2">
-          <section>
+          <section data-tour-id="baseline-estimates">
             <h2 className="mb-3 text-xl font-bold text-white">User-entered baselines</h2>
             <div className="space-y-4">
               {userEnteredBaselines.length ? (

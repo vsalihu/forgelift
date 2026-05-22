@@ -7,6 +7,7 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import DataReadinessCard from "../components/readiness/DataReadinessCard.jsx";
 import BodyweightCheckInCard from "../components/bodyweight/BodyweightCheckInCard.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import AnimatedProgressBar from "../components/visuals/AnimatedProgressBar.jsx";
 import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
 import ProgressRing from "../components/visuals/ProgressRing.jsx";
@@ -27,13 +28,14 @@ import { trainingBalanceService } from "../services/trainingBalanceService.js";
 import { userService } from "../services/userService.js";
 import { weakPointService } from "../services/weakPointService.js";
 import { workoutService } from "../services/workoutService.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(new Date(date));
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
-const CompactCard = ({ title, value, note, icon: Icon, tone = "default", to }) => {
+const CompactCard = ({ title, value, note, icon: Icon, tone = "default", to, tourId }) => {
   const toneClass =
     tone === "warning"
       ? "border-orange-400/20 bg-orange-500/10"
@@ -41,7 +43,7 @@ const CompactCard = ({ title, value, note, icon: Icon, tone = "default", to }) =
         ? "border-emerald-400/20 bg-emerald-500/10"
         : "border-white/10 bg-black/20";
   const content = (
-    <div className={`rounded-lg border p-4 transition ${toneClass} ${to ? "hover:border-forge-copper/60" : ""}`}>
+    <div data-tour-id={tourId} className={`rounded-lg border p-4 transition ${toneClass} ${to ? "hover:border-forge-copper/60" : ""}`}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-300">{title}</p>
         {Icon ? <Icon className="h-5 w-5 text-forge-ember" /> : null}
@@ -175,7 +177,7 @@ const DashboardPage = () => {
 
   return (
     <Layout>
-      <section className="mb-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] p-5 shadow-metal sm:p-6">
+      <section data-tour-id="dashboard-hero" className="mb-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] p-5 shadow-metal sm:p-6">
         <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Today</p>
@@ -184,6 +186,7 @@ const DashboardPage = () => {
               <RankBadge rank={rankData?.overallRank || user?.currentOverallRank || "Copper"} />
               <StatPill variant="rank">{rankData?.xp || user?.xp || 0} XP</StatPill>
               <StatPill variant="info">{todayRecommendation?.bestWorkoutType || "Any Workout"}</StatPill>
+              <TutorialLauncher autoStart pageKey="dashboard" steps={getTutorialSteps("dashboard")} />
             </div>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
               Best today: {todayRecommendation?.bestWorkoutType || "Any Workout"}.{" "}
@@ -207,7 +210,7 @@ const DashboardPage = () => {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <Button className="min-h-12 w-full text-base" type="button" onClick={() => { window.location.href = "/gym-mode"; }}>
+            <Button data-tour-id="dashboard-start-gym-mode" className="min-h-12 w-full text-base" type="button" onClick={() => { window.location.href = "/gym-mode"; }}>
               <Dumbbell className="h-5 w-5" />
               Start Gym Mode
             </Button>
@@ -286,6 +289,7 @@ const DashboardPage = () => {
               to="/ranks"
             />
             <IconMetricCard
+              tourId="dashboard-recovery"
               icon={Activity}
               label="Recovery"
               value={todayRecommendation?.bestWorkoutType || "No data"}
@@ -294,6 +298,7 @@ const DashboardPage = () => {
               to="/recovery"
             />
             <IconMetricCard
+              tourId="dashboard-missions"
               icon={ListChecks}
               label="Weekly Target"
               value={weeklyTarget ? `${weeklyTarget.completedWorkouts}/${weeklyTarget.targetWorkouts}` : "No target"}
@@ -321,6 +326,7 @@ const DashboardPage = () => {
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <CompactCard
+                  tourId="dashboard-overload"
                   icon={Zap}
                   title="Smart Overload"
                   value={topOverload?.exerciseName || "No target yet"}
@@ -460,7 +466,9 @@ const DashboardPage = () => {
 
       {readiness && readiness.overallReadiness !== "ready" ? (
         <section className="mb-6">
-          <DataReadinessCard readiness={readiness} />
+          <div data-tour-id="dashboard-data-readiness">
+            <DataReadinessCard readiness={readiness} />
+          </div>
         </section>
       ) : null}
     </Layout>

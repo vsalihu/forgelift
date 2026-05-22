@@ -6,6 +6,7 @@ import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
 import RankPromotionModal from "../components/ranks/RankPromotionModal.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import RpeGuide from "../components/ui/RpeGuide.jsx";
@@ -16,6 +17,7 @@ import { strengthBaselineService } from "../services/strengthBaselineService.js"
 import { workoutService } from "../services/workoutService.js";
 import { helpText } from "../utils/helpText.js";
 import { copySetForNext, createEmptySet, describeSetLoad, isSetValid, normalizeSetForSave } from "../utils/workoutSetUtils.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
@@ -284,6 +286,9 @@ const WorkoutLoggerPage = () => {
       <div className="mb-6">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Workout Logger</p>
         <h1 className="mt-2 text-3xl font-black text-white">Log a workout</h1>
+        <div className="mt-4">
+          <TutorialLauncher pageKey="workout_logger" steps={getTutorialSteps("workout_logger")} />
+        </div>
       </div>
 
       {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
@@ -537,7 +542,7 @@ const WorkoutLoggerPage = () => {
       ) : null}
 
       <form className="space-y-6" onSubmit={handleSubmit}>
-        <section className="metal-panel rounded-lg p-5">
+        <section data-tour-id="logger-workout-details" className="metal-panel rounded-lg p-5">
           <h2 className="mb-5 text-xl font-bold text-white">Session details</h2>
           {user?.beginnerTipsEnabled !== false ? (
             <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -617,7 +622,7 @@ const WorkoutLoggerPage = () => {
 
         <section className="metal-panel rounded-lg p-5">
           <h2 className="mb-5 text-xl font-bold text-white">Exercises</h2>
-          <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+          <div data-tour-id="logger-add-exercise" className="rounded-lg border border-white/10 bg-black/20 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-bold text-white">Choose from the exercise library</p>
@@ -722,6 +727,7 @@ const WorkoutLoggerPage = () => {
                 </div>
 
                 <div className="space-y-3">
+                  <div data-tour-id={exerciseIndex === 0 ? "logger-set-entry" : undefined}>
                   {exercise.sets.map((set, setIndex) => (
                     <div className="rounded-lg bg-white/[0.03] p-3" key={setIndex}>
                       <div className="mb-3 flex flex-col gap-2 rounded-md bg-black/20 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -854,6 +860,7 @@ const WorkoutLoggerPage = () => {
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
                 {(!isSetValid(exercise.sets[exercise.sets.length - 1]) ||
                   (exercise.exerciseType === "bodyweight" && !user?.bodyweight)) ? (
@@ -896,7 +903,7 @@ const WorkoutLoggerPage = () => {
           </div>
         </section>
 
-        <div className="sticky bottom-20 z-20 flex justify-end rounded-xl bg-forge-black/90 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
+        <div data-tour-id="logger-save-workout" className="sticky bottom-20 z-20 flex justify-end rounded-xl bg-forge-black/90 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
           <Button className="min-h-14 w-full text-base sm:w-auto" loading={submitting} type="submit">
             Save workout
           </Button>

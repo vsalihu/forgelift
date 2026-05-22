@@ -66,7 +66,7 @@ const StrengthExerciseSelector = ({ exercises = [], selectedName, onSelect }) =>
         </div>
       ) : null}
 
-      <div>
+      <div data-tour-id={!search && muscle === "All" ? "baseline-popular-lifts" : undefined}>
         <p className="mb-2 text-sm font-bold text-slate-300">{!search && muscle === "All" ? "Popular baseline lifts" : "Matching exercises"}</p>
         <div className="grid max-h-[30rem] gap-3 overflow-y-auto pr-1 md:grid-cols-2">
           {results.map(({ exercise, match }) => (

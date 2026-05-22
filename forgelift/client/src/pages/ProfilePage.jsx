@@ -8,12 +8,15 @@ import Layout from "../components/Layout.jsx";
 import SelectInput from "../components/SelectInput.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import DataReadinessCard from "../components/readiness/DataReadinessCard.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { userService } from "../services/userService.js";
 import { bodyweightService } from "../services/bodyweightService.js";
+import { tutorialService } from "../services/tutorialService.js";
 import { helpText } from "../utils/helpText.js";
 import { strengthStandardOptions } from "../utils/onboarding.js";
 import { goalPaths } from "../utils/onboarding.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatDate = (date) =>
   date ? new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(date)) : "Not completed";
@@ -36,6 +39,7 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [readiness, setReadiness] = useState(null);
   const [bodyweightData, setBodyweightData] = useState({ entries: [], latest: null });
+  const [resettingTutorials, setResettingTutorials] = useState(false);
 
   useEffect(() => {
     userService.getDataReadiness().then((data) => setReadiness(data.readiness)).catch(() => setReadiness(null));
@@ -67,14 +71,31 @@ const ProfilePage = () => {
     }
   };
 
+  const handleResetTutorials = async () => {
+    setResettingTutorials(true);
+    setMessage("");
+    setError("");
+    try {
+      await tutorialService.resetAllTutorials();
+      setMessage("Tutorials reset. Quick Tours will be available again.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResettingTutorials(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="mb-6">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Profile</p>
         <h1 className="mt-2 text-3xl font-black text-white">Your profile</h1>
+        <div className="mt-4">
+          <TutorialLauncher pageKey="profile" steps={getTutorialSteps("profile")} />
+        </div>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-        <form className="metal-panel rounded-lg p-5" onSubmit={handleSubmit}>
+        <form data-tour-id="profile-basic-info" className="metal-panel rounded-lg p-5" onSubmit={handleSubmit}>
           {message ? <div className="mb-5 rounded-md bg-green-500/10 p-3 text-sm text-green-200">{message}</div> : null}
           {error ? <div className="mb-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
           <div className="grid gap-4 md:grid-cols-2">
@@ -209,7 +230,7 @@ const ProfilePage = () => {
               <dd className="text-right text-white">{user?.onboardingCompleted ? "Complete" : "Incomplete"}</dd>
             </div>
           </dl>
-          <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
+          <div data-tour-id="profile-assessment" className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
             <h3 className="font-bold text-white">ForgeLift Assessment</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Retake the assessment any time to update your estimated training level, goal path, and strength
@@ -246,7 +267,7 @@ const ProfilePage = () => {
             </Link>
           </div>
 
-          <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
+          <div data-tour-id="profile-bodyweight" className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
             <h3 className="font-bold text-white">Bodyweight Tracking</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Current bodyweight: {bodyweightData.latest?.currentBodyweight || user?.bodyweight || "Not set"}{" "}
@@ -277,7 +298,7 @@ const ProfilePage = () => {
             </Link>
           </div>
 
-          <div className="mt-6 rounded-lg border border-red-400/20 bg-red-500/10 p-4">
+          <div data-tour-id="profile-data-management" className="mt-6 rounded-lg border border-red-400/20 bg-red-500/10 p-4">
             <h3 className="font-bold text-white">Data Management</h3>
             <p className="mt-2 text-sm leading-6 text-red-100">
               Reset your training history, delete logs from a selected period, or clear strength baselines. Your
@@ -289,6 +310,15 @@ const ProfilePage = () => {
             >
               Open Data Management
             </Link>
+          </div>
+          <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
+            <h3 className="font-bold text-white">Tutorials</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Reset page tutorials if you want ForgeLift to show guided tours again.
+            </p>
+            <Button className="mt-4" loading={resettingTutorials} type="button" variant="secondary" onClick={handleResetTutorials}>
+              Reset all tutorials
+            </Button>
           </div>
           <div className="mt-6">
             <DataReadinessCard readiness={readiness} />

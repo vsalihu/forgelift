@@ -6,8 +6,10 @@ import SelectInput from "../components/SelectInput.jsx";
 import Button from "../components/Button.jsx";
 import CustomExerciseForm from "../components/exercises/CustomExerciseForm.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { exerciseService } from "../services/exerciseService.js";
 import { advancedMuscleFilters, getMuscleFilterCounts, muscleFilters } from "../utils/exerciseMatchUtils.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const typeOptions = [
   { value: "compound", label: "Compound" },
@@ -61,11 +63,11 @@ const getMatchBadge = (exercise, activeMuscle) => {
   return null;
 };
 
-const ExerciseCard = ({ exercise, activeMuscle, onEdit, onDelete }) => {
+const ExerciseCard = ({ exercise, activeMuscle, onEdit, onDelete, tourId }) => {
   const matchBadge = getMatchBadge(exercise, activeMuscle);
 
   return (
-    <article className="metal-panel rounded-lg p-5 shadow-metal">
+    <article data-tour-id={tourId} className="metal-panel rounded-lg p-5 shadow-metal">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-forge-copper">
@@ -255,16 +257,17 @@ const ExerciseLibraryPage = () => {
           {showAdvancedMuscles ? "Hide advanced muscles" : "Show advanced muscles"}
         </button>
         <div className="flex flex-col gap-2 sm:items-end">
-          <Button type="button" onClick={() => { setEditingExercise(null); setCustomFormOpen(true); }}>
+          <Button data-tour-id="exercise-create-custom" type="button" onClick={() => { setEditingExercise(null); setCustomFormOpen(true); }}>
             <PlusCircle className="h-4 w-4" />
             Create Exercise
           </Button>
+          <TutorialLauncher pageKey="exercise_library" steps={getTutorialSteps("exercise_library")} />
           <p className="text-sm text-slate-400">{exercises.length} exercises found</p>
         </div>
       </div>
 
       <section className="metal-panel mb-6 rounded-lg p-5">
-        <div className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible">
+        <div data-tour-id="exercise-filter-chips" className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible">
           {[
             ["all", "All"],
             ["default", "ForgeLift Exercises"],
@@ -326,12 +329,14 @@ const ExerciseLibraryPage = () => {
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+          <div data-tour-id="exercise-search">
           <FormInput
             label="Search by name"
             placeholder="Bench Press"
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
           />
+          </div>
           <SelectInput
             label="Exercise type"
             options={typeOptions}
@@ -372,11 +377,12 @@ const ExerciseLibraryPage = () => {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {exercises.map((exercise) => (
+        {exercises.map((exercise, index) => (
           <ExerciseCard
             exercise={exercise}
             activeMuscle={filters.muscle}
             key={exercise._id}
+            tourId={index === 0 ? "exercise-card" : undefined}
             onDelete={handleDeleteCustom}
             onEdit={(item) => {
               setEditingExercise(item);

@@ -8,8 +8,10 @@ import MissionDetailModal from "../components/missions/MissionDetailModal.jsx";
 import MissionSummaryCard from "../components/missions/MissionSummaryCard.jsx";
 import WeeklyTargetCard from "../components/missions/WeeklyTargetCard.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { missionService } from "../services/missionService.js";
 import { helpText } from "../utils/helpText.js";
+import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const MissionsPage = () => {
   const [weeklyTarget, setWeeklyTarget] = useState(null);
@@ -106,6 +108,7 @@ const MissionsPage = () => {
           <RefreshCw className="h-4 w-4" />
           Recalculate
         </Button>
+        <TutorialLauncher pageKey="missions" steps={getTutorialSteps("missions")} />
       </div>
 
       {loading ? <p className="text-forge-steel">Loading missions...</p> : null}
@@ -121,7 +124,9 @@ const MissionsPage = () => {
       {!loading && !error ? (
         <div className="space-y-6">
           <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-            <WeeklyTargetCard weeklyTarget={weeklyTarget} />
+            <div data-tour-id="missions-weekly-target">
+              <WeeklyTargetCard weeklyTarget={weeklyTarget} />
+            </div>
             <section className="metal-panel rounded-lg p-5">
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Mission Summary</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -141,7 +146,7 @@ const MissionsPage = () => {
             </section>
           </div>
 
-          <section>
+          <section data-tour-id="missions-active-list">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Active Missions</p>
@@ -151,8 +156,10 @@ const MissionsPage = () => {
 
             {activeMissions.length ? (
               <div className="space-y-5">
-                {activeMissions.map((mission) => (
-                  <MissionCard key={mission._id} mission={mission} onComplete={handleCompleteMission} onOpen={setSelectedMission} />
+                {activeMissions.map((mission, index) => (
+                  <div data-tour-id={index === 0 ? "mission-card" : undefined} key={mission._id}>
+                    <MissionCard mission={mission} onComplete={handleCompleteMission} onOpen={setSelectedMission} />
+                  </div>
                 ))}
               </div>
             ) : (

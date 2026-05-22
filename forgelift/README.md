@@ -32,6 +32,7 @@ It is built as a full-stack portfolio project with a React/Vite frontend, an Exp
 - Private custom exercise creation with muscle impact percentages
 - Interactive mission detail panels and completion animations
 - Weekly bodyweight check-ins and bodyweight history tracking
+- ForgeLift Guided Tutorial with page-specific Quick Tours
 
 ## Visual UX Layer
 
@@ -247,6 +248,7 @@ Major API route groups:
 - `/api/auth` - register and login
 - `/api/users` - current user, profile, onboarding
 - `/api/bodyweight` - weekly bodyweight check-ins and bodyweight history
+- `/api/tutorials` - page tutorial progress and reset actions
 - `/api/exercises` - exercise library and custom exercises
 - `/api/workouts` - workout logging, history, detail, recent exercises
 - `/api/workout-templates` - user workout templates
@@ -355,6 +357,21 @@ ForgeLift keeps authenticated navigation consistent on mobile and desktop:
 - Mobile bottom navigation stays visible on main authenticated pages and uses safe-area padding.
 - The More tab opens a custom bottom sheet instead of a basic browser dropdown.
 - Shared custom controls support search inputs, horizontal filter chips, segmented controls, action sheets, and bottom sheets.
+
+## ForgeLift Guided Tutorial
+
+ForgeLift includes a reusable guided tutorial system for page-specific onboarding.
+
+The tutorial layer supports:
+
+- Quick Tour launch buttons on major authenticated pages
+- animated dark overlay and highlighted target areas
+- step cards with Next, Back, Skip, Finish, and Don't show again controls
+- mobile bottom-sheet style tutorial cards that avoid the bottom nav
+- backend-persisted progress per user and page
+- Profile action to reset all tutorials
+
+Dashboard and Gym Mode can auto-start for users who have not completed or recently skipped those tours. Other pages expose the tutorial through the Quick Tour button so users can learn the page without being interrupted.
 
 ## Custom Exercises
 

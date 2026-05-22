@@ -1,8 +1,8 @@
 import StatusGlowCard from "./StatusGlowCard.jsx";
 
-const IconMetricCard = ({ icon: Icon, label, value, status, variant = "neutral", to }) => {
+const IconMetricCard = ({ icon: Icon, label, value, status, variant = "neutral", to, tourId }) => {
   const content = (
-    <StatusGlowCard className="h-full transition hover:border-forge-copper/60" variant={variant}>
+    <StatusGlowCard data-tour-id={tourId} className="h-full transition hover:border-forge-copper/60" variant={variant}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>

@@ -6,6 +6,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { connectDB } from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
+import { seedExercises } from "./utils/seedExercises.js";
+import { seedDemoData } from "./utils/seedDemoData.js";
 import advancedAnalyticsRoutes from "./routes/advancedAnalyticsRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import assessmentRoutes from "./routes/assessmentRoutes.js";
@@ -96,6 +98,23 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+
+    try {
+      const result = await seedExercises();
+      console.log("Exercise library seeded:", result);
+    } catch (error) {
+      console.error("Exercise seed failed:", error.message);
+    }
+
+    if (process.env.SEED_DEMO_DATA === "true") {
+      try {
+        await seedDemoData();
+        console.log("Demo data seeded.");
+      } catch (error) {
+        console.error("Demo seed failed:", error.message);
+      }
+    }
+
     app.listen(port, () => {
       console.log(`ForgeLift API running on port ${port}`);
     });

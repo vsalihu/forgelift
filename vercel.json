@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build --prefix forgelift/client",
+  "installCommand": "npm install --prefix forgelift/client",
+  "outputDirectory": "forgelift/client/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}

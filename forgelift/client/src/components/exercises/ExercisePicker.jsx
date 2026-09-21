@@ -103,7 +103,7 @@ const ExercisePicker = ({
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0).map((muscle) => (
               <button
-                className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-black ${
+                className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-black ${
                   filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
                 }`}
                 key={muscle}
@@ -133,7 +133,7 @@ const ExercisePicker = ({
                 <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                   {advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0).map((muscle) => (
                     <button
-                      className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-black ${
+                      className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-black ${
                         filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
                       }`}
                       key={muscle}

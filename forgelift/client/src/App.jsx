@@ -20,6 +20,7 @@ const AdvancedAnalyticsPage = lazy(() => import("./pages/AdvancedAnalyticsPage.j
 const AssessmentPage = lazy(() => import("./pages/AssessmentPage.jsx"));
 const DataManagementPage = lazy(() => import("./pages/DataManagementPage.jsx"));
 const DeloadPage = lazy(() => import("./pages/DeloadPage.jsx"));
+const FriendsPage = lazy(() => import("./pages/FriendsPage.jsx"));
 const GymModePage = lazy(() => import("./pages/GymModePage.jsx"));
 const MissionsPage = lazy(() => import("./pages/MissionsPage.jsx"));
 const MonthlyReportPage = lazy(() => import("./pages/MonthlyReportPage.jsx"));
@@ -53,6 +54,7 @@ const App = () => {
           <Route path="/assessment" element={withTransition(<AssessmentPage />)} />
           <Route path="/data-management" element={withTransition(<DataManagementPage />)} />
           <Route path="/exercises" element={withTransition(<ExerciseLibraryPage />)} />
+          <Route path="/friends" element={withTransition(<FriendsPage />)} />
           <Route path="/profile" element={withTransition(<ProfilePage />)} />
           <Route path="/progress" element={withTransition(<AnalyticsPage />)} />
           <Route path="/analytics/advanced" element={withTransition(<AdvancedAnalyticsPage />)} />

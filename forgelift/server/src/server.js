@@ -8,6 +8,8 @@ import { connectDB } from "./config/db.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { seedExercises } from "./utils/seedExercises.js";
 import { seedDemoData } from "./utils/seedDemoData.js";
+import { backfillUsernames } from "./utils/backfillUsernames.js";
+import activityRoutes from "./routes/activityRoutes.js";
 import advancedAnalyticsRoutes from "./routes/advancedAnalyticsRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import assessmentRoutes from "./routes/assessmentRoutes.js";
@@ -16,6 +18,7 @@ import bodyweightRoutes from "./routes/bodyweightRoutes.js";
 import dataManagementRoutes from "./routes/dataManagementRoutes.js";
 import deloadRoutes from "./routes/deloadRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
+import friendRoutes from "./routes/friendRoutes.js";
 import missionRoutes from "./routes/missionRoutes.js";
 import monthlyReportRoutes from "./routes/monthlyReportRoutes.js";
 import overloadRoutes from "./routes/overloadRoutes.js";
@@ -71,6 +74,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/activity", activityRoutes);
 app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/assessment", assessmentRoutes);
@@ -78,6 +82,7 @@ app.use("/api/bodyweight", bodyweightRoutes);
 app.use("/api/data-management", dataManagementRoutes);
 app.use("/api/deload", deloadRoutes);
 app.use("/api/exercises", exerciseRoutes);
+app.use("/api/friends", friendRoutes);
 app.use("/api/missions", missionRoutes);
 app.use("/api/monthly-reports", monthlyReportRoutes);
 app.use("/api/overload", overloadRoutes);
@@ -98,6 +103,13 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+
+    try {
+      const result = await backfillUsernames();
+      if (result.updated) console.log("Backfilled usernames for existing users:", result);
+    } catch (error) {
+      console.error("Username backfill failed:", error.message);
+    }
 
     try {
       const result = await seedExercises();

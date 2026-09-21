@@ -20,6 +20,8 @@ export const getDefaultStrengthStandard = (gender) => {
 
 export const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
+export const validateUsername = (username) => /^[a-z0-9_]{3,20}$/.test(username || "");
+
 export const validateRequiredNumber = (value, fieldName, errors) => {
   const numberValue = Number(value);
 

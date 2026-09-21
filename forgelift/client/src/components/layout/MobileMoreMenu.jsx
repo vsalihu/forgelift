@@ -13,6 +13,7 @@ import {
   Shield,
   ShieldAlert,
   UserCircle,
+  Users,
   Zap
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -37,6 +38,10 @@ const groups = [
       { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },
       { to: "/training-balance", label: "Training Balance", icon: Scale }
     ]
+  },
+  {
+    title: "Social",
+    items: [{ to: "/friends", label: "Friends", icon: Users }]
   },
   {
     title: "Progress",

@@ -90,6 +90,7 @@ const ProfilePage = () => {
       <div className="mb-6">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Profile</p>
         <h1 className="mt-2 text-3xl font-black text-white">Your profile</h1>
+        {user?.username ? <p className="mt-1 text-sm text-slate-400">@{user.username}</p> : null}
         <div className="mt-4">
           <TutorialLauncher pageKey="profile" steps={getTutorialSteps("profile")} />
         </div>

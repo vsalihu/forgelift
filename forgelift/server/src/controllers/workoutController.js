@@ -1,3 +1,4 @@
+import ActivityFeedItem from "../models/ActivityFeedItem.js";
 import Exercise from "../models/Exercise.js";
 import DeloadRecommendation from "../models/DeloadRecommendation.js";
 import OverloadRecommendation from "../models/OverloadRecommendation.js";
@@ -178,6 +179,27 @@ export const createWorkout = async (req, res) => {
     const newPersonalRecords = await detectPersonalRecords({ userId: req.user._id, workout });
     const xpEarned = calculateXP({ workout, newPersonalRecords });
     req.user.xp = (req.user.xp || 0) + xpEarned;
+    req.user.lifetimeVolume = (req.user.lifetimeVolume || 0) + (workout.totalVolume || 0);
+    req.user.lifetimeReps = (req.user.lifetimeReps || 0) + (workout.totalReps || 0);
+    req.user.lifetimeSets = (req.user.lifetimeSets || 0) + (workout.totalSets || 0);
+    req.user.lifetimeWorkoutCount = (req.user.lifetimeWorkoutCount || 0) + 1;
+
+    try {
+      await ActivityFeedItem.create({
+        userId: req.user._id,
+        type: "workout_completed",
+        workoutId: workout._id,
+        title: workout.title,
+        totalVolume: workout.totalVolume,
+        totalSets: workout.totalSets,
+        totalReps: workout.totalReps,
+        exerciseCount: workout.exercises?.length || 0,
+        bestEstimated1RM: workout.bestEstimated1RM
+      });
+    } catch (feedError) {
+      console.error("Failed to create activity feed item:", feedError.message);
+    }
+
     let updatedRanks = await recalculateUserRanks(req.user);
     const recentWorkouts = await getRecentWorkouts(req.user._id);
     const recoveryScores = await recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts });

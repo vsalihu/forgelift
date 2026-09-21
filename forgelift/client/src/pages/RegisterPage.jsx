@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth.js";
 const RegisterPage = () => {
   const { register, user, loading } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", username: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,6 +52,17 @@ const RegisterPage = () => {
               type="email"
               value={form.email}
               onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+            />
+            <FormInput
+              label="Username"
+              value={form.username}
+              onChange={(event) => setForm({ ...form, username: event.target.value.toLowerCase() })}
+              minLength={3}
+              maxLength={20}
+              pattern="[a-z0-9_]+"
+              title="Letters, numbers, and underscores only"
+              placeholder="letters, numbers, underscores"
               required
             />
             <FormInput

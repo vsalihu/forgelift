@@ -8,6 +8,7 @@ import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
@@ -25,6 +26,8 @@ const WorkoutTemplatesPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [sharedTemplateIds, setSharedTemplateIds] = useState([]);
+  const [sharingId, setSharingId] = useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -110,6 +113,19 @@ const WorkoutTemplatesPage = () => {
     navigate("/gym-mode");
   };
 
+  const shareTemplate = async (templateId) => {
+    setSharingId(templateId);
+    setError("");
+    try {
+      await activityService.shareWorkout(templateId);
+      setSharedTemplateIds((ids) => [...ids, templateId]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSharingId("");
+    }
+  };
+
   const createSuggestion = async (suggestion) => {
     await workoutTemplateService.createTemplate({
       name: suggestion.name,
@@ -185,6 +201,15 @@ const WorkoutTemplatesPage = () => {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" onClick={() => startTemplate(template)}>Start</Button>
+                        <Button
+                          disabled={sharedTemplateIds.includes(template._id)}
+                          loading={sharingId === template._id}
+                          type="button"
+                          variant="secondary"
+                          onClick={() => shareTemplate(template._id)}
+                        >
+                          {sharedTemplateIds.includes(template._id) ? "Shared" : "Share with Friends"}
+                        </Button>
                         <Button type="button" variant="secondary" onClick={() => editTemplate(template)}>Edit</Button>
                         <Button type="button" variant="ghost" onClick={() => deleteTemplate(template._id)}>Delete</Button>
                       </div>

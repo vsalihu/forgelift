@@ -18,6 +18,7 @@ import {
   Shield,
   TrendingUp,
   UserCircle,
+  Users,
   X,
   Zap
 } from "lucide-react";
@@ -53,6 +54,11 @@ const navItems = [
       { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },
       { to: "/training-balance", label: "Training Balance", icon: Scale }
     ]
+  },
+  {
+    section: "Social",
+    accent: "text-pink-300",
+    items: [{ to: "/friends", label: "Friends", icon: Users }]
   },
   {
     section: "Progress",

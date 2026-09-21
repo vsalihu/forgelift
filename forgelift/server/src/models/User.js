@@ -89,6 +89,16 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20,
+      match: /^[a-z0-9_]+$/
+    },
     passwordHash: {
       type: String,
       required: true
@@ -156,6 +166,22 @@ const userSchema = new mongoose.Schema(
     },
     lastRankCheck: {
       type: Date
+    },
+    lifetimeVolume: {
+      type: Number,
+      default: 0
+    },
+    lifetimeReps: {
+      type: Number,
+      default: 0
+    },
+    lifetimeSets: {
+      type: Number,
+      default: 0
+    },
+    lifetimeWorkoutCount: {
+      type: Number,
+      default: 0
     },
     overloadMode: {
       type: String,

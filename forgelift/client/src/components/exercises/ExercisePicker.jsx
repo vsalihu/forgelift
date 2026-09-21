@@ -6,6 +6,7 @@ import Button from "../Button.jsx";
 import ExerciseImpactCard from "./ExerciseImpactCard.jsx";
 import CustomExerciseForm from "./CustomExerciseForm.jsx";
 import { exerciseService } from "../../services/exerciseService.js";
+import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { advancedMuscleFilters, filterAndRankExercises, getMuscleFilterCounts, muscleFilters } from "../../utils/exerciseMatchUtils.js";
 
 const typeOptions = [
@@ -49,6 +50,8 @@ const ExercisePicker = ({
     () => getMuscleFilterCounts({ exercises, filters: { ...filters, muscle: "All" }, filterList: advancedMuscleFilters }),
     [exercises, filters.search, filters.type, filters.equipment, filters.difficulty]
   );
+
+  useBodyScrollLock(open);
 
   if (!open) return null;
 
@@ -125,35 +128,36 @@ const ExercisePicker = ({
             <SelectInput label="Equipment" options={equipmentOptions} value={filters.equipment} onChange={(event) => setFilters({ ...filters, equipment: event.target.value })} />
             <SelectInput label="Difficulty" options={difficultyOptions} value={filters.difficulty} onChange={(event) => setFilters({ ...filters, difficulty: event.target.value })} />
           </div>
-        </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {recentExercises.length ? (
-            <section className="mb-5">
+            <div>
               <p className="mb-2 text-sm font-bold text-slate-300">Recent</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                 {recentExercises.slice(0, 8).map((exercise) => (
                   <button className="shrink-0 rounded-full bg-white/10 px-3 py-2 text-sm font-semibold text-slate-200" key={exercise.exerciseName} type="button" onClick={() => handleSelect(exercises.find((item) => item.name === exercise.exerciseName) || exercise)}>
                     {exercise.exerciseName}
                   </button>
                 ))}
               </div>
-            </section>
+            </div>
           ) : null}
 
           {suggestions.length ? (
-            <section className="mb-5">
+            <div>
               <p className="mb-2 text-sm font-bold text-slate-300">Smart suggestions</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
                 {suggestions.slice(0, 8).map((name) => (
                   <button className="shrink-0 rounded-full bg-forge-ember/15 px-3 py-2 text-sm font-semibold text-orange-200" key={name} type="button" onClick={() => handleSelect(exercises.find((item) => item.name === name) || { exerciseName: name, name })}>
                     {name}
                   </button>
                 ))}
               </div>
-            </section>
+            </div>
           ) : null}
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">{ranked.length} exercise{ranked.length === 1 ? "" : "s"}</p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {ranked.map(({ exercise, match }) => (
               <ExerciseImpactCard exercise={exercise} key={exercise._id || exercise.name} match={match} onSelect={handleSelect} />

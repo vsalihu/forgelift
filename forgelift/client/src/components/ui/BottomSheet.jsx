@@ -1,6 +1,9 @@
 import { X } from "lucide-react";
+import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 
 const BottomSheet = ({ open, title, children, onClose, className = "" }) => {
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   return (
@@ -18,7 +21,7 @@ const BottomSheet = ({ open, title, children, onClose, className = "" }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="max-h-[calc(88vh-5rem)] overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="max-h-[calc(88vh-5rem)] overflow-y-auto overscroll-contain p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           {children}
         </div>
       </section>

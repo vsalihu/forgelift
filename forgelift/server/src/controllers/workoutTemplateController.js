@@ -1,5 +1,6 @@
 import Exercise from "../models/Exercise.js";
 import WorkoutTemplate from "../models/WorkoutTemplate.js";
+import { getFriendIds } from "./friendController.js";
 
 const normalizeExercise = async (exercise) => {
   let libraryExercise = null;
@@ -86,6 +87,41 @@ export const updateWorkoutTemplate = async (req, res) => {
     return res.json({ template });
   } catch (error) {
     return res.status(500).json({ message: "Unable to update workout template.", error: error.message });
+  }
+};
+
+export const updateWorkoutTemplateVisibility = async (req, res) => {
+  try {
+    const { visibility } = req.body;
+
+    if (!["private", "public"].includes(visibility)) {
+      return res.status(400).json({ message: "Visibility must be 'private' or 'public'." });
+    }
+
+    const template = await WorkoutTemplate.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $set: { visibility } },
+      { new: true }
+    );
+
+    if (!template) return res.status(404).json({ message: "Workout template not found." });
+
+    return res.json({ template });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to update visibility.", error: error.message });
+  }
+};
+
+export const getFriendsPublicTemplates = async (req, res) => {
+  try {
+    const friendIds = await getFriendIds(req.user._id);
+    const templates = await WorkoutTemplate.find({ userId: { $in: friendIds }, visibility: "public" })
+      .populate("userId", "name username")
+      .sort({ updatedAt: -1 });
+
+    return res.json({ templates });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch friends' public workouts.", error: error.message });
   }
 };
 

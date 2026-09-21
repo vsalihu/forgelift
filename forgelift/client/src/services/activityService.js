@@ -5,10 +5,11 @@ export const activityService = {
     const query = new URLSearchParams(params).toString();
     return request(`/activity/feed${query ? `?${query}` : ""}`);
   },
-  shareWorkout: (workoutTemplateId) =>
-    request("/activity/share-workout", {
+  getInbox: () => request("/activity/inbox"),
+  sendWorkout: (workoutTemplateId, friendUserId) =>
+    request("/activity/send-workout", {
       method: "POST",
-      body: JSON.stringify({ workoutTemplateId })
+      body: JSON.stringify({ workoutTemplateId, friendUserId })
     }),
-  saveSharedTemplate: (feedItemId) => request(`/activity/feed/${feedItemId}/save-template`, { method: "POST" })
+  saveInboxWorkout: (sharedWorkoutId) => request(`/activity/inbox/${sharedWorkoutId}/save-template`, { method: "POST" })
 };

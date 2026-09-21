@@ -6,6 +6,7 @@ import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
+import BottomSheet from "../components/ui/BottomSheet.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
@@ -14,6 +15,7 @@ import StatPill from "../components/visuals/StatPill.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { overloadService } from "../services/overloadService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
@@ -105,6 +107,8 @@ const GymModePage = () => {
   const [overloadRecommendations, setOverloadRecommendations] = useState([]);
   const [strengthBaselines, setStrengthBaselines] = useState([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [workoutPickerOpen, setWorkoutPickerOpen] = useState(false);
+  const [inboxWorkouts, setInboxWorkouts] = useState([]);
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(initialDraft.activeExerciseIndex);
   const [highlightIndex, setHighlightIndex] = useState(null);
   const [draftRestored, setDraftRestored] = useState(initialDraft.restored);
@@ -124,18 +128,20 @@ const GymModePage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [exerciseData, templateData, recentData, overloadData, baselineData] = await Promise.all([
+        const [exerciseData, templateData, recentData, overloadData, baselineData, inboxData] = await Promise.all([
           exerciseService.getExercises(),
           workoutTemplateService.getTemplates(),
           workoutService.getRecentExercises(),
           overloadService.getOverloadRecommendations(),
-          strengthBaselineService.getStrengthBaselines()
+          strengthBaselineService.getStrengthBaselines(),
+          activityService.getInbox()
         ]);
         setExercises(exerciseData.exercises || []);
         setTemplates(templateData.templates || []);
         setRecentExercises(recentData.exercises || []);
         setOverloadRecommendations(overloadData.recommendations || []);
         setStrengthBaselines(baselineData.baselines || []);
+        setInboxWorkouts(inboxData.inbox || []);
       } catch (err) {
         setError(err.message);
       }
@@ -318,6 +324,15 @@ const GymModePage = () => {
     scrollToExercise(0);
   };
 
+  const loadFromWorkoutPicker = (item) => {
+    applyTemplate({
+      name: item.name || item.workoutName,
+      description: item.description || item.workoutDescription,
+      exercises: item.exercises
+    });
+    setWorkoutPickerOpen(false);
+  };
+
   const resetWorkout = () => {
     skipDraftSaveRef.current = true;
     localStorage.removeItem("forgeliftGymModeDraft");
@@ -478,6 +493,52 @@ const GymModePage = () => {
         onClose={() => setPickerOpen(false)}
         onSelect={addExerciseObject}
       />
+      <BottomSheet open={workoutPickerOpen} title="Load Workout" onClose={() => setWorkoutPickerOpen(false)}>
+        <div className="space-y-6">
+          <section>
+            <p className="mb-2 text-sm font-bold text-slate-300">Your saved workouts</p>
+            {templates.length ? (
+              <div className="space-y-2">
+                {templates.map((template) => (
+                  <button
+                    className="w-full rounded-lg bg-white/10 p-3 text-left hover:bg-white/15"
+                    key={template._id}
+                    type="button"
+                    onClick={() => loadFromWorkoutPicker(template)}
+                  >
+                    <p className="font-bold text-white">{template.name}</p>
+                    <p className="text-sm text-slate-400">{template.exercises.length} exercises</p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">No saved workouts yet.</p>
+            )}
+          </section>
+          <section>
+            <p className="mb-2 text-sm font-bold text-slate-300">Sent to you by friends</p>
+            {inboxWorkouts.length ? (
+              <div className="space-y-2">
+                {inboxWorkouts.map((item) => (
+                  <button
+                    className="w-full rounded-lg bg-forge-ember/15 p-3 text-left hover:bg-forge-ember/25"
+                    key={item._id}
+                    type="button"
+                    onClick={() => loadFromWorkoutPicker(item)}
+                  >
+                    <p className="font-bold text-white">{item.workoutName}</p>
+                    <p className="text-sm text-slate-400">
+                      From @{item.fromUserId?.username} · {item.exercises.length} exercises
+                    </p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">Nothing sent to you yet.</p>
+            )}
+          </section>
+        </div>
+      </BottomSheet>
       {showResetConfirm ? (
         <ConfirmModal
           title="Reset Gym Mode workout?"
@@ -571,7 +632,7 @@ const GymModePage = () => {
           <EmptyState title="Ready to start?" description="Add your first exercise or start from a workout template." />
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Button data-tour-id="gym-add-exercise" type="button" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
-            {templates[0] ? <Button type="button" variant="secondary" onClick={() => applyTemplate(templates[0])}>Use Template</Button> : null}
+            <Button type="button" variant="secondary" onClick={() => setWorkoutPickerOpen(true)}>Load Workout</Button>
           </div>
           <div className="mt-6 space-y-4">
             {templates.length ? (
@@ -619,7 +680,10 @@ const GymModePage = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Exercise List</p>
               <h1 className="mt-1 text-2xl font-black text-white">Live workout</h1>
             </div>
-            <Button data-tour-id="gym-add-exercise" type="button" variant="secondary" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button data-tour-id="gym-add-exercise" type="button" variant="secondary" onClick={() => setPickerOpen(true)}><Plus className="h-4 w-4" />Add Exercise</Button>
+              <Button type="button" variant="secondary" onClick={() => setWorkoutPickerOpen(true)}>Load Workout</Button>
+            </div>
           </div>
 
           {workout.exercises.map((exercise, exerciseIndex) => {

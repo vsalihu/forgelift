@@ -1,11 +1,12 @@
 import express from "express";
-import { getFeed, saveSharedTemplate, shareWorkout } from "../controllers/activityController.js";
+import { getFeed, getInbox, saveInboxWorkout, sendWorkout } from "../controllers/activityController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/feed", protect, getFeed);
-router.post("/share-workout", protect, shareWorkout);
-router.post("/feed/:id/save-template", protect, saveSharedTemplate);
+router.get("/inbox", protect, getInbox);
+router.post("/send-workout", protect, sendWorkout);
+router.post("/inbox/:id/save-template", protect, saveInboxWorkout);
 
 export default router;

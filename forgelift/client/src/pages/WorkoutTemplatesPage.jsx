@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
+import Badge from "../components/ui/Badge.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -10,6 +11,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
+import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
 
@@ -20,25 +22,31 @@ const WorkoutTemplatesPage = () => {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [friends, setFriends] = useState([]);
   const [form, setForm] = useState(emptyTemplate);
   const [editingId, setEditingId] = useState("");
   const [selectedExerciseId, setSelectedExerciseId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [sharedTemplateIds, setSharedTemplateIds] = useState([]);
-  const [sharingId, setSharingId] = useState("");
+  const [visibilityBusyId, setVisibilityBusyId] = useState("");
+  const [sendPickerId, setSendPickerId] = useState("");
+  const [selectedFriendId, setSelectedFriendId] = useState("");
+  const [sendingId, setSendingId] = useState("");
+  const [sentConfirmationId, setSentConfirmationId] = useState("");
 
   const loadData = async () => {
     setLoading(true);
     setError("");
     try {
-      const [templateData, exerciseData] = await Promise.all([
+      const [templateData, exerciseData, friendData] = await Promise.all([
         workoutTemplateService.getTemplates(),
-        exerciseService.getExercises()
+        exerciseService.getExercises(),
+        friendService.getFriends()
       ]);
       setTemplates(templateData.templates || []);
       setExercises(exerciseData.exercises || []);
+      setFriends(friendData.friends || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -113,16 +121,38 @@ const WorkoutTemplatesPage = () => {
     navigate("/gym-mode");
   };
 
-  const shareTemplate = async (templateId) => {
-    setSharingId(templateId);
+  const toggleVisibility = async (template) => {
+    const nextVisibility = template.visibility === "public" ? "private" : "public";
+    setVisibilityBusyId(template._id);
     setError("");
     try {
-      await activityService.shareWorkout(templateId);
-      setSharedTemplateIds((ids) => [...ids, templateId]);
+      const data = await workoutTemplateService.setVisibility(template._id, nextVisibility);
+      setTemplates((current) => current.map((item) => (item._id === template._id ? data.template : item)));
     } catch (err) {
       setError(err.message);
     } finally {
-      setSharingId("");
+      setVisibilityBusyId("");
+    }
+  };
+
+  const openSendPicker = (templateId) => {
+    setSentConfirmationId("");
+    setSelectedFriendId("");
+    setSendPickerId(sendPickerId === templateId ? "" : templateId);
+  };
+
+  const sendTemplate = async (templateId) => {
+    if (!selectedFriendId) return;
+    setSendingId(templateId);
+    setError("");
+    try {
+      await activityService.sendWorkout(templateId, selectedFriendId);
+      setSentConfirmationId(templateId);
+      setSendPickerId("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingId("");
     }
   };
 
@@ -195,25 +225,64 @@ const WorkoutTemplatesPage = () => {
                   <article className="metal-panel rounded-lg p-5" key={template._id}>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <h2 className="text-xl font-black text-white">{template.name}</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-xl font-black text-white">{template.name}</h2>
+                          <Badge tone={template.visibility === "public" ? "orange" : "neutral"}>
+                            {template.visibility === "public" ? "Public" : "Private"}
+                          </Badge>
+                        </div>
                         <p className="mt-1 text-sm text-slate-400">{template.description || "No description"}</p>
                         <p className="mt-2 text-sm text-forge-copper">{template.exercises.length} exercises</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Button type="button" onClick={() => startTemplate(template)}>Start</Button>
                         <Button
-                          disabled={sharedTemplateIds.includes(template._id)}
-                          loading={sharingId === template._id}
+                          loading={visibilityBusyId === template._id}
                           type="button"
                           variant="secondary"
-                          onClick={() => shareTemplate(template._id)}
+                          onClick={() => toggleVisibility(template)}
                         >
-                          {sharedTemplateIds.includes(template._id) ? "Shared" : "Share with Friends"}
+                          {template.visibility === "public" ? "Make Private" : "Make Public"}
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => openSendPicker(template._id)}>
+                          Send to...
                         </Button>
                         <Button type="button" variant="secondary" onClick={() => editTemplate(template)}>Edit</Button>
                         <Button type="button" variant="ghost" onClick={() => deleteTemplate(template._id)}>Delete</Button>
                       </div>
                     </div>
+
+                    {sendPickerId === template._id ? (
+                      <div className="mt-4 flex flex-col gap-2 rounded-md bg-black/25 p-3 sm:flex-row sm:items-center">
+                        {friends.length ? (
+                          <>
+                            <select
+                              className="min-h-11 flex-1 rounded-md border border-white/10 bg-black/30 px-3 text-white"
+                              value={selectedFriendId}
+                              onChange={(event) => setSelectedFriendId(event.target.value)}
+                            >
+                              <option value="">Choose a friend...</option>
+                              {friends.map((friend) => (
+                                <option key={friend._id} value={friend._id}>{friend.name} (@{friend.username})</option>
+                              ))}
+                            </select>
+                            <Button
+                              disabled={!selectedFriendId}
+                              loading={sendingId === template._id}
+                              type="button"
+                              onClick={() => sendTemplate(template._id)}
+                            >
+                              Send
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-slate-400">Add a friend first to send workouts.</p>
+                        )}
+                      </div>
+                    ) : null}
+                    {sentConfirmationId === template._id ? (
+                      <p className="mt-3 text-sm font-semibold text-emerald-300">Sent!</p>
+                    ) : null}
                   </article>
                 ))}
               </div>

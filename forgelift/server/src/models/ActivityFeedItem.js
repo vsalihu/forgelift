@@ -1,27 +1,5 @@
 import mongoose from "mongoose";
 
-const sharedExerciseSchema = new mongoose.Schema(
-  {
-    exerciseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Exercise"
-    },
-    exerciseName: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    targetSets: Number,
-    targetRepMin: Number,
-    targetRepMax: Number,
-    notes: {
-      type: String,
-      default: ""
-    }
-  },
-  { _id: false }
-);
-
 const activityFeedItemSchema = new mongoose.Schema(
   {
     userId: {
@@ -32,7 +10,7 @@ const activityFeedItemSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["workout_completed", "workout_shared"],
+      enum: ["workout_completed"],
       required: true
     },
     workoutId: {
@@ -44,13 +22,7 @@ const activityFeedItemSchema = new mongoose.Schema(
     totalSets: Number,
     totalReps: Number,
     exerciseCount: Number,
-    bestEstimated1RM: Number,
-    workoutName: String,
-    workoutDescription: String,
-    sharedExercises: {
-      type: [sharedExerciseSchema],
-      default: undefined
-    }
+    bestEstimated1RM: Number
   },
   { timestamps: true }
 );

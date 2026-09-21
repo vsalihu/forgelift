@@ -16,5 +16,11 @@ export const workoutTemplateService = {
   deleteTemplate: (id) =>
     request(`/workout-templates/${id}`, {
       method: "DELETE"
-    })
+    }),
+  setVisibility: (id, visibility) =>
+    request(`/workout-templates/${id}/visibility`, {
+      method: "PUT",
+      body: JSON.stringify({ visibility })
+    }),
+  getFriendsPublicTemplates: () => request("/workout-templates/friends/public")
 };

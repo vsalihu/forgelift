@@ -54,6 +54,11 @@ const workoutTemplateSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    visibility: {
+      type: String,
+      enum: ["private", "public"],
+      default: "private"
+    },
     exercises: {
       type: [workoutTemplateExerciseSchema],
       default: []
@@ -63,5 +68,6 @@ const workoutTemplateSchema = new mongoose.Schema(
 );
 
 workoutTemplateSchema.index({ userId: 1, createdAt: -1 });
+workoutTemplateSchema.index({ userId: 1, visibility: 1 });
 
 export default mongoose.model("WorkoutTemplate", workoutTemplateSchema);

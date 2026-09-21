@@ -1,4 +1,5 @@
 import ActivityFeedItem from "../models/ActivityFeedItem.js";
+import SharedWorkout from "../models/SharedWorkout.js";
 import WorkoutTemplate from "../models/WorkoutTemplate.js";
 import { getFriendIds } from "./friendController.js";
 
@@ -23,12 +24,17 @@ export const getFeed = async (req, res) => {
   }
 };
 
-export const shareWorkout = async (req, res) => {
-  try {
-    const { workoutTemplateId } = req.body;
+const isFriend = async (userId, otherUserId) => {
+  const friendIds = await getFriendIds(userId);
+  return friendIds.some((id) => id.equals(otherUserId));
+};
 
-    if (!workoutTemplateId) {
-      return res.status(400).json({ message: "workoutTemplateId is required." });
+export const sendWorkout = async (req, res) => {
+  try {
+    const { workoutTemplateId, friendUserId } = req.body;
+
+    if (!workoutTemplateId || !friendUserId) {
+      return res.status(400).json({ message: "workoutTemplateId and friendUserId are required." });
     }
 
     const template = await WorkoutTemplate.findOne({ _id: workoutTemplateId, userId: req.user._id });
@@ -37,40 +43,50 @@ export const shareWorkout = async (req, res) => {
       return res.status(404).json({ message: "Workout template not found." });
     }
 
-    const feedItem = await ActivityFeedItem.create({
-      userId: req.user._id,
-      type: "workout_shared",
+    if (!(await isFriend(req.user._id, friendUserId))) {
+      return res.status(400).json({ message: "You can only send workouts to your friends." });
+    }
+
+    const sharedWorkout = await SharedWorkout.create({
+      fromUserId: req.user._id,
+      toUserId: friendUserId,
+      sourceTemplateId: template._id,
       workoutName: template.name,
       workoutDescription: template.description,
-      sharedExercises: template.exercises.map((exercise) => ({
-        exerciseId: exercise.exerciseId,
-        exerciseName: exercise.exerciseName,
-        targetSets: exercise.targetSets,
-        targetRepMin: exercise.targetRepMin,
-        targetRepMax: exercise.targetRepMax,
-        notes: exercise.notes
-      }))
+      exercises: template.exercises
     });
 
-    return res.status(201).json({ feedItem });
+    return res.status(201).json({ sharedWorkout });
   } catch (error) {
-    return res.status(500).json({ message: "Unable to share workout.", error: error.message });
+    return res.status(500).json({ message: "Unable to send workout.", error: error.message });
   }
 };
 
-export const saveSharedTemplate = async (req, res) => {
+export const getInbox = async (req, res) => {
   try {
-    const feedItem = await ActivityFeedItem.findOne({ _id: req.params.id, type: "workout_shared" });
+    const inbox = await SharedWorkout.find({ toUserId: req.user._id })
+      .populate("fromUserId", "name username")
+      .sort({ createdAt: -1 });
 
-    if (!feedItem) {
+    return res.json({ inbox });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch sent workouts.", error: error.message });
+  }
+};
+
+export const saveInboxWorkout = async (req, res) => {
+  try {
+    const sharedWorkout = await SharedWorkout.findOne({ _id: req.params.id, toUserId: req.user._id });
+
+    if (!sharedWorkout) {
       return res.status(404).json({ message: "Shared workout not found." });
     }
 
     const template = await WorkoutTemplate.create({
       userId: req.user._id,
-      name: feedItem.workoutName,
-      description: feedItem.workoutDescription,
-      exercises: feedItem.sharedExercises
+      name: sharedWorkout.workoutName,
+      description: sharedWorkout.workoutDescription,
+      exercises: sharedWorkout.exercises
     });
 
     return res.status(201).json({ template });

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
+import { Dumbbell, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
-import Badge from "../components/ui/Badge.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -12,12 +11,14 @@ import SegmentedControl from "../components/ui/SegmentedControl.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { friendService } from "../services/friendService.js";
+import { workoutTemplateService } from "../services/workoutTemplateService.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
 const tabs = [
   { value: "feed", label: "Feed" },
   { value: "friends", label: "Friends" },
+  { value: "workouts", label: "Workouts" },
   { value: "leaderboard", label: "Leaderboard" }
 ];
 
@@ -29,30 +30,37 @@ const FriendsPage = () => {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [inbox, setInbox] = useState([]);
+  const [publicWorkouts, setPublicWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState("");
-  const [savedFeedItemIds, setSavedFeedItemIds] = useState([]);
+  const [savedInboxIds, setSavedInboxIds] = useState([]);
+  const [savedPublicIds, setSavedPublicIds] = useState([]);
 
   const loadAll = async () => {
     setLoading(true);
     setError("");
     try {
-      const [feedData, friendsData, incomingData, sentData, leaderboardData] = await Promise.all([
+      const [feedData, friendsData, incomingData, sentData, leaderboardData, inboxData, publicData] = await Promise.all([
         activityService.getFeed(),
         friendService.getFriends(),
         friendService.getRequests(),
         friendService.getRequests("sent"),
-        friendService.getLeaderboard()
+        friendService.getLeaderboard(),
+        activityService.getInbox(),
+        workoutTemplateService.getFriendsPublicTemplates()
       ]);
       setFeed(feedData.feed || []);
       setFriends(friendsData.friends || []);
       setIncomingRequests(incomingData.requests || []);
       setSentRequests(sentData.requests || []);
       setLeaderboard(leaderboardData.leaderboard || []);
+      setInbox(inboxData.inbox || []);
+      setPublicWorkouts(publicData.templates || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -117,11 +125,27 @@ const FriendsPage = () => {
     }
   };
 
-  const saveSharedTemplate = async (feedItemId) => {
-    setBusyId(feedItemId);
+  const saveInboxWorkout = async (sharedWorkoutId) => {
+    setBusyId(sharedWorkoutId);
     try {
-      await activityService.saveSharedTemplate(feedItemId);
-      setSavedFeedItemIds((ids) => [...ids, feedItemId]);
+      await activityService.saveInboxWorkout(sharedWorkoutId);
+      setSavedInboxIds((ids) => [...ids, sharedWorkoutId]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId("");
+    }
+  };
+
+  const savePublicWorkout = async (template) => {
+    setBusyId(template._id);
+    try {
+      await workoutTemplateService.createTemplate({
+        name: template.name,
+        description: template.description,
+        exercises: template.exercises
+      });
+      setSavedPublicIds((ids) => [...ids, template._id]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -149,44 +173,14 @@ const FriendsPage = () => {
           <div className="space-y-4">
             {feed.map((item) => (
               <article className="metal-panel rounded-lg p-5" key={item._id}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-bold text-white">
-                    {item.userId?._id === user?._id ? "You" : item.userId?.name}{" "}
-                    <span className="font-normal text-slate-400">@{item.userId?.username}</span>
-                  </p>
-                  <Badge tone={item.type === "workout_shared" ? "orange" : "neutral"}>
-                    {item.type === "workout_shared" ? "Shared workout" : "Completed workout"}
-                  </Badge>
-                </div>
-
-                {item.type === "workout_completed" ? (
-                  <>
-                    <p className="mt-2 text-lg font-black text-white">{item.title}</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {formatNumber(item.totalVolume)}kg volume · {item.totalSets} sets · {item.totalReps} reps · {item.exerciseCount} exercises
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="mt-2 text-lg font-black text-white">{item.workoutName}</p>
-                    {item.workoutDescription ? <p className="mt-1 text-sm text-slate-400">{item.workoutDescription}</p> : null}
-                    <p className="mt-2 text-sm text-forge-copper">
-                      {item.sharedExercises?.map((exercise) => exercise.exerciseName).join(", ")}
-                    </p>
-                    {item.userId?._id !== user?._id ? (
-                      <Button
-                        className="mt-3"
-                        disabled={savedFeedItemIds.includes(item._id)}
-                        loading={busyId === item._id}
-                        type="button"
-                        variant="secondary"
-                        onClick={() => saveSharedTemplate(item._id)}
-                      >
-                        {savedFeedItemIds.includes(item._id) ? "Saved to your templates" : "Save to My Templates"}
-                      </Button>
-                    ) : null}
-                  </>
-                )}
+                <p className="font-bold text-white">
+                  {item.userId?._id === user?._id ? "You" : item.userId?.name}{" "}
+                  <span className="font-normal text-slate-400">@{item.userId?.username}</span>
+                </p>
+                <p className="mt-2 text-lg font-black text-white">{item.title}</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {formatNumber(item.totalVolume)}kg volume · {item.totalSets} sets · {item.totalReps} reps · {item.exerciseCount} exercises
+                </p>
               </article>
             ))}
           </div>
@@ -309,6 +303,70 @@ const FriendsPage = () => {
               </div>
             ) : (
               <EmptyState icon={Users} title="No friends yet" description="Search for a username above to send your first friend request." />
+            )}
+          </section>
+        </div>
+      ) : null}
+
+      {!loading && activeTab === "workouts" ? (
+        <div className="space-y-6">
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-white">Sent to you</h2>
+            {inbox.length ? (
+              <div className="space-y-3">
+                {inbox.map((item) => (
+                  <article className="metal-panel rounded-lg p-5" key={item._id}>
+                    <p className="text-sm text-slate-400">From {item.fromUserId?.name} (@{item.fromUserId?.username})</p>
+                    <p className="mt-1 text-lg font-black text-white">{item.workoutName}</p>
+                    {item.workoutDescription ? <p className="mt-1 text-sm text-slate-400">{item.workoutDescription}</p> : null}
+                    <p className="mt-2 text-sm text-forge-copper">
+                      {item.exercises?.map((exercise) => exercise.exerciseName).join(", ")}
+                    </p>
+                    <Button
+                      className="mt-3"
+                      disabled={savedInboxIds.includes(item._id)}
+                      loading={busyId === item._id}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => saveInboxWorkout(item._id)}
+                    >
+                      {savedInboxIds.includes(item._id) ? "Saved to your templates" : "Save to My Templates"}
+                    </Button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">Nothing sent to you yet.</p>
+            )}
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold text-white">Browse friends' public workouts</h2>
+            {publicWorkouts.length ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {publicWorkouts.map((template) => (
+                  <article className="metal-panel rounded-lg p-5" key={template._id}>
+                    <p className="text-sm text-slate-400">By {template.userId?.name} (@{template.userId?.username})</p>
+                    <p className="mt-1 text-lg font-black text-white">{template.name}</p>
+                    {template.description ? <p className="mt-1 text-sm text-slate-400">{template.description}</p> : null}
+                    <p className="mt-2 text-sm text-forge-copper">
+                      {template.exercises?.map((exercise) => exercise.exerciseName).join(", ")}
+                    </p>
+                    <Button
+                      className="mt-3"
+                      disabled={savedPublicIds.includes(template._id)}
+                      loading={busyId === template._id}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => savePublicWorkout(template)}
+                    >
+                      {savedPublicIds.includes(template._id) ? "Saved to your templates" : "Save to My Templates"}
+                    </Button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={Dumbbell} title="No public workouts yet" description="Friends' workouts marked public will show up here." />
             )}
           </section>
         </div>

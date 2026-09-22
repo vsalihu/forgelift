@@ -96,7 +96,7 @@ const Sidebar = ({ open, onClose }) => {
         }`}
       >
         <div className="mb-8 flex shrink-0 items-center justify-between lg:hidden">
-          <span className="font-bold text-white">Navigation</span>
+          <img alt="ForgeLift" className="h-7 w-auto" src="/logo-full.png" />
           <button className="rounded-md p-2 text-slate-300 hover:bg-white/10" onClick={onClose}>
             <X className="h-5 w-5" />
           </button>

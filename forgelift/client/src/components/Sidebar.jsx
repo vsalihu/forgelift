@@ -39,7 +39,7 @@ const navItems = [
     accent: "text-emerald-300",
     items: [
       { to: "/workouts", label: "Workout History", icon: ClipboardList },
-      { to: "/workout-templates", label: "Workout Templates", icon: ClipboardList },
+      { to: "/workout-templates", label: "Design a Workout", icon: ClipboardList },
       { to: "/exercises", label: "Exercise Library", icon: BookOpen },
       { to: "/strength-baselines", label: "Strength Baselines", icon: Calculator }
     ]

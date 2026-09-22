@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp, Dumbbell, Plus, X } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -8,6 +9,7 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
+import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
@@ -16,6 +18,7 @@ import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
 
 const emptyTemplate = { name: "", description: "", exercises: [] };
+const numberFieldClass = "min-h-10 w-16 rounded-md border border-white/10 bg-black/30 px-2 text-center text-sm text-white outline-none focus:border-forge-ember";
 
 const WorkoutTemplatesPage = () => {
   const { user } = useAuth();
@@ -25,7 +28,7 @@ const WorkoutTemplatesPage = () => {
   const [friends, setFriends] = useState([]);
   const [form, setForm] = useState(emptyTemplate);
   const [editingId, setEditingId] = useState("");
-  const [selectedExerciseId, setSelectedExerciseId] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -58,18 +61,16 @@ const WorkoutTemplatesPage = () => {
     loadData();
   }, []);
 
-  const exerciseOptions = useMemo(
-    () => exercises.map((exercise) => ({ value: exercise._id, label: exercise.name })),
-    [exercises]
-  );
+  const findLibraryExercise = (templateExercise) =>
+    exercises.find(
+      (exercise) => exercise._id === templateExercise.exerciseId || exercise.name === templateExercise.exerciseName
+    );
 
-  const addExercise = () => {
-    const exercise = exercises.find((item) => item._id === selectedExerciseId);
-    if (!exercise) return;
-    setForm({
-      ...form,
+  const addExerciseFromPicker = (exercise) => {
+    setForm((current) => ({
+      ...current,
       exercises: [
-        ...form.exercises,
+        ...current.exercises,
         {
           exerciseId: exercise._id,
           exerciseName: exercise.name,
@@ -79,8 +80,33 @@ const WorkoutTemplatesPage = () => {
           notes: ""
         }
       ]
+    }));
+    if (!exercises.some((item) => item._id === exercise._id)) {
+      setExercises((current) => [...current, exercise]);
+    }
+  };
+
+  const updateExerciseField = (index, field, value) => {
+    setForm((current) => ({
+      ...current,
+      exercises: current.exercises.map((exercise, currentIndex) =>
+        currentIndex === index ? { ...exercise, [field]: value } : exercise
+      )
+    }));
+  };
+
+  const removeExercise = (index) => {
+    setForm((current) => ({ ...current, exercises: current.exercises.filter((_item, current2) => current2 !== index) }));
+  };
+
+  const moveExercise = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= form.exercises.length) return;
+    setForm((current) => {
+      const nextExercises = [...current.exercises];
+      [nextExercises[index], nextExercises[targetIndex]] = [nextExercises[targetIndex], nextExercises[index]];
+      return { ...current, exercises: nextExercises };
     });
-    setSelectedExerciseId("");
   };
 
   const saveTemplate = async (event) => {
@@ -108,6 +134,11 @@ const WorkoutTemplatesPage = () => {
       exercises: template.exercises || []
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId("");
+    setForm(emptyTemplate);
   };
 
   const deleteTemplate = async (templateId) => {
@@ -166,12 +197,21 @@ const WorkoutTemplatesPage = () => {
     await loadData();
   };
 
+  const totalSets = form.exercises.reduce((total, exercise) => total + (Number(exercise.targetSets) || 0), 0);
+
   return (
     <Layout>
+      <ExercisePicker
+        open={pickerOpen}
+        exercises={exercises}
+        onClose={() => setPickerOpen(false)}
+        onSelect={addExerciseFromPicker}
+      />
+
       <PageHeader
-        eyebrow="Templates"
-        title="Workout templates"
-        description="Build repeatable sessions and start them quickly from Gym Mode."
+        eyebrow="Workout Builder"
+        title="Design a Workout"
+        description="Search the exercise library, filter by muscle group, or add your own movement, then save it to train later."
         actions={
           <Link className="inline-flex min-h-11 items-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white" to="/gym-mode">
             Start Gym Mode
@@ -182,43 +222,134 @@ const WorkoutTemplatesPage = () => {
       {loading ? <LoadingSkeleton rows={4} /> : null}
 
       {!loading ? (
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <form className="metal-panel rounded-lg p-5" onSubmit={saveTemplate}>
-            <h2 className="mb-4 text-xl font-bold text-white">{editingId ? "Edit template" : "Create template"}</h2>
-            <div className="grid gap-4">
-              <FormInput label="Template name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-              <FormInput label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-              <div className="flex gap-2">
-                <select
-                  className="min-h-11 flex-1 rounded-md border border-white/10 bg-black/30 px-3 text-white"
-                  value={selectedExerciseId}
-                  onChange={(event) => setSelectedExerciseId(event.target.value)}
-                >
-                  <option value="">Choose exercise...</option>
-                  {exerciseOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <Button type="button" variant="secondary" onClick={addExercise}>Add</Button>
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <form className="metal-panel rounded-xl p-5" onSubmit={saveTemplate}>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-forge-copper">1. Basics</p>
+                <h2 className="mt-1 text-xl font-bold text-white">{editingId ? "Edit workout" : "New workout"}</h2>
               </div>
+              {editingId ? (
+                <button className="text-sm font-semibold text-slate-400 hover:text-white" type="button" onClick={cancelEdit}>
+                  Cancel edit
+                </button>
+              ) : null}
             </div>
-            <div className="mt-4 space-y-2">
-              {form.exercises.map((exercise, index) => (
-                <div className="rounded-md bg-black/25 p-3 text-sm" key={`${exercise.exerciseName}-${index}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-bold text-white">{exercise.exerciseName}</span>
-                    <button className="text-red-300" type="button" onClick={() => setForm({ ...form, exercises: form.exercises.filter((_item, current) => current !== index) })}>
-                      Remove
-                    </button>
-                  </div>
-                  <p className="mt-1 text-slate-400">{exercise.targetSets} sets / {exercise.targetRepMin}-{exercise.targetRepMax} reps</p>
-                </div>
-              ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormInput label="Workout name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+              <FormInput label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
             </div>
-            <Button className="mt-5 w-full" loading={saving} type="submit">{editingId ? "Save template" : "Create template"}</Button>
+
+            <div className="mb-3 mt-6 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-forge-copper">2. Exercises</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {form.exercises.length ? `${form.exercises.length} exercises · ${totalSets} total sets` : "No exercises added yet."}
+                </p>
+              </div>
+              <Button type="button" onClick={() => setPickerOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Exercise
+              </Button>
+            </div>
+
+            {form.exercises.length ? (
+              <div className="space-y-3">
+                {form.exercises.map((exercise, index) => {
+                  const libraryExercise = findLibraryExercise(exercise);
+                  return (
+                    <div className="rounded-lg border border-white/10 bg-black/25 p-3" key={`${exercise.exerciseName}-${index}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-white">{exercise.exerciseName}</p>
+                          {libraryExercise?.primaryMuscles?.length ? (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {libraryExercise.primaryMuscles.slice(0, 3).map((muscle) => (
+                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-slate-300" key={muscle}>
+                                  {muscle}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                            disabled={index === 0}
+                            type="button"
+                            onClick={() => moveExercise(index, -1)}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-30"
+                            disabled={index === form.exercises.length - 1}
+                            type="button"
+                            onClick={() => moveExercise(index, 1)}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="rounded-md p-1.5 text-red-300 hover:bg-red-500/10"
+                            type="button"
+                            onClick={() => removeExercise(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+                        <label className="flex items-center gap-2">
+                          Sets
+                          <input
+                            className={numberFieldClass}
+                            min="1"
+                            type="number"
+                            value={exercise.targetSets}
+                            onChange={(event) => updateExerciseField(index, "targetSets", Number(event.target.value) || 1)}
+                          />
+                        </label>
+                        <label className="flex items-center gap-2">
+                          Reps
+                          <input
+                            className={numberFieldClass}
+                            min="1"
+                            type="number"
+                            value={exercise.targetRepMin}
+                            onChange={(event) => updateExerciseField(index, "targetRepMin", Number(event.target.value) || 1)}
+                          />
+                          <span className="text-slate-500">to</span>
+                          <input
+                            className={numberFieldClass}
+                            min="1"
+                            type="number"
+                            value={exercise.targetRepMax}
+                            onChange={(event) => updateExerciseField(index, "targetRepMax", Number(event.target.value) || 1)}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <button
+                className="w-full rounded-lg border border-dashed border-white/15 p-6 text-center text-slate-400 hover:border-forge-copper/60 hover:text-white"
+                type="button"
+                onClick={() => setPickerOpen(true)}
+              >
+                <Dumbbell className="mx-auto mb-2 h-6 w-6" />
+                Search or filter the exercise library to add your first movement.
+              </button>
+            )}
+
+            <Button className="mt-5 w-full" disabled={!form.exercises.length} loading={saving} type="submit">
+              {editingId ? "Save workout" : "Save workout"}
+            </Button>
           </form>
 
           <section>
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-forge-copper">Your workouts</p>
             {templates.length ? (
               <div className="space-y-4">
                 {templates.map((template) => (
@@ -288,7 +419,7 @@ const WorkoutTemplatesPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <EmptyState title="No templates yet" description="Create one or add a starter suggestion for your goal path." />
+                <EmptyState title="No workouts yet" description="Design one on the left, or start from a suggestion for your goal path." />
                 <div className="grid gap-3 md:grid-cols-2">
                   {getTemplateSuggestions(user?.goalPath).map((suggestion) => (
                     <button className="rounded-lg border border-white/10 bg-black/20 p-4 text-left hover:border-forge-copper/60" key={suggestion.name} type="button" onClick={() => createSuggestion(suggestion)}>

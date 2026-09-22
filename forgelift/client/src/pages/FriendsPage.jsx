@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Dumbbell, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
@@ -218,10 +219,10 @@ const FriendsPage = () => {
                     const alreadyConnected = existingUsernames.has(result.username);
                     return (
                       <div className="flex items-center justify-between rounded-md bg-black/25 p-3" key={result._id}>
-                        <div>
+                        <Link className="hover:underline" to={`/u/${result.username}`}>
                           <p className="font-bold text-white">{result.name}</p>
                           <p className="text-sm text-slate-400">@{result.username} · {result.currentOverallRank}</p>
-                        </div>
+                        </Link>
                         <Button
                           disabled={alreadyConnected}
                           loading={busyId === result.username}
@@ -286,10 +287,10 @@ const FriendsPage = () => {
               <div className="grid gap-3 sm:grid-cols-2">
                 {friends.map((friend) => (
                   <div className="metal-panel flex items-center justify-between rounded-lg p-4" key={friend._id}>
-                    <div>
+                    <Link className="hover:underline" to={`/u/${friend.username}`}>
                       <p className="font-bold text-white">{friend.name}</p>
                       <p className="text-sm text-slate-400">@{friend.username} · {friend.currentOverallRank}</p>
-                    </div>
+                    </Link>
                     <button
                       className="rounded-md p-2 text-red-300 hover:bg-red-500/10"
                       disabled={busyId === friend._id}
@@ -393,8 +394,10 @@ const FriendsPage = () => {
                       {index === 0 ? <Trophy className="h-4 w-4 text-yellow-300" /> : index + 1}
                     </td>
                     <td className="p-3 text-white">
-                      {entry.name} {entry.isSelf ? <span className="text-forge-copper">(you)</span> : null}
-                      <span className="block text-xs text-slate-400">@{entry.username}</span>
+                      <Link className="hover:underline" to={`/u/${entry.username}`}>
+                        {entry.name} {entry.isSelf ? <span className="text-forge-copper">(you)</span> : null}
+                        <span className="block text-xs text-slate-400">@{entry.username}</span>
+                      </Link>
                     </td>
                     <td className="p-3 text-slate-300">{entry.currentOverallRank}</td>
                     <td className="p-3 text-slate-300">{formatNumber(entry.xp)}</td>

@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OnboardingPage from "./pages/OnboardingPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import PublicProfilePage from "./pages/PublicProfilePage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import WorkoutDetailPage from "./pages/WorkoutDetailPage.jsx";
 import WorkoutHistoryPage from "./pages/WorkoutHistoryPage.jsx";
@@ -56,6 +57,7 @@ const App = () => {
           <Route path="/exercises" element={withTransition(<ExerciseLibraryPage />)} />
           <Route path="/friends" element={withTransition(<FriendsPage />)} />
           <Route path="/profile" element={withTransition(<ProfilePage />)} />
+          <Route path="/u/:username" element={withTransition(<PublicProfilePage />)} />
           <Route path="/progress" element={withTransition(<AnalyticsPage />)} />
           <Route path="/analytics/advanced" element={withTransition(<AdvancedAnalyticsPage />)} />
           <Route path="/reports/monthly" element={withTransition(<MonthlyReportPage />)} />

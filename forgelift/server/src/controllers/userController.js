@@ -5,10 +5,16 @@ import {
   validStrengthStandards,
   validUnits
 } from "../utils/validation.js";
+import ActivityFeedItem from "../models/ActivityFeedItem.js";
 import Assessment from "../models/Assessment.js";
 import BodyweightEntry from "../models/BodyweightEntry.js";
+import Friendship from "../models/Friendship.js";
+import MuscleRank from "../models/MuscleRank.js";
+import User from "../models/User.js";
 import Workout from "../models/Workout.js";
+import WorkoutTemplate from "../models/WorkoutTemplate.js";
 import { getUserDataReadiness } from "../utils/getUserDataReadiness.js";
+import { getRankProgress } from "../utils/rankConfig.js";
 
 const allowedMeasurements = ["chest", "waist", "hips", "shoulders", "arms", "thighs", "calves", "glutes"];
 
@@ -139,6 +145,85 @@ export const updateProfile = async (req, res) => {
     return res.json({ user: req.user.toJSON() });
   } catch (error) {
     return res.status(500).json({ message: "Unable to update profile.", error: error.message });
+  }
+};
+
+export const getPublicProfile = async (req, res) => {
+  try {
+    const username = (req.params.username || "").trim().toLowerCase();
+    const profileUser = await User.findOne({ username });
+
+    if (!profileUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isSelf = profileUser._id.equals(req.user._id);
+    let isFriend = false;
+    let friendRequestStatus = "none";
+    let friendship = null;
+
+    if (!isSelf) {
+      friendship = await Friendship.findOne({
+        $or: [
+          { requesterId: req.user._id, recipientId: profileUser._id },
+          { requesterId: profileUser._id, recipientId: req.user._id }
+        ]
+      });
+
+      if (friendship) {
+        if (friendship.status === "accepted") {
+          isFriend = true;
+        } else {
+          friendRequestStatus = friendship.requesterId.equals(req.user._id) ? "sent" : "received";
+        }
+      }
+    }
+
+    const baseProfile = {
+      _id: profileUser._id,
+      name: profileUser.name,
+      username: profileUser.username,
+      currentOverallRank: profileUser.currentOverallRank,
+      createdAt: profileUser.createdAt
+    };
+
+    if (!isSelf && !isFriend) {
+      return res.json({
+        profile: baseProfile,
+        isSelf,
+        isFriend,
+        friendRequestStatus,
+        friendRequestId: friendship?._id || null
+      });
+    }
+
+    const [muscleRanks, publicWorkouts, recentActivity] = await Promise.all([
+      MuscleRank.find({ userId: profileUser._id }).sort({ score: -1 }),
+      WorkoutTemplate.find({ userId: profileUser._id, visibility: "public" }).sort({ updatedAt: -1 }),
+      ActivityFeedItem.find({ userId: profileUser._id, type: "workout_completed" }).sort({ createdAt: -1 }).limit(10)
+    ]);
+
+    return res.json({
+      profile: {
+        ...baseProfile,
+        overallRankScore: profileUser.overallRankScore,
+        overallProgress: getRankProgress(profileUser.overallRankScore || 0),
+        xp: profileUser.xp,
+        lifetimeVolume: profileUser.lifetimeVolume,
+        lifetimeReps: profileUser.lifetimeReps,
+        lifetimeSets: profileUser.lifetimeSets,
+        lifetimeWorkoutCount: profileUser.lifetimeWorkoutCount
+      },
+      muscleRanks,
+      publicWorkouts,
+      recentActivity,
+      isSelf,
+      isFriend,
+      friendRequestStatus,
+      friendRequestId: friendship?._id || null
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to load profile.", error: error.message });
   }
 };
 

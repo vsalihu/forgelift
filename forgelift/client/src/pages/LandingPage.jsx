@@ -21,8 +21,8 @@ const LandingPage = () => {
           <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-forge-copper">
             Smart gym progression
           </p>
-          <h1 className="max-w-4xl text-5xl font-black leading-tight text-white sm:text-6xl">
-            ForgeLift
+          <h1 className="max-w-4xl">
+            <img alt="ForgeLift" className="h-16 w-auto sm:h-20" src="/logo-full.png" />
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
             A premium foundation for tracking future ranks, weak points, recovery, personal records,

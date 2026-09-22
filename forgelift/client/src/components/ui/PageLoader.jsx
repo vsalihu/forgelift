@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Dumbbell } from "lucide-react";
 import BrandSignature from "../brand/BrandSignature.jsx";
 
 const PageLoader = ({ text = "Forging your progress..." }) => (
@@ -10,11 +9,8 @@ const PageLoader = ({ text = "Forging your progress..." }) => (
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-forge-ember text-white shadow-metal">
-        <Dumbbell className="h-7 w-7" />
-      </div>
-      <h1 className="mt-4 text-2xl font-black text-white">ForgeLift</h1>
-      <p className="mt-2 text-sm text-forge-steel">{text}</p>
+      <img alt="ForgeLift" className="mx-auto h-12 w-auto" src="/logo-full.png" />
+      <p className="mt-3 text-sm text-forge-steel">{text}</p>
       <BrandSignature variant="loader" />
       <div className="mx-auto mt-5 h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
         <motion.div

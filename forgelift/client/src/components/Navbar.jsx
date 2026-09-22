@@ -1,4 +1,4 @@
-import { Dumbbell, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import Button from "./Button.jsx";
@@ -25,11 +25,8 @@ const Navbar = ({ onMenuClick }) => {
               <Menu className="h-5 w-5" />
             </button>
           ) : null}
-          <Link className="flex items-center gap-2 text-lg font-black text-white" to={user ? "/dashboard" : "/"}>
-            <span className="rounded-md bg-forge-ember p-2 text-white">
-              <Dumbbell className="h-5 w-5" />
-            </span>
-            ForgeLift
+          <Link className="flex items-center" to={user ? "/dashboard" : "/"}>
+            <img alt="ForgeLift" className="h-8 w-auto sm:h-9" src="/logo-full.png" />
           </Link>
         </div>
 

@@ -1,4 +1,4 @@
-import { Shield } from "lucide-react";
+import { Award, Crown, Flame, Gem, Medal, Shield, ShieldHalf, Star, Swords } from "lucide-react";
 
 export const rankStyles = {
   Copper: "border-orange-700/60 bg-gradient-to-r from-orange-950/70 to-orange-800/20 text-orange-300 shadow-orange-950/30",
@@ -12,14 +12,28 @@ export const rankStyles = {
   Ultimate: "border-white/70 bg-gradient-to-r from-white/20 to-forge-ember/20 text-white shadow-white/10"
 };
 
+export const rankIcons = {
+  Copper: Shield,
+  Bronze: ShieldHalf,
+  Silver: Award,
+  Gold: Medal,
+  Platinum: Star,
+  Diamond: Gem,
+  Elite: Flame,
+  Warrior: Swords,
+  Ultimate: Crown
+};
+
 const RankBadge = ({ rank = "Copper", className = "" }) => {
+  const RankIcon = rankIcons[rank] || Shield;
+
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.16em] shadow-lg ${
         rankStyles[rank] || rankStyles.Copper
       } ${className}`}
     >
-      <Shield className="h-3.5 w-3.5" />
+      <RankIcon className="h-3.5 w-3.5" />
       {rank}
     </span>
   );

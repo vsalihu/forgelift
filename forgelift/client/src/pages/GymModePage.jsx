@@ -14,6 +14,7 @@ import ProgressRing from "../components/visuals/ProgressRing.jsx";
 import StatPill from "../components/visuals/StatPill.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
+import WorkoutCompleteModal from "../components/workout/WorkoutCompleteModal.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
@@ -115,6 +116,7 @@ const GymModePage = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [savedResult, setSavedResult] = useState(null);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(90);
@@ -370,6 +372,7 @@ const GymModePage = () => {
     try {
       const data = await workoutService.createWorkout(buildPayload());
       setSavedResult(data);
+      setShowCompleteModal(true);
       localStorage.removeItem("forgeliftGymModeDraft");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -557,6 +560,11 @@ const GymModePage = () => {
           onConfirm={() => finishWorkout({ force: true })}
         />
       ) : null}
+      <WorkoutCompleteModal
+        open={showCompleteModal}
+        analysis={savedResult?.analysis}
+        onClose={() => setShowCompleteModal(false)}
+      />
 
       {error ? <ErrorState message={error} /> : null}
 

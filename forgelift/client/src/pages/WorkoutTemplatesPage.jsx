@@ -143,8 +143,14 @@ const WorkoutTemplatesPage = () => {
 
   const deleteTemplate = async (templateId) => {
     if (!window.confirm("Delete this workout template?")) return;
-    await workoutTemplateService.deleteTemplate(templateId);
-    await loadData();
+    setError("");
+    try {
+      await workoutTemplateService.deleteTemplate(templateId);
+      setTemplates((current) => current.filter((item) => item._id !== templateId));
+      if (editingId === templateId) cancelEdit();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const startTemplate = (template) => {

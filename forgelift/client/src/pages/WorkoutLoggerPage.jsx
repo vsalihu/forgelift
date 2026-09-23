@@ -6,6 +6,7 @@ import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
 import RankPromotionModal from "../components/ranks/RankPromotionModal.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import WorkoutCompleteModal from "../components/workout/WorkoutCompleteModal.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
@@ -32,6 +33,7 @@ const WorkoutLoggerPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [savedResult, setSavedResult] = useState(null);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showPromotionModal, setShowPromotionModal] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -258,7 +260,7 @@ const WorkoutLoggerPage = () => {
       };
       const data = await workoutService.createWorkout(payload);
       setSavedResult(data);
-      setShowPromotionModal(Boolean(data.analysis?.rankPromotions?.length));
+      setShowCompleteModal(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(err.message);
@@ -276,6 +278,14 @@ const WorkoutLoggerPage = () => {
         suggestions={suggestedExerciseNames}
         onClose={() => setPickerOpen(false)}
         onSelect={addExerciseObject}
+      />
+      <WorkoutCompleteModal
+        open={showCompleteModal}
+        analysis={savedResult?.analysis}
+        onClose={() => {
+          setShowCompleteModal(false);
+          setShowPromotionModal(Boolean(savedResult?.analysis?.rankPromotions?.length));
+        }}
       />
       <RankPromotionModal
         promotions={showPromotionModal ? savedResult?.analysis?.rankPromotions || [] : []}

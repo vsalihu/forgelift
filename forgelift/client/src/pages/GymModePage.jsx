@@ -14,10 +14,12 @@ import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import ProgressRing from "../components/visuals/ProgressRing.jsx";
 import StatPill from "../components/visuals/StatPill.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import CoopSessionBanner from "../components/coop/CoopSessionBanner.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import WorkoutCompleteModal from "../components/workout/WorkoutCompleteModal.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
+import { coopSessionService } from "../services/coopSessionService.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { overloadService } from "../services/overloadService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
@@ -98,6 +100,7 @@ const GymModePage = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [workoutPickerOpen, setWorkoutPickerOpen] = useState(false);
   const [inboxWorkouts, setInboxWorkouts] = useState([]);
+  const [activeCoopSession, setActiveCoopSession] = useState(null);
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(initialDraft.activeExerciseIndex);
   const [highlightIndex, setHighlightIndex] = useState(null);
   const [draftRestored, setDraftRestored] = useState(initialDraft.restored);
@@ -118,13 +121,14 @@ const GymModePage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [exerciseData, templateData, recentData, overloadData, baselineData, inboxData] = await Promise.all([
+        const [exerciseData, templateData, recentData, overloadData, baselineData, inboxData, coopData] = await Promise.all([
           exerciseService.getExercises(),
           workoutTemplateService.getTemplates(),
           workoutService.getRecentExercises(),
           overloadService.getOverloadRecommendations(),
           strengthBaselineService.getStrengthBaselines(),
-          activityService.getInbox()
+          activityService.getInbox(),
+          coopSessionService.getActive()
         ]);
         setExercises(exerciseData.exercises || []);
         setTemplates(templateData.templates || []);
@@ -132,6 +136,7 @@ const GymModePage = () => {
         setOverloadRecommendations(overloadData.recommendations || []);
         setStrengthBaselines(baselineData.baselines || []);
         setInboxWorkouts(inboxData.inbox || []);
+        setActiveCoopSession(coopData.session || null);
       } catch (err) {
         setError(err.message);
       }
@@ -185,6 +190,25 @@ const GymModePage = () => {
       const normalised = normalizeSetForSave(set);
       return total + (normalised.totalLoad || 0) * (Number(normalised.reps) || 0);
     }, 0);
+
+  useEffect(() => {
+    if (!activeCoopSession?._id) return undefined;
+
+    const timeout = window.setTimeout(() => {
+      const totalVolume = workout.exercises.reduce((total, exercise) => total + getExerciseVolume(exercise), 0);
+      const completedSets = workout.exercises.reduce((total, exercise) => total + (exercise.sets || []).filter(isSetValid).length, 0);
+      coopSessionService
+        .updateProgress(activeCoopSession._id, {
+          completedSets,
+          totalVolume,
+          currentExerciseName: workout.exercises[activeExerciseIndex]?.exerciseName || ""
+        })
+        .catch(() => {});
+    }, 1500);
+
+    return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workout, activeExerciseIndex, activeCoopSession?._id]);
 
   const addExerciseObject = (exercise) => {
     if (!exercise) return;
@@ -363,6 +387,11 @@ const GymModePage = () => {
       setShowCompleteModal(true);
       localStorage.removeItem("forgeliftGymModeDraft");
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      if (activeCoopSession?._id) {
+        coopSessionService.finish(activeCoopSession._id, data.workout._id).catch(() => {});
+        setActiveCoopSession(null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -555,6 +584,8 @@ const GymModePage = () => {
       />
 
       {error ? <ErrorState message={error} /> : null}
+
+      {activeCoopSession?._id ? <CoopSessionBanner sessionId={activeCoopSession._id} /> : null}
 
       {draftRestored ? (
         <section className="mb-5 rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-4">

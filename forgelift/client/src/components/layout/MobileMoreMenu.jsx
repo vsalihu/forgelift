@@ -9,6 +9,7 @@ import {
   FileText,
   HeartPulse,
   Medal,
+  MessageCircle,
   Scale,
   Shield,
   ShieldAlert,
@@ -41,7 +42,10 @@ export const moreMenuGroups = [
   },
   {
     title: "Social",
-    items: [{ to: "/friends", label: "Friends", icon: Users }]
+    items: [
+      { to: "/friends", label: "Friends", icon: Users },
+      { to: "/chat", label: "Chat", icon: MessageCircle }
+    ]
   },
   {
     title: "Progress",

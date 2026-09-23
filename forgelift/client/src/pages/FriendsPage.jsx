@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
+import { Dumbbell, MessageCircle, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -302,14 +302,23 @@ const FriendsPage = () => {
                       <p className="font-bold text-white">{friend.name}</p>
                       <p className="text-sm text-slate-400">@{friend.username} · {friend.currentOverallRank}</p>
                     </Link>
-                    <button
-                      className="rounded-md p-2 text-red-300 hover:bg-red-500/10"
-                      disabled={busyId === friend._id}
-                      type="button"
-                      onClick={() => setPendingRemoveId(friend._id)}
-                    >
-                      <UserMinus className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        className="rounded-md p-2 text-slate-300 hover:bg-white/10"
+                        title="Message"
+                        to={`/chat/${friend.username}`}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Link>
+                      <button
+                        className="rounded-md p-2 text-red-300 hover:bg-red-500/10"
+                        disabled={busyId === friend._id}
+                        type="button"
+                        onClick={() => setPendingRemoveId(friend._id)}
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

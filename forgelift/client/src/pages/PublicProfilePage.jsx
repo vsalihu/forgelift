@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Lock, Trophy, UserCheck, UserMinus, UserPlus } from "lucide-react";
+import { Lock, MessageCircle, Trophy, UserCheck, UserMinus, UserPlus } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
@@ -169,7 +169,18 @@ const PublicProfilePage = () => {
               Edit Profile Settings
             </Link>
           ) : (
-            friendActionButton()
+            <>
+              {isFriend ? (
+                <Link
+                  className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
+                  to={`/chat/${username}`}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Message
+                </Link>
+              ) : null}
+              {friendActionButton()}
+            </>
           )}
         </div>
       </div>

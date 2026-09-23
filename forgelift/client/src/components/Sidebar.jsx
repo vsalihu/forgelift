@@ -10,6 +10,7 @@ import {
   Gauge,
   HeartPulse,
   Medal,
+  MessageCircle,
   PlusCircle,
   ListChecks,
   FileText,
@@ -58,7 +59,10 @@ const navItems = [
   {
     section: "Social",
     accent: "text-pink-300",
-    items: [{ to: "/friends", label: "Friends", icon: Users }]
+    items: [
+      { to: "/friends", label: "Friends", icon: Users },
+      { to: "/chat", label: "Chat", icon: MessageCircle }
+    ]
   },
   {
     section: "Progress",

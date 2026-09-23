@@ -8,6 +8,7 @@ import CustomExerciseForm from "./CustomExerciseForm.jsx";
 import { exerciseService } from "../../services/exerciseService.js";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { advancedMuscleFilters, filterAndRankExercises, getMuscleFilterCounts, muscleFilters } from "../../utils/exerciseMatchUtils.js";
+import { getBroadMuscleImage, getMuscleImage } from "../../utils/muscleImages.js";
 
 const typeOptions = [
   { value: "compound", label: "Compound" },
@@ -101,18 +102,22 @@ const ExercisePicker = ({
           </div>
 
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0).map((muscle) => (
-              <button
-                className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-black ${
-                  filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
-                }`}
-                key={muscle}
-                type="button"
-                onClick={() => setFilters({ ...filters, muscle })}
-              >
-                {muscle} {muscle !== "All" ? `(${broadCounts[muscle] || 0})` : ""}
-              </button>
-            ))}
+            {muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0).map((muscle) => {
+              const image = getBroadMuscleImage(muscle);
+              return (
+                <button
+                  className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-black ${
+                    filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
+                  }`}
+                  key={muscle}
+                  type="button"
+                  onClick={() => setFilters({ ...filters, muscle })}
+                >
+                  {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
+                  {muscle} {muscle !== "All" ? `(${broadCounts[muscle] || 0})` : ""}
+                </button>
+              );
+            })}
           </div>
 
           {filtersOpen ? (
@@ -131,18 +136,22 @@ const ExercisePicker = ({
               </button>
               {showAdvancedMuscles ? (
                 <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                  {advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0).map((muscle) => (
-                    <button
-                      className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-black ${
-                        filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
-                      }`}
-                      key={muscle}
-                      type="button"
-                      onClick={() => setFilters({ ...filters, muscle })}
-                    >
-                      {muscle} ({advancedCounts[muscle] || 0})
-                    </button>
-                  ))}
+                  {advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0).map((muscle) => {
+                    const image = getMuscleImage(muscle);
+                    return (
+                      <button
+                        className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-black ${
+                          filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
+                        }`}
+                        key={muscle}
+                        type="button"
+                        onClick={() => setFilters({ ...filters, muscle })}
+                      >
+                        {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
+                        {muscle} ({advancedCounts[muscle] || 0})
+                      </button>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>

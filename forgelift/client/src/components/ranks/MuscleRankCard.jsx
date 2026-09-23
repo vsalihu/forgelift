@@ -1,17 +1,24 @@
 import ProgressBar from "../ProgressBar.jsx";
 import RankBadge from "./RankBadge.jsx";
+import { getBroadMuscleImage } from "../../utils/muscleImages.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
 const MuscleRankCard = ({ muscleRank }) => {
   const assessed = muscleRank.dataAvailable !== false && muscleRank.workoutCount > 0;
+  const image = getBroadMuscleImage(muscleRank.muscleGroup);
 
   return (
     <article className="metal-panel rounded-lg p-5 shadow-metal">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-black text-white">{muscleRank.muscleGroup}</h2>
-          <p className="mt-1 text-sm text-slate-400">{assessed ? `Score ${formatNumber(muscleRank.score)}` : "Unassessed"}</p>
+        <div className="flex items-center gap-3">
+          {image ? (
+            <img alt="" aria-hidden="true" className="h-14 w-14 shrink-0 rounded-lg bg-black/25 object-contain p-1" src={image} />
+          ) : null}
+          <div>
+            <h2 className="text-xl font-black text-white">{muscleRank.muscleGroup}</h2>
+            <p className="mt-1 text-sm text-slate-400">{assessed ? `Score ${formatNumber(muscleRank.score)}` : "Unassessed"}</p>
+          </div>
         </div>
         {assessed ? <RankBadge rank={muscleRank.rank} /> : <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-300">Unassessed</span>}
       </div>

@@ -10,6 +10,7 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { exerciseService } from "../services/exerciseService.js";
 import { advancedMuscleFilters, getMuscleFilterCounts, muscleFilters } from "../utils/exerciseMatchUtils.js";
+import { getBroadMuscleImage, getMuscleImage } from "../utils/muscleImages.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const typeOptions = [
@@ -306,18 +307,20 @@ const ExerciseLibraryPage = () => {
           {muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0).map((muscle) => {
             const value = muscle === "All" ? "" : muscle;
             const active = filters.muscle === value;
+            const image = getBroadMuscleImage(muscle);
 
             return (
               <button
                 key={muscle}
                 type="button"
-                className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
+                className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
                   active
                     ? "bg-forge-ember text-white"
                     : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
                 }`}
                 onClick={() => setFilters({ ...filters, muscle: value })}
               >
+                {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
                 {muscle} {muscle !== "All" ? `(${broadCounts[muscle] || 0})` : ""}
               </button>
             );
@@ -327,17 +330,19 @@ const ExerciseLibraryPage = () => {
           <div className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2">
             {advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0).map((muscle) => {
               const active = filters.muscle === muscle;
+              const image = getMuscleImage(muscle);
               return (
                 <button
                   key={muscle}
                   type="button"
-                  className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
+                  className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
                     active
                       ? "bg-forge-ember text-white"
                       : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
                   }`}
                   onClick={() => setFilters({ ...filters, muscle })}
                 >
+                  {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
                   {muscle} ({advancedCounts[muscle] || 0})
                 </button>
               );

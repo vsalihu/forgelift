@@ -402,7 +402,8 @@ export const deleteWorkout = async (req, res) => {
     await updateWeeklyMissions({ user: req.user });
 
     return res.json({ message: "Workout deleted." });
-  } catch (_error) {
-    return res.status(404).json({ message: "Workout not found." });
+  } catch (error) {
+    console.error("Failed to delete workout:", error.message);
+    return res.status(500).json({ message: "Unable to delete workout.", error: error.message });
   }
 };

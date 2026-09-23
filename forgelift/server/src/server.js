@@ -9,6 +9,7 @@ import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { seedExercises } from "./utils/seedExercises.js";
 import { seedDemoData } from "./utils/seedDemoData.js";
 import { backfillUsernames } from "./utils/backfillUsernames.js";
+import { cleanupOrphanedFeedItems } from "./utils/cleanupOrphanedFeedItems.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import advancedAnalyticsRoutes from "./routes/advancedAnalyticsRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
@@ -109,6 +110,13 @@ const startServer = async () => {
       if (result.updated) console.log("Backfilled usernames for existing users:", result);
     } catch (error) {
       console.error("Username backfill failed:", error.message);
+    }
+
+    try {
+      const result = await cleanupOrphanedFeedItems();
+      if (result.removed) console.log("Removed orphaned activity feed items:", result);
+    } catch (error) {
+      console.error("Activity feed cleanup failed:", error.message);
     }
 
     try {

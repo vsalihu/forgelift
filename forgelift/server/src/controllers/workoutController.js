@@ -384,6 +384,11 @@ export const deleteWorkout = async (req, res) => {
     }
 
     await PersonalRecord.deleteMany({ userId: req.user._id, workoutId: workout._id });
+    await ActivityFeedItem.deleteMany({ userId: req.user._id, workoutId: workout._id });
+    req.user.lifetimeVolume = Math.max(0, (req.user.lifetimeVolume || 0) - (workout.totalVolume || 0));
+    req.user.lifetimeReps = Math.max(0, (req.user.lifetimeReps || 0) - (workout.totalReps || 0));
+    req.user.lifetimeSets = Math.max(0, (req.user.lifetimeSets || 0) - (workout.totalSets || 0));
+    req.user.lifetimeWorkoutCount = Math.max(0, (req.user.lifetimeWorkoutCount || 0) - 1);
     await recalculateUserRanks(req.user);
     const recentWorkouts = await getRecentWorkouts(req.user._id);
     await recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts });

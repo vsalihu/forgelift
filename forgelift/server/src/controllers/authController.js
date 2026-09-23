@@ -3,8 +3,8 @@ import User from "../models/User.js";
 import { generateToken } from "../utils/generateToken.js";
 import { validateEmail, validateUsername } from "../utils/validation.js";
 
-const authResponse = (user) => ({
-  token: generateToken(user._id),
+const authResponse = (user, rememberMe = true) => ({
+  token: generateToken(user._id, rememberMe),
   user: user.toJSON()
 });
 
@@ -51,7 +51,7 @@ export const register = async (req, res) => {
       passwordHash
     });
 
-    return res.status(201).json(authResponse(user));
+    return res.status(201).json(authResponse(user, req.body.rememberMe !== false));
   } catch (error) {
     return res.status(500).json({ message: "Unable to register account.", error: error.message });
   }
@@ -59,7 +59,7 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email?.trim() || !password) {
       return res.status(400).json({ message: "Email and password are required." });
@@ -77,7 +77,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    return res.json(authResponse(user));
+    return res.json(authResponse(user, rememberMe !== false));
   } catch (error) {
     return res.status(500).json({ message: "Unable to login.", error: error.message });
   }

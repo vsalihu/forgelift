@@ -10,7 +10,7 @@ const LoginPage = () => {
   const { login, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", rememberMe: true });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,6 +57,15 @@ const LoginPage = () => {
               onChange={(event) => setForm({ ...form, password: event.target.value })}
               required
             />
+            <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-slate-300">
+              <input
+                checked={form.rememberMe}
+                className="h-4 w-4 accent-forge-ember"
+                type="checkbox"
+                onChange={(event) => setForm({ ...form, rememberMe: event.target.checked })}
+              />
+              Remember me on this device
+            </label>
             <Button className="w-full" loading={submitting} type="submit">
               Login
             </Button>

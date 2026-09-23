@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -10,6 +10,7 @@ import WorkoutCompleteModal from "../components/workout/WorkoutCompleteModal.jsx
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
+import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import RpeGuide from "../components/ui/RpeGuide.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { exerciseService } from "../services/exerciseService.js";
@@ -52,13 +53,17 @@ const loadInitialDraft = () => {
 
 const WorkoutLoggerPage = () => {
   const { user } = useAuth();
-  const initialDraft = useMemo(loadInitialDraft, []);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = Boolean(id);
+  const initialDraft = useMemo(() => (isEditMode ? { form: emptyForm, restored: false } : loadInitialDraft()), [isEditMode]);
   const [exercises, setExercises] = useState([]);
   const [recentExercises, setRecentExercises] = useState([]);
   const [overloadRecommendations, setOverloadRecommendations] = useState([]);
   const [strengthBaselines, setStrengthBaselines] = useState([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(true);
+  const [loadingWorkout, setLoadingWorkout] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [savedResult, setSavedResult] = useState(null);
@@ -92,6 +97,49 @@ const WorkoutLoggerPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!isEditMode) return;
+
+    const loadExistingWorkout = async () => {
+      setLoadingWorkout(true);
+      try {
+        const data = await workoutService.getWorkout(id);
+        const workout = data.workout;
+        setForm({
+          title: workout.title || "",
+          notes: workout.notes || "",
+          sessionRPE: workout.sessionRPE ?? "",
+          soreness: workout.soreness ?? "",
+          sleepQuality: workout.sleepQuality ?? "",
+          energyLevel: workout.energyLevel ?? "",
+          exercises: (workout.exercises || []).map((exercise) => ({
+            exerciseId: exercise.exerciseId,
+            exerciseName: exercise.exerciseName,
+            exerciseType: exercise.exerciseType || "",
+            mainMuscleGroups: exercise.mainMuscleGroups || [],
+            detailedMuscles: exercise.detailedMuscles || [],
+            primaryMuscles: exercise.primaryMuscles || [],
+            secondaryMuscles: exercise.secondaryMuscles || [],
+            stabiliserMuscles: exercise.stabiliserMuscles || [],
+            impactProfile: exercise.impactProfile || {},
+            sets: (exercise.sets || []).map((set) => ({
+              ...createEmptySet({ exerciseType: exercise.exerciseType, bodyweight: user?.bodyweight }),
+              ...set
+            }))
+          }))
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoadingWorkout(false);
+      }
+    };
+
+    loadExistingWorkout();
+  }, [id, isEditMode]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+
     if (skipDraftSaveRef.current) {
       skipDraftSaveRef.current = false;
       localStorage.removeItem(DRAFT_KEY);
@@ -104,7 +152,7 @@ const WorkoutLoggerPage = () => {
     }
 
     localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
-  }, [form]);
+  }, [form, isEditMode]);
 
   const discardDraft = () => {
     skipDraftSaveRef.current = true;
@@ -302,6 +350,13 @@ const WorkoutLoggerPage = () => {
           sets: exercise.sets.map(normalizeSetForSave)
         }))
       };
+
+      if (isEditMode) {
+        await workoutService.updateWorkout(id, payload);
+        navigate(`/workouts/${id}`);
+        return;
+      }
+
       const data = await workoutService.createWorkout(payload);
       setSavedResult(data);
       setShowCompleteModal(true);
@@ -339,15 +394,21 @@ const WorkoutLoggerPage = () => {
       />
 
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Workout Logger</p>
-        <h1 className="mt-2 text-3xl font-black text-white">Log a workout</h1>
-        <div className="mt-4">
-          <TutorialLauncher pageKey="workout_logger" steps={getTutorialSteps("workout_logger")} />
-        </div>
+        <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">{isEditMode ? "Edit Workout" : "Workout Logger"}</p>
+        <h1 className="mt-2 text-3xl font-black text-white">{isEditMode ? "Edit workout" : "Log a workout"}</h1>
+        {!isEditMode ? (
+          <div className="mt-4">
+            <TutorialLauncher pageKey="workout_logger" steps={getTutorialSteps("workout_logger")} />
+          </div>
+        ) : null}
       </div>
 
       {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
 
+      {isEditMode && loadingWorkout ? <LoadingSkeleton rows={5} /> : null}
+
+      {isEditMode && loadingWorkout ? null : (
+      <>
       {draftRestored ? (
         <section className="mb-5 rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -970,12 +1031,22 @@ const WorkoutLoggerPage = () => {
           </div>
         </section>
 
-        <div data-tour-id="logger-save-workout" className="sticky bottom-20 z-20 flex justify-end rounded-xl bg-forge-black/90 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
+        <div data-tour-id="logger-save-workout" className="sticky bottom-20 z-20 flex justify-end gap-2 rounded-xl bg-forge-black/90 p-2 backdrop-blur lg:static lg:bg-transparent lg:p-0">
+          {isEditMode ? (
+            <Link
+              className="inline-flex min-h-14 items-center justify-center rounded-md bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
+              to={`/workouts/${id}`}
+            >
+              Cancel
+            </Link>
+          ) : null}
           <Button className="min-h-14 w-full text-base sm:w-auto" loading={submitting} type="submit">
-            Save workout
+            {isEditMode ? "Save changes" : "Save workout"}
           </Button>
         </div>
       </form>
+      </>
+      )}
     </Layout>
   );
 };

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Eye, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
@@ -137,6 +137,13 @@ const WorkoutHistoryPage = () => {
                   >
                     <Eye className="h-4 w-4" />
                     View
+                  </Link>
+                  <Link
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+                    to={`/workouts/${workout._id}/edit`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
                   </Link>
                   <Button type="button" variant="ghost" onClick={() => setPendingDelete(workout)}>
                     <Trash2 className="h-4 w-4" />

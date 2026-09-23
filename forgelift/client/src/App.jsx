@@ -74,6 +74,7 @@ const App = () => {
           <Route path="/workout-templates" element={withTransition(<WorkoutTemplatesPage />)} />
           <Route path="/workouts" element={withTransition(<WorkoutHistoryPage />)} />
           <Route path="/workouts/new" element={withTransition(<WorkoutLoggerPage />)} />
+          <Route path="/workouts/:id/edit" element={withTransition(<WorkoutLoggerPage />)} />
           <Route path="/workouts/:id" element={withTransition(<WorkoutDetailPage />)} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

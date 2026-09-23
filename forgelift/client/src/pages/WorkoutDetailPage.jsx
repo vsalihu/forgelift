@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { ArrowLeft, BarChart3, Pencil } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
 import { workoutService } from "../services/workoutService.js";
@@ -54,11 +54,20 @@ const WorkoutDetailPage = () => {
 
       {workout ? (
         <>
-          <div className="mb-6">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
-              {formatDate(workout.date)}
-            </p>
-            <h1 className="mt-2 text-3xl font-black text-white">{workout.title}</h1>
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
+                {formatDate(workout.date)}
+              </p>
+              <h1 className="mt-2 text-3xl font-black text-white">{workout.title}</h1>
+            </div>
+            <Link
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+              to={`/workouts/${workout._id}/edit`}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit workout
+            </Link>
           </div>
 
           <section className="mb-6 grid gap-4 md:grid-cols-4">

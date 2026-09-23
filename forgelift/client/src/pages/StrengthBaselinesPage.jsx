@@ -62,7 +62,7 @@ const BaselineCard = ({ baseline, onDelete }) => (
         <Trash2 className="h-4 w-4" />
       </button>
     </div>
-    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+    <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
       <div>
         <dt className="text-slate-500">Estimated 1RM <HelpTooltip {...helpText.estimated1RM} size="xs" /></dt>
         <dd className="mt-1 font-bold text-white">{formatNumber(baseline.estimatedOneRepMax)}kg</dd>
@@ -220,7 +220,7 @@ const StrengthBaselinesPage = () => {
           </span>
           <h2 className="text-xl font-bold text-white">Add or update baseline</h2>
         </div>
-        <form className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]" onSubmit={handleSubmit}>
+        <form className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]" onSubmit={handleSubmit}>
           <div data-tour-id="baseline-search">
           <StrengthExerciseSelector
             exercises={exercises}
@@ -263,7 +263,7 @@ const StrengthBaselinesPage = () => {
       {loading ? <p className="text-forge-steel">Loading strength baselines...</p> : null}
 
       {!loading ? (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <section data-tour-id="baseline-estimates">
             <h2 className="mb-3 text-xl font-bold text-white">User-entered baselines</h2>
             <div className="space-y-4">

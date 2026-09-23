@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
@@ -22,8 +22,37 @@ import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
+const DRAFT_KEY = "forgeliftWorkoutLoggerDraft";
+
+const emptyForm = {
+  title: "",
+  notes: "",
+  sessionRPE: "",
+  soreness: "",
+  sleepQuality: "",
+  energyLevel: "",
+  exercises: []
+};
+
+const loadInitialDraft = () => {
+  const draft = localStorage.getItem(DRAFT_KEY);
+  if (!draft) return { form: emptyForm, restored: false };
+
+  try {
+    const parsed = JSON.parse(draft);
+    if (!parsed.exercises?.length && !parsed.title && !parsed.notes) {
+      return { form: emptyForm, restored: false };
+    }
+    return { form: { ...emptyForm, ...parsed }, restored: Boolean(parsed.exercises?.length) };
+  } catch (_error) {
+    localStorage.removeItem(DRAFT_KEY);
+    return { form: emptyForm, restored: false };
+  }
+};
+
 const WorkoutLoggerPage = () => {
   const { user } = useAuth();
+  const initialDraft = useMemo(loadInitialDraft, []);
   const [exercises, setExercises] = useState([]);
   const [recentExercises, setRecentExercises] = useState([]);
   const [overloadRecommendations, setOverloadRecommendations] = useState([]);
@@ -35,15 +64,9 @@ const WorkoutLoggerPage = () => {
   const [savedResult, setSavedResult] = useState(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showPromotionModal, setShowPromotionModal] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    notes: "",
-    sessionRPE: "",
-    soreness: "",
-    sleepQuality: "",
-    energyLevel: "",
-    exercises: []
-  });
+  const [draftRestored, setDraftRestored] = useState(initialDraft.restored);
+  const [form, setForm] = useState(initialDraft.form);
+  const skipDraftSaveRef = useRef(false);
 
   useEffect(() => {
     const loadExercises = async () => {
@@ -67,6 +90,27 @@ const WorkoutLoggerPage = () => {
 
     loadExercises();
   }, []);
+
+  useEffect(() => {
+    if (skipDraftSaveRef.current) {
+      skipDraftSaveRef.current = false;
+      localStorage.removeItem(DRAFT_KEY);
+      return;
+    }
+
+    if (!form.exercises.length && !form.title && !form.notes) {
+      localStorage.removeItem(DRAFT_KEY);
+      return;
+    }
+
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  }, [form]);
+
+  const discardDraft = () => {
+    skipDraftSaveRef.current = true;
+    setForm(emptyForm);
+    setDraftRestored(false);
+  };
 
   const addExerciseObject = (exercise) => {
     if (!exercise) {
@@ -261,6 +305,7 @@ const WorkoutLoggerPage = () => {
       const data = await workoutService.createWorkout(payload);
       setSavedResult(data);
       setShowCompleteModal(true);
+      localStorage.removeItem(DRAFT_KEY);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(err.message);
@@ -302,6 +347,18 @@ const WorkoutLoggerPage = () => {
       </div>
 
       {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
+
+      {draftRestored ? (
+        <section className="mb-5 rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-bold text-orange-100">Unsaved workout draft restored.</p>
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={() => setDraftRestored(false)}>Continue</Button>
+              <Button type="button" variant="danger" onClick={discardDraft}>Discard</Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {savedResult?.analysis ? (
         <section className="metal-panel mb-6 rounded-lg border-forge-copper/40 p-5 shadow-metal">

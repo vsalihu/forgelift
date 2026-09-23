@@ -1,13 +1,13 @@
-import RankBadge, { rankIcons, rankStyles } from "./RankBadge.jsx";
-import { Shield } from "lucide-react";
+import RankBadge, { rankStyles } from "./RankBadge.jsx";
 import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
 import ProgressRing from "../visuals/ProgressRing.jsx";
 import StatPill from "../visuals/StatPill.jsx";
+import { getRankImage } from "../../utils/rankImages.js";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
 const RankProgressCard = ({ overallRank, overallScore, overallProgress, xp }) => {
-  const OverallRankIcon = rankIcons[overallRank] || Shield;
+  const rankImage = getRankImage(overallRank);
 
   return (
     <section className="rounded-lg border border-forge-copper/40 bg-gradient-to-br from-forge-copper/25 via-forge-panel to-black/70 p-6 shadow-metal">
@@ -18,7 +18,7 @@ const RankProgressCard = ({ overallRank, overallScore, overallProgress, xp }) =>
               rankStyles[overallRank] || rankStyles.Copper
             }`}
           >
-            <OverallRankIcon className="h-8 w-8" />
+            {rankImage ? <img alt="" aria-hidden="true" className="h-11 w-11 object-contain" src={rankImage} /> : null}
           </span>
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Overall Rank</p>

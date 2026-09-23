@@ -19,7 +19,7 @@ import {
 import { NavLink } from "react-router-dom";
 import BottomSheet from "../ui/BottomSheet.jsx";
 
-const groups = [
+export const moreMenuGroups = [
   {
     title: "Training",
     items: [
@@ -65,7 +65,7 @@ const groups = [
 const MobileMoreMenu = ({ open, onClose }) => (
   <BottomSheet open={open} title="More ForgeLift" onClose={onClose}>
     <div className="space-y-5">
-      {groups.map((group) => (
+      {moreMenuGroups.map((group) => (
         <section key={group.title}>
           <p className="mb-2 px-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</p>
           <div className="grid gap-2">

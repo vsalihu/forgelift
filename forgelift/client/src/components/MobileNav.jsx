@@ -1,7 +1,7 @@
 import { Dumbbell, Gauge, ListChecks, Menu, PlusCircle } from "lucide-react";
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import MobileMoreMenu from "./layout/MobileMoreMenu.jsx";
+import { NavLink, useLocation } from "react-router-dom";
+import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: Gauge },
@@ -10,8 +10,12 @@ const items = [
   { to: "/missions", label: "Missions", icon: ListChecks }
 ];
 
+const morePaths = moreMenuGroups.flatMap((group) => group.items.map((item) => item.to));
+
 const MobileNav = () => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isMoreActive = morePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   return (
     <>
@@ -25,9 +29,7 @@ const MobileNav = () => {
                     ? item.to === "/gym-mode"
                       ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30"
                       : "bg-white/12 text-white"
-                    : item.to === "/gym-mode"
-                      ? "text-forge-copper"
-                      : "text-slate-300"
+                    : "text-slate-300"
                 }`
               }
               key={item.to}
@@ -38,7 +40,9 @@ const MobileNav = () => {
             </NavLink>
           ))}
           <button
-            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
+            className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
+              isMoreActive ? "bg-white/12 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"
+            }`}
             type="button"
             onClick={() => setMoreOpen(true)}
           >

@@ -34,7 +34,6 @@ const WorkoutTemplatesPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState("");
-  const [deleting, setDeleting] = useState(false);
   const [visibilityBusyId, setVisibilityBusyId] = useState("");
   const [sendPickerId, setSendPickerId] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState("");
@@ -144,21 +143,19 @@ const WorkoutTemplatesPage = () => {
     setForm(emptyTemplate);
   };
 
-  const confirmDeleteTemplate = async () => {
+  const confirmDeleteTemplate = () => {
     const templateId = pendingDeleteId;
     if (!templateId) return;
+    const templateToDelete = templates.find((item) => item._id === templateId);
     setError("");
-    setDeleting(true);
-    try {
-      await workoutTemplateService.deleteTemplate(templateId);
-      setTemplates((current) => current.filter((item) => item._id !== templateId));
-      if (editingId === templateId) cancelEdit();
-      setPendingDeleteId("");
-    } catch (err) {
+    setPendingDeleteId("");
+    setTemplates((current) => current.filter((item) => item._id !== templateId));
+    if (editingId === templateId) cancelEdit();
+
+    workoutTemplateService.deleteTemplate(templateId).catch((err) => {
       setError(err.message);
-    } finally {
-      setDeleting(false);
-    }
+      if (templateToDelete) setTemplates((current) => [templateToDelete, ...current]);
+    });
   };
 
   const startTemplate = (template) => {
@@ -225,7 +222,6 @@ const WorkoutTemplatesPage = () => {
         <ConfirmModal
           title="Delete this workout template?"
           confirmLabel="Delete"
-          loading={deleting}
           onCancel={() => setPendingDeleteId("")}
           onConfirm={confirmDeleteTemplate}
         />

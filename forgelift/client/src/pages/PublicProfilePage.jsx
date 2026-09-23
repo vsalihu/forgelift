@@ -68,17 +68,15 @@ const PublicProfilePage = () => {
     }
   };
 
-  const confirmRemoveFriend = async () => {
-    setActionBusy(true);
-    try {
-      await friendService.removeFriend(data.profile._id);
-      await loadProfile();
-      setShowRemoveConfirm(false);
-    } catch (err) {
+  const confirmRemoveFriend = () => {
+    setError("");
+    setShowRemoveConfirm(false);
+    setData((current) => ({ ...current, isFriend: false, friendRequestStatus: "none" }));
+
+    friendService.removeFriend(data.profile._id).catch((err) => {
       setError(err.message);
-    } finally {
-      setActionBusy(false);
-    }
+      loadProfile();
+    });
   };
 
   const saveWorkout = async (template) => {
@@ -153,7 +151,6 @@ const PublicProfilePage = () => {
           title="Remove this friend?"
           description={`Remove @${username} as a friend?`}
           confirmLabel="Remove"
-          loading={actionBusy}
           onCancel={() => setShowRemoveConfirm(false)}
           onConfirm={confirmRemoveFriend}
         />

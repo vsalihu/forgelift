@@ -20,7 +20,6 @@ const WorkoutHistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   const loadWorkouts = async () => {
     setLoading(true);
@@ -40,18 +39,19 @@ const WorkoutHistoryPage = () => {
     loadWorkouts();
   }, []);
 
-  const confirmDeleteWorkout = async () => {
+  const confirmDeleteWorkout = () => {
     if (!pendingDelete) return;
-    setDeleting(true);
-    try {
-      await workoutService.deleteWorkout(pendingDelete._id);
-      setWorkouts((current) => current.filter((item) => item._id !== pendingDelete._id));
-      setPendingDelete(null);
-    } catch (err) {
+    const workoutToDelete = pendingDelete;
+    setPendingDelete(null);
+    setError("");
+    setWorkouts((current) => current.filter((item) => item._id !== workoutToDelete._id));
+
+    workoutService.deleteWorkout(workoutToDelete._id).catch((err) => {
       setError(err.message);
-    } finally {
-      setDeleting(false);
-    }
+      setWorkouts((current) =>
+        [...current, workoutToDelete].sort((a, b) => new Date(b.date) - new Date(a.date))
+      );
+    });
   };
 
   return (
@@ -61,7 +61,6 @@ const WorkoutHistoryPage = () => {
           title="Delete this workout?"
           description={`Delete "${pendingDelete.title}"? This cannot be undone.`}
           confirmLabel="Delete"
-          loading={deleting}
           onCancel={() => setPendingDelete(null)}
           onConfirm={confirmDeleteWorkout}
         />

@@ -115,19 +115,18 @@ const FriendsPage = () => {
     }
   };
 
-  const confirmRemoveFriend = async () => {
+  const confirmRemoveFriend = () => {
     const friendUserId = pendingRemoveId;
     if (!friendUserId) return;
-    setBusyId(friendUserId);
-    try {
-      await friendService.removeFriend(friendUserId);
-      await loadAll();
-      setPendingRemoveId("");
-    } catch (err) {
+    setError("");
+    setPendingRemoveId("");
+    setFriends((current) => current.filter((friend) => friend._id !== friendUserId));
+    setLeaderboard((current) => current.filter((entry) => entry._id !== friendUserId));
+
+    friendService.removeFriend(friendUserId).catch((err) => {
       setError(err.message);
-    } finally {
-      setBusyId("");
-    }
+      loadAll();
+    });
   };
 
   const saveInboxWorkout = async (sharedWorkoutId) => {
@@ -170,7 +169,6 @@ const FriendsPage = () => {
         <ConfirmModal
           title="Remove this friend?"
           confirmLabel="Remove"
-          loading={busyId === pendingRemoveId}
           onCancel={() => setPendingRemoveId("")}
           onConfirm={confirmRemoveFriend}
         />

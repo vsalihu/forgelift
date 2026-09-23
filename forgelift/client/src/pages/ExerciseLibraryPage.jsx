@@ -162,7 +162,6 @@ const ExerciseLibraryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState("");
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const loadAllExercises = async () => {
@@ -231,21 +230,22 @@ const ExerciseLibraryPage = () => {
     }
   };
 
-  const confirmDeleteCustom = async () => {
+  const confirmDeleteCustom = () => {
     const id = pendingDeleteId;
     if (!id) return;
-    setDeleting(true);
-    try {
-      await exerciseService.deleteCustomExercise(id);
-      const data = await exerciseService.getExercises();
-      setAllExercises(data.exercises || []);
-      setExercises((current) => current.filter((exercise) => exercise._id !== id));
-      setPendingDeleteId("");
-    } catch (err) {
+    const deletedExercise = allExercises.find((exercise) => exercise._id === id);
+    setError("");
+    setPendingDeleteId("");
+    setAllExercises((current) => current.filter((exercise) => exercise._id !== id));
+    setExercises((current) => current.filter((exercise) => exercise._id !== id));
+
+    exerciseService.deleteCustomExercise(id).catch((err) => {
       setError(err.message);
-    } finally {
-      setDeleting(false);
-    }
+      if (deletedExercise) {
+        setAllExercises((current) => [...current, deletedExercise]);
+        setExercises((current) => [...current, deletedExercise]);
+      }
+    });
   };
 
   return (
@@ -255,7 +255,6 @@ const ExerciseLibraryPage = () => {
           title="Delete this custom exercise?"
           description="Workouts already logged will stay saved."
           confirmLabel="Delete"
-          loading={deleting}
           onCancel={() => setPendingDeleteId("")}
           onConfirm={confirmDeleteCustom}
         />

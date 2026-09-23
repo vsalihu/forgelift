@@ -7,6 +7,7 @@ import Layout from "../components/Layout.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
 import BottomSheet from "../components/ui/BottomSheet.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
@@ -85,19 +86,6 @@ const getTemplateWorkout = (bodyweight) => {
     }))
   };
 };
-
-const ConfirmModal = ({ title, description, confirmLabel, onCancel, onConfirm }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-    <div className="w-full max-w-md rounded-xl border border-red-400/30 bg-forge-panel p-5 shadow-2xl">
-      <h2 className="text-2xl font-black text-white">{title}</h2>
-      <p className="mt-3 text-sm leading-6 text-slate-300">{description}</p>
-      <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button type="button" variant="secondary" onClick={onCancel}>Go Back</Button>
-        <Button type="button" variant="danger" onClick={onConfirm}>{confirmLabel}</Button>
-      </div>
-    </div>
-  </div>
-);
 
 const GymModePage = () => {
   const { user } = useAuth();

@@ -4,6 +4,7 @@ import { Dumbbell, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-rea
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -39,6 +40,7 @@ const FriendsPage = () => {
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [pendingRemoveId, setPendingRemoveId] = useState("");
   const [savedInboxIds, setSavedInboxIds] = useState([]);
   const [savedPublicIds, setSavedPublicIds] = useState([]);
 
@@ -113,12 +115,14 @@ const FriendsPage = () => {
     }
   };
 
-  const removeFriend = async (friendUserId) => {
-    if (!window.confirm("Remove this friend?")) return;
+  const confirmRemoveFriend = async () => {
+    const friendUserId = pendingRemoveId;
+    if (!friendUserId) return;
     setBusyId(friendUserId);
     try {
       await friendService.removeFriend(friendUserId);
       await loadAll();
+      setPendingRemoveId("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -162,6 +166,15 @@ const FriendsPage = () => {
 
   return (
     <Layout>
+      {pendingRemoveId ? (
+        <ConfirmModal
+          title="Remove this friend?"
+          confirmLabel="Remove"
+          loading={busyId === pendingRemoveId}
+          onCancel={() => setPendingRemoveId("")}
+          onConfirm={confirmRemoveFriend}
+        />
+      ) : null}
       <PageHeader eyebrow="Social" title="Friends" description="Add friends, share workouts, and compare progress." />
 
       <SegmentedControl className="mb-6" options={tabs} value={activeTab} onChange={setActiveTab} />
@@ -295,7 +308,7 @@ const FriendsPage = () => {
                       className="rounded-md p-2 text-red-300 hover:bg-red-500/10"
                       disabled={busyId === friend._id}
                       type="button"
-                      onClick={() => removeFriend(friend._id)}
+                      onClick={() => setPendingRemoveId(friend._id)}
                     >
                       <UserMinus className="h-4 w-4" />
                     </button>

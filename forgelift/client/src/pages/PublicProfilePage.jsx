@@ -5,6 +5,7 @@ import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
 import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -23,6 +24,7 @@ const PublicProfilePage = () => {
   const [error, setError] = useState("");
   const [actionBusy, setActionBusy] = useState(false);
   const [savedTemplateIds, setSavedTemplateIds] = useState([]);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -66,12 +68,12 @@ const PublicProfilePage = () => {
     }
   };
 
-  const removeFriend = async () => {
-    if (!window.confirm(`Remove @${username} as a friend?`)) return;
+  const confirmRemoveFriend = async () => {
     setActionBusy(true);
     try {
       await friendService.removeFriend(data.profile._id);
       await loadProfile();
+      setShowRemoveConfirm(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,7 +121,7 @@ const PublicProfilePage = () => {
     if (isSelf) return null;
     if (isFriend) {
       return (
-        <Button loading={actionBusy} type="button" variant="ghost" onClick={removeFriend}>
+        <Button loading={actionBusy} type="button" variant="ghost" onClick={() => setShowRemoveConfirm(true)}>
           <UserMinus className="h-4 w-4" />
           Remove Friend
         </Button>
@@ -146,6 +148,16 @@ const PublicProfilePage = () => {
 
   return (
     <Layout>
+      {showRemoveConfirm ? (
+        <ConfirmModal
+          title="Remove this friend?"
+          description={`Remove @${username} as a friend?`}
+          confirmLabel="Remove"
+          loading={actionBusy}
+          onCancel={() => setShowRemoveConfirm(false)}
+          onConfirm={confirmRemoveFriend}
+        />
+      ) : null}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Profile</p>

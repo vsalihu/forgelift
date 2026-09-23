@@ -5,6 +5,7 @@ import FormInput from "../components/FormInput.jsx";
 import SelectInput from "../components/SelectInput.jsx";
 import Button from "../components/Button.jsx";
 import CustomExerciseForm from "../components/exercises/CustomExerciseForm.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { exerciseService } from "../services/exerciseService.js";
@@ -160,6 +161,8 @@ const ExerciseLibraryPage = () => {
   const [savingCustom, setSavingCustom] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const loadAllExercises = async () => {
@@ -228,20 +231,35 @@ const ExerciseLibraryPage = () => {
     }
   };
 
-  const handleDeleteCustom = async (id) => {
-    if (!window.confirm("Delete this custom exercise? Workouts already logged will stay saved.")) return;
+  const confirmDeleteCustom = async () => {
+    const id = pendingDeleteId;
+    if (!id) return;
+    setDeleting(true);
     try {
       await exerciseService.deleteCustomExercise(id);
       const data = await exerciseService.getExercises();
       setAllExercises(data.exercises || []);
       setExercises((current) => current.filter((exercise) => exercise._id !== id));
+      setPendingDeleteId("");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
     <Layout>
+      {pendingDeleteId ? (
+        <ConfirmModal
+          title="Delete this custom exercise?"
+          description="Workouts already logged will stay saved."
+          confirmLabel="Delete"
+          loading={deleting}
+          onCancel={() => setPendingDeleteId("")}
+          onConfirm={confirmDeleteCustom}
+        />
+      ) : null}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
@@ -383,7 +401,7 @@ const ExerciseLibraryPage = () => {
             activeMuscle={filters.muscle}
             key={exercise._id}
             tourId={index === 0 ? "exercise-card" : undefined}
-            onDelete={handleDeleteCustom}
+            onDelete={setPendingDeleteId}
             onEdit={(item) => {
               setEditingExercise(item);
               setCustomFormOpen(true);

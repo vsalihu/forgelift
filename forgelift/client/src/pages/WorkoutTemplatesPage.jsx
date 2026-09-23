@@ -5,6 +5,7 @@ import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
 import Badge from "../components/ui/Badge.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -32,6 +33,8 @@ const WorkoutTemplatesPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [visibilityBusyId, setVisibilityBusyId] = useState("");
   const [sendPickerId, setSendPickerId] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState("");
@@ -141,15 +144,20 @@ const WorkoutTemplatesPage = () => {
     setForm(emptyTemplate);
   };
 
-  const deleteTemplate = async (templateId) => {
-    if (!window.confirm("Delete this workout template?")) return;
+  const confirmDeleteTemplate = async () => {
+    const templateId = pendingDeleteId;
+    if (!templateId) return;
     setError("");
+    setDeleting(true);
     try {
       await workoutTemplateService.deleteTemplate(templateId);
       setTemplates((current) => current.filter((item) => item._id !== templateId));
       if (editingId === templateId) cancelEdit();
+      setPendingDeleteId("");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -213,6 +221,15 @@ const WorkoutTemplatesPage = () => {
         onClose={() => setPickerOpen(false)}
         onSelect={addExerciseFromPicker}
       />
+      {pendingDeleteId ? (
+        <ConfirmModal
+          title="Delete this workout template?"
+          confirmLabel="Delete"
+          loading={deleting}
+          onCancel={() => setPendingDeleteId("")}
+          onConfirm={confirmDeleteTemplate}
+        />
+      ) : null}
 
       <PageHeader
         eyebrow="Workout Builder"
@@ -385,7 +402,7 @@ const WorkoutTemplatesPage = () => {
                           Send to...
                         </Button>
                         <Button type="button" variant="secondary" onClick={() => editTemplate(template)}>Edit</Button>
-                        <Button type="button" variant="ghost" onClick={() => deleteTemplate(template._id)}>Delete</Button>
+                        <Button type="button" variant="ghost" onClick={() => setPendingDeleteId(template._id)}>Delete</Button>
                       </div>
                     </div>
 

@@ -3,6 +3,7 @@ import { CalendarDays, Eye, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import { workoutService } from "../services/workoutService.js";
 
 const formatDate = (date) =>
@@ -18,6 +19,8 @@ const WorkoutHistoryPage = () => {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadWorkouts = async () => {
     setLoading(true);
@@ -37,21 +40,32 @@ const WorkoutHistoryPage = () => {
     loadWorkouts();
   }, []);
 
-  const deleteWorkout = async (workout) => {
-    const confirmed = window.confirm(`Delete "${workout.title}"? This cannot be undone.`);
-
-    if (!confirmed) return;
-
+  const confirmDeleteWorkout = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await workoutService.deleteWorkout(workout._id);
-      setWorkouts((current) => current.filter((item) => item._id !== workout._id));
+      await workoutService.deleteWorkout(pendingDelete._id);
+      setWorkouts((current) => current.filter((item) => item._id !== pendingDelete._id));
+      setPendingDelete(null);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
     <Layout>
+      {pendingDelete ? (
+        <ConfirmModal
+          title="Delete this workout?"
+          description={`Delete "${pendingDelete.title}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          loading={deleting}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={confirmDeleteWorkout}
+        />
+      ) : null}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Workout History</p>
@@ -125,7 +139,7 @@ const WorkoutHistoryPage = () => {
                     <Eye className="h-4 w-4" />
                     View
                   </Link>
-                  <Button type="button" variant="ghost" onClick={() => deleteWorkout(workout)}>
+                  <Button type="button" variant="ghost" onClick={() => setPendingDelete(workout)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

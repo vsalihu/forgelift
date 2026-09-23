@@ -25,11 +25,7 @@ const MobileNav = () => {
             <NavLink
               className={({ isActive }) =>
                 `flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
-                  isActive
-                    ? item.to === "/gym-mode"
-                      ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30"
-                      : "bg-white/12 text-white"
-                    : "text-slate-300"
+                  isActive ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30" : "text-slate-300"
                 }`
               }
               key={item.to}
@@ -41,7 +37,7 @@ const MobileNav = () => {
           ))}
           <button
             className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
-              isMoreActive ? "bg-white/12 text-white" : "text-slate-300 hover:bg-white/10 hover:text-white"
+              isMoreActive ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30" : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
             type="button"
             onClick={() => setMoreOpen(true)}

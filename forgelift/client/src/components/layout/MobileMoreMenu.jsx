@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import BottomSheet from "../ui/BottomSheet.jsx";
+import UnreadBadge from "../ui/UnreadBadge.jsx";
 
 export const moreMenuGroups = [
   {
@@ -66,7 +67,7 @@ export const moreMenuGroups = [
   }
 ];
 
-const MobileMoreMenu = ({ open, onClose }) => (
+const MobileMoreMenu = ({ open, onClose, unreadMessages = 0 }) => (
   <BottomSheet open={open} title="More ForgeLift" onClose={onClose}>
     <div className="space-y-5">
       {moreMenuGroups.map((group) => (
@@ -86,6 +87,7 @@ const MobileMoreMenu = ({ open, onClose }) => (
               >
                 <item.icon className="h-5 w-5 shrink-0 text-forge-copper" />
                 {item.label}
+                {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
               </NavLink>
             ))}
           </div>

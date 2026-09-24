@@ -24,6 +24,7 @@ import {
   Zap
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import UnreadBadge from "./ui/UnreadBadge.jsx";
 
 const navItems = [
   {
@@ -87,7 +88,7 @@ const navItems = [
   }
 ];
 
-const Sidebar = ({ open, onClose }) => {
+const Sidebar = ({ open, onClose, unreadMessages = 0 }) => {
   return (
     <>
       <div
@@ -127,6 +128,7 @@ const Sidebar = ({ open, onClose }) => {
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
                     <span className="truncate">{item.label}</span>
+                    {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
                   </NavLink>
                 ))}
               </div>

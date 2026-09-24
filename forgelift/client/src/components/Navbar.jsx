@@ -1,9 +1,10 @@
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import Button from "./Button.jsx";
+import UnreadBadge from "./ui/UnreadBadge.jsx";
 
-const Navbar = ({ onMenuClick }) => {
+const Navbar = ({ onMenuClick, unreadMessages = 0 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -58,6 +59,12 @@ const Navbar = ({ onMenuClick }) => {
                 Missions
               </Link>
             </nav>
+            <Link className="relative rounded-md p-2 text-slate-300 hover:bg-white/10" to="/chat" aria-label="Chat">
+              <MessageCircle className="h-5 w-5" />
+              {unreadMessages ? (
+                <UnreadBadge className="absolute -right-1 -top-1" count={unreadMessages} />
+              ) : null}
+            </Link>
             <span className="hidden text-sm text-forge-steel sm:inline">{user.name}</span>
             <Button variant="ghost" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />

@@ -2,6 +2,7 @@ import { Dumbbell, Gauge, ListChecks, Menu, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
+import UnreadBadge from "./ui/UnreadBadge.jsx";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: Gauge },
@@ -12,7 +13,7 @@ const items = [
 
 const morePaths = moreMenuGroups.flatMap((group) => group.items.map((item) => item.to));
 
-const MobileNav = () => {
+const MobileNav = ({ unreadMessages = 0 }) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const { pathname } = useLocation();
   const isMoreActive = morePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -36,7 +37,7 @@ const MobileNav = () => {
             </NavLink>
           ))}
           <button
-            className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
+            className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
               isMoreActive ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30" : "text-slate-300 hover:bg-white/10 hover:text-white"
             }`}
             type="button"
@@ -44,10 +45,13 @@ const MobileNav = () => {
           >
             <Menu className="h-5 w-5" />
             More
+            {unreadMessages ? (
+              <UnreadBadge className="absolute right-2 top-1" count={unreadMessages} />
+            ) : null}
           </button>
         </div>
       </nav>
-      <MobileMoreMenu open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <MobileMoreMenu open={moreOpen} unreadMessages={unreadMessages} onClose={() => setMoreOpen(false)} />
     </>
   );
 };

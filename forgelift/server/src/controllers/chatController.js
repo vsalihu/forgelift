@@ -72,6 +72,20 @@ const decorateConversation = (conversation, myUserId, otherUser) => {
   };
 };
 
+export const getUnreadCount = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ "participants.userId": req.user._id }).select("participants");
+    const count = conversations.reduce((total, conversation) => {
+      const mine = conversation.participants.find((participant) => participant.userId.equals(req.user._id));
+      return total + (mine?.unreadCount || 0);
+    }, 0);
+
+    return res.json({ count });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch unread count.", error: error.message });
+  }
+};
+
 export const getConversations = async (req, res) => {
   try {
     const conversations = await Conversation.find({ "participants.userId": req.user._id }).sort({

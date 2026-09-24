@@ -4,6 +4,7 @@ import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Footer from "../components/layout/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
+import LoadingOverlay from "../components/ui/LoadingOverlay.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 
 const LoginPage = () => {
@@ -36,6 +37,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen">
+      <LoadingOverlay open={submitting} text="Logging in..." />
       <Navbar />
       <main className="mx-auto flex max-w-md flex-col justify-center px-4 py-12">
         <div className="metal-panel rounded-lg p-6 shadow-metal">

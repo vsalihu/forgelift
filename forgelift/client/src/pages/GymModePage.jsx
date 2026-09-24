@@ -277,8 +277,6 @@ const GymModePage = () => {
     });
   };
 
-  const repeatLastSet = (exerciseIndex) => addSet(exerciseIndex);
-
   const useSuggestedWeight = (exerciseIndex) => {
     const exercise = workout.exercises[exerciseIndex];
     const baseline = strengthBaselines.find((item) => item.exerciseName === exercise?.exerciseName);
@@ -797,11 +795,12 @@ const GymModePage = () => {
                           : "Enter weight and reps to unlock Add Set."}
                       </p>
                     ) : null}
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button data-tour-id="gym-add-set" className="min-h-12" disabled={!currentSetValid(exercise)} type="button" onClick={() => addSet(exerciseIndex)}>Add Set</Button>
-                      <Button data-tour-id="gym-repeat-set" className="min-h-12" disabled={!currentSetValid(exercise)} type="button" variant="secondary" onClick={() => repeatLastSet(exerciseIndex)}>Repeat Last Set</Button>
-                      <Button type="button" variant="secondary" onClick={() => focusExercise(Math.max(0, exerciseIndex - 1))}>Previous</Button>
-                      <Button data-tour-id="gym-next-exercise" type="button" variant="secondary" onClick={nextExercise}>Next Exercise</Button>
+                    <div className="space-y-2">
+                      <Button data-tour-id="gym-add-set" className="min-h-12 w-full" disabled={!currentSetValid(exercise)} type="button" onClick={() => addSet(exerciseIndex)}>Add Set</Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button type="button" variant="secondary" onClick={() => focusExercise(Math.max(0, exerciseIndex - 1))}>Previous</Button>
+                        <Button data-tour-id="gym-next-exercise" type="button" variant="secondary" onClick={nextExercise}>Next Exercise</Button>
+                      </div>
                     </div>
                     {lastSet ? <p className="text-xs text-slate-500">Current input: {describeSetLoad(lastSet)} x {lastSet.reps || 0} reps.</p> : null}
                   </div>

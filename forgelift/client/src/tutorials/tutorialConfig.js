@@ -91,13 +91,6 @@ export const tutorialConfig = {
       fallbackContent: "Add an exercise first to see the Add Set button."
     },
     {
-      target: "gym-repeat-set",
-      title: "Repeat Last Set",
-      content: "Repeat Last Set immediately copies the previous saved set.",
-      placement: "top",
-      fallbackContent: "Add an exercise and log a set first to use Repeat Last Set."
-    },
-    {
       target: "gym-rest-timer",
       title: "Rest timer",
       content: "Use the rest timer between working sets without leaving Gym Mode.",

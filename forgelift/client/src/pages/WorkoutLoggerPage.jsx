@@ -219,18 +219,6 @@ const WorkoutLoggerPage = () => {
     });
   };
 
-  const repeatLastSet = (exerciseIndex) => {
-    const exercise = form.exercises[exerciseIndex];
-    const lastSet = exercise?.sets?.[exercise.sets.length - 1];
-    if (!lastSet) return;
-    setForm({
-      ...form,
-      exercises: form.exercises.map((item, index) =>
-        index === exerciseIndex ? { ...item, sets: [...item.sets, copySetForNext(lastSet)] } : item
-      )
-    });
-  };
-
   const removeSet = (exerciseIndex, setIndex) => {
     setForm({
       ...form,
@@ -1012,19 +1000,6 @@ const WorkoutLoggerPage = () => {
                 >
                   <Plus className="h-4 w-4" />
                   Add set
-                </Button>
-                <Button
-                  className="mt-3 w-full sm:ml-3 sm:w-auto"
-                  disabled={
-                    !exercise.sets.length ||
-                    !isSetValid(exercise.sets[exercise.sets.length - 1]) ||
-                    (exercise.exerciseType === "bodyweight" && !user?.bodyweight)
-                  }
-                  type="button"
-                  variant="ghost"
-                  onClick={() => repeatLastSet(exerciseIndex)}
-                >
-                  Repeat last set
                 </Button>
               </div>
             ))}

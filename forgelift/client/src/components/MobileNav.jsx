@@ -1,4 +1,4 @@
-import { Dumbbell, Gauge, ListChecks, Menu, PlusCircle } from "lucide-react";
+import { CalendarDays, Dumbbell, Gauge, Menu, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
@@ -8,7 +8,7 @@ const items = [
   { to: "/dashboard", label: "Home", icon: Gauge },
   { to: "/gym-mode", label: "Gym", icon: Dumbbell },
   { to: "/workouts/new", label: "Log", icon: PlusCircle },
-  { to: "/missions", label: "Missions", icon: ListChecks }
+  { to: "/calendar", label: "Calendar", icon: CalendarDays }
 ];
 
 const morePaths = moreMenuGroups.flatMap((group) => group.items.map((item) => item.to));

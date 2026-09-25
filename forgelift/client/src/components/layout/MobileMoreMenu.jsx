@@ -9,6 +9,7 @@ import {
   Database,
   FileText,
   HeartPulse,
+  ListChecks,
   Medal,
   MessageCircle,
   Scale,
@@ -54,6 +55,7 @@ export const moreMenuGroups = [
     title: "Progress",
     items: [
       { to: "/ranks", label: "Ranks", icon: Shield },
+      { to: "/missions", label: "Missions", icon: ListChecks },
       { to: "/progress/prs", label: "PR Timeline", icon: Medal },
       { to: "/analytics/advanced", label: "Advanced Analytics", icon: AreaChart },
       { to: "/reports/monthly", label: "Monthly Reports", icon: FileText }

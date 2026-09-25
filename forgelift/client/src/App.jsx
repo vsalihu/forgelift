@@ -19,6 +19,7 @@ import WorkoutLoggerPage from "./pages/WorkoutLoggerPage.jsx";
 
 const AdvancedAnalyticsPage = lazy(() => import("./pages/AdvancedAnalyticsPage.jsx"));
 const AssessmentPage = lazy(() => import("./pages/AssessmentPage.jsx"));
+const CalendarPage = lazy(() => import("./pages/CalendarPage.jsx"));
 const ChatListPage = lazy(() => import("./pages/ChatListPage.jsx"));
 const ChatThreadPage = lazy(() => import("./pages/ChatThreadPage.jsx"));
 const DataManagementPage = lazy(() => import("./pages/DataManagementPage.jsx"));
@@ -55,6 +56,7 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={withTransition(<DashboardPage />)} />
           <Route path="/assessment" element={withTransition(<AssessmentPage />)} />
+          <Route path="/calendar" element={withTransition(<CalendarPage />)} />
           <Route path="/chat" element={withTransition(<ChatListPage />)} />
           <Route path="/chat/:username" element={withTransition(<ChatThreadPage />)} />
           <Route path="/data-management" element={withTransition(<DataManagementPage />)} />

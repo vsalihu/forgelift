@@ -3,6 +3,7 @@ import {
   AreaChart,
   BookOpen,
   Calculator,
+  CalendarDays,
   ClipboardCheck,
   ClipboardList,
   Database,
@@ -40,6 +41,7 @@ const navItems = [
     section: "Training",
     accent: "text-emerald-300",
     items: [
+      { to: "/calendar", label: "Calendar", icon: CalendarDays },
       { to: "/workouts", label: "Workout History", icon: ClipboardList },
       { to: "/workout-templates", label: "Design a Workout", icon: ClipboardList },
       { to: "/exercises", label: "Exercise Library", icon: BookOpen },

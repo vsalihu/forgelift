@@ -1,4 +1,6 @@
 import CalendarEntry from "../models/CalendarEntry.js";
+import Friendship from "../models/Friendship.js";
+import User from "../models/User.js";
 import Workout from "../models/Workout.js";
 import WorkoutTemplate from "../models/WorkoutTemplate.js";
 import { dateKey, startOfUTCDay } from "../utils/generateTrainingPlan.js";
@@ -49,6 +51,73 @@ export const getMonth = async (req, res) => {
     return res.json({ days });
   } catch (error) {
     return res.status(500).json({ message: "Unable to fetch calendar month.", error: error.message });
+  }
+};
+
+export const getPublicMonth = async (req, res) => {
+  try {
+    const username = (req.params.username || "").trim().toLowerCase();
+    const year = Number(req.params.year);
+    const month = Number(req.params.month);
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return res.status(400).json({ message: "A valid year and month (1-12) are required." });
+    }
+
+    const profileUser = await User.findOne({ username });
+    if (!profileUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const isSelf = profileUser._id.equals(req.user._id);
+    if (!isSelf) {
+      const friendship = await Friendship.findOne({
+        status: "accepted",
+        $or: [
+          { requesterId: req.user._id, recipientId: profileUser._id },
+          { requesterId: profileUser._id, recipientId: req.user._id }
+        ]
+      });
+
+      if (!friendship) {
+        return res.status(403).json({ message: "Add this user as a friend to see their training calendar." });
+      }
+    }
+
+    const rangeStart = new Date(Date.UTC(year, month - 1, 1));
+    const rangeEnd = new Date(Date.UTC(year, month, 1));
+
+    const [workouts, entries] = await Promise.all([
+      Workout.find({ userId: profileUser._id, date: { $gte: rangeStart, $lt: rangeEnd } }).select("date"),
+      CalendarEntry.find({ userId: profileUser._id, date: { $gte: rangeStart, $lt: rangeEnd } }).select(
+        "date type isDeloadWeek"
+      )
+    ]);
+
+    const workoutDateKeys = new Set(workouts.map((workout) => dateKey(workout.date)));
+    const daysByDate = new Map();
+
+    entries.forEach((entry) => {
+      const key = dateKey(entry.date);
+      daysByDate.set(key, {
+        date: key,
+        type: entry.type,
+        isDeloadWeek: entry.isDeloadWeek,
+        completed: workoutDateKeys.has(key)
+      });
+    });
+
+    workoutDateKeys.forEach((key) => {
+      if (!daysByDate.has(key)) {
+        daysByDate.set(key, { date: key, type: null, isDeloadWeek: false, completed: true });
+      }
+    });
+
+    const days = [...daysByDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+    return res.json({ days });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to load training calendar.", error: error.message });
   }
 };
 

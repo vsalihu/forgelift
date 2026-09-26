@@ -2,6 +2,7 @@ import { request } from "./api.js";
 
 export const calendarService = {
   getMonth: (year, month) => request(`/calendar/${year}/${month}`),
+  getPublicMonth: (username, year, month) => request(`/calendar/public/${username}/${year}/${month}`),
   upsertEntry: (payload) =>
     request("/calendar/entries", {
       method: "POST",

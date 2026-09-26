@@ -5,6 +5,7 @@ import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
 import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
+import PublicTrainingCalendar from "../components/calendar/PublicTrainingCalendar.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
@@ -208,6 +209,8 @@ const PublicProfilePage = () => {
             <MetricCard label="Lifetime sets" value={formatNumber(profile.lifetimeSets)} />
             <MetricCard label="Workouts logged" value={formatNumber(profile.lifetimeWorkoutCount)} />
           </section>
+
+          <PublicTrainingCalendar username={username} />
 
           {data.muscleRanks?.length ? (
             <section>

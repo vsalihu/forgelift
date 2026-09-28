@@ -8,6 +8,7 @@ import PersonalRecord from "../models/PersonalRecord.js";
 import RecoveryScore from "../models/RecoveryScore.js";
 import Streak from "../models/Streak.js";
 import TrainingBalance from "../models/TrainingBalance.js";
+import TrainingLoadStatus from "../models/TrainingLoadStatus.js";
 import WeakPoint from "../models/WeakPoint.js";
 import WeeklyTarget from "../models/WeeklyTarget.js";
 import Workout from "../models/Workout.js";
@@ -15,6 +16,7 @@ import { calculateXP } from "./calculateXP.js";
 import { recalculateUserRanks } from "./calculateRanks.js";
 import { detectPersonalRecords } from "./detectPersonalRecords.js";
 import { recalculateRecoveryFromWorkouts } from "./recalculateRecoveryFromWorkouts.js";
+import { recalculateTrainingLoadFromWorkouts } from "./recalculateTrainingLoadFromWorkouts.js";
 import { updateDeloadRecommendations } from "./updateDeloadRecommendations.js";
 import { updateOverloadRecommendations } from "./updateOverloadRecommendations.js";
 import { updateWeakPoints } from "./updateWeakPoints.js";
@@ -27,6 +29,7 @@ const clearDerivedData = async (userId, { clearMissions = true, clearReports = t
     RecoveryScore.deleteMany({ userId }),
     WeakPoint.deleteMany({ userId }),
     TrainingBalance.deleteMany({ userId }),
+    TrainingLoadStatus.deleteMany({ userId }),
     OverloadRecommendation.deleteMany({ userId }),
     DeloadRecommendation.deleteMany({ userId })
   ];
@@ -68,6 +71,8 @@ export const recalculateUserTrainingState = async ({
     .filter((workout) => new Date(workout.date) >= new Date(Date.now() - 14 * 24 * 60 * 60 * 1000))
     .sort((a, b) => new Date(b.date) - new Date(a.date));
   const recoveryScores = await recalculateRecoveryFromWorkouts({ user, recentWorkouts: recentRecoveryWorkouts });
+  const workouts90d = workouts.filter((workout) => new Date(workout.date) >= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
+  const trainingLoad = await recalculateTrainingLoadFromWorkouts({ user, workouts90d });
   const weakPointResult = await updateWeakPoints(user);
   const overloadRecommendations = workouts.length ? await updateOverloadRecommendations({ user }) : [];
   const deloadResult = await updateDeloadRecommendations(user);
@@ -78,6 +83,7 @@ export const recalculateUserTrainingState = async ({
     personalRecordCount: await PersonalRecord.countDocuments({ userId: user._id }),
     updatedRanks,
     recoveryScores,
+    trainingLoad,
     trainingBalance: weakPointResult.trainingBalance,
     weakPoints: weakPointResult.weakPoints,
     overloadRecommendations,

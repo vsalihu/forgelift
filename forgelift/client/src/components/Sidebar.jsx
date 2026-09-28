@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Database,
   Dumbbell,
+  Flame,
   Gauge,
   HeartPulse,
   Medal,
@@ -53,6 +54,7 @@ const navItems = [
     accent: "text-violet-300",
     items: [
       { to: "/recovery", label: "Recovery", icon: HeartPulse },
+      { to: "/training-load", label: "Training Load", icon: Flame },
       { to: "/overload", label: "Smart Overload", icon: Zap },
       { to: "/deload", label: "Deload", icon: ShieldAlert },
       { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },

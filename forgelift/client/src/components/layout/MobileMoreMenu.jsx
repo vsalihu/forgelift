@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Database,
   FileText,
+  Flame,
   HeartPulse,
   ListChecks,
   Medal,
@@ -38,6 +39,7 @@ export const moreMenuGroups = [
     title: "Intelligence",
     items: [
       { to: "/recovery", label: "Recovery", icon: HeartPulse },
+      { to: "/training-load", label: "Training Load", icon: Flame },
       { to: "/overload", label: "Smart Overload", icon: Zap },
       { to: "/deload", label: "Deload", icon: ShieldAlert },
       { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },

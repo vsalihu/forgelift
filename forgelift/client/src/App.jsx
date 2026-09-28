@@ -34,6 +34,7 @@ const RecoveryPage = lazy(() => import("./pages/RecoveryPage.jsx"));
 const SmartOverloadPage = lazy(() => import("./pages/SmartOverloadPage.jsx"));
 const StrengthBaselinesPage = lazy(() => import("./pages/StrengthBaselinesPage.jsx"));
 const TrainingBalancePage = lazy(() => import("./pages/TrainingBalancePage.jsx"));
+const TrainingLoadPage = lazy(() => import("./pages/TrainingLoadPage.jsx"));
 const WeakPointsPage = lazy(() => import("./pages/WeakPointsPage.jsx"));
 const WorkoutTemplatesPage = lazy(() => import("./pages/WorkoutTemplatesPage.jsx"));
 
@@ -76,6 +77,7 @@ const App = () => {
           <Route path="/strength-baselines" element={withTransition(<StrengthBaselinesPage />)} />
           <Route path="/deload" element={withTransition(<DeloadPage />)} />
           <Route path="/training-balance" element={withTransition(<TrainingBalancePage />)} />
+          <Route path="/training-load" element={withTransition(<TrainingLoadPage />)} />
           <Route path="/weak-points" element={withTransition(<WeakPointsPage />)} />
           <Route path="/workout-templates" element={withTransition(<WorkoutTemplatesPage />)} />
           <Route path="/workouts" element={withTransition(<WorkoutHistoryPage />)} />

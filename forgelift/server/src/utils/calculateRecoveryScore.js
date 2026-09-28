@@ -13,6 +13,14 @@ const fatigueByLoadLevel = {
   stabiliserLoad: { Low: 3, Medium: 8, High: 15, "Very High": 25 }
 };
 
+const recoveryWindowHoursByLoadLevel = {
+  directLoad: { Low: 16, Medium: 24, High: 48, "Very High": 72 },
+  indirectLoad: { Low: 10, Medium: 16, High: 30, "Very High": 48 },
+  stabiliserLoad: { Low: 8, Medium: 12, High: 20, "Very High": 32 }
+};
+
+const regainedFatigue = (fatigue, windowHours, elapsedHours) => fatigue * Math.min(1, elapsedHours / windowHours);
+
 const getStatus = (score) => {
   if (score >= 80) return "Fully Recovered";
   if (score >= 60) return "Mostly Ready";
@@ -150,20 +158,26 @@ export const calculateRecoveryScore = ({ user, muscleGroup, loadData, latestWork
   }
 
   if (directLoad > 0) {
-    score -= fatigueByLoadLevel.directLoad[directLevel];
-    score += Math.min(60, hoursBetween(loadData.lastDirectLoadAt, now) * 2);
+    const fatigue = fatigueByLoadLevel.directLoad[directLevel];
+    const windowHours = recoveryWindowHoursByLoadLevel.directLoad[directLevel];
+    const elapsedHours = hoursBetween(loadData.lastDirectLoadAt, now);
+    score -= fatigue - regainedFatigue(fatigue, windowHours, elapsedHours);
     reasons.push(`${muscleGroup} received a ${directLevel} direct load.`);
   }
 
   if (indirectLoad > 0) {
-    score -= fatigueByLoadLevel.indirectLoad[indirectLevel];
-    score += Math.min(50, hoursBetween(loadData.lastIndirectLoadAt, now) * 3);
+    const fatigue = fatigueByLoadLevel.indirectLoad[indirectLevel];
+    const windowHours = recoveryWindowHoursByLoadLevel.indirectLoad[indirectLevel];
+    const elapsedHours = hoursBetween(loadData.lastIndirectLoadAt, now);
+    score -= fatigue - regainedFatigue(fatigue, windowHours, elapsedHours);
     reasons.push(`${muscleGroup} was indirectly loaded during related movements.`);
   }
 
   if (stabiliserLoad > 0) {
-    score -= fatigueByLoadLevel.stabiliserLoad[stabiliserLevel];
-    score += Math.min(40, hoursBetween(loadData.lastStabiliserLoadAt, now) * 4);
+    const fatigue = fatigueByLoadLevel.stabiliserLoad[stabiliserLevel];
+    const windowHours = recoveryWindowHoursByLoadLevel.stabiliserLoad[stabiliserLevel];
+    const elapsedHours = hoursBetween(loadData.lastStabiliserLoadAt, now);
+    score -= fatigue - regainedFatigue(fatigue, windowHours, elapsedHours);
     reasons.push(`${muscleGroup} contributed as a stabiliser.`);
   }
 

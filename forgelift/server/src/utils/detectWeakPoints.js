@@ -50,7 +50,14 @@ const hasStalled = (sessions) => {
   return latest.estimated1RM <= previous.estimated1RM && previous.estimated1RM <= oldest.estimated1RM && latest.volume <= previous.volume;
 };
 
-export const detectWeakPoints = ({ user, workouts = [], muscleRanks = [], trainingBalance, personalRecords = [] }) => {
+export const detectWeakPoints = ({
+  user,
+  workouts = [],
+  muscleRanks = [],
+  trainingBalance,
+  personalRecords = [],
+  trainingLoad = []
+}) => {
   const weakPoints = [];
   const muscleTotals = getMuscleTotals(trainingBalance);
 
@@ -213,6 +220,40 @@ export const detectWeakPoints = ({ user, workouts = [], muscleRanks = [], traini
           message: `${muscleGroup} has not been trained directly for over 14 days.`,
           recommendation: `Add direct ${muscleGroup.toLowerCase()} work soon.`,
           evidence: { daysSinceDirectTraining: Math.round(daysSince) }
+        })
+      );
+    }
+  });
+
+  trainingLoad.forEach((status) => {
+    if (!status.dataAvailable) return;
+
+    if (status.quadrant === "Fatigued Without Gains") {
+      weakPoints.push(
+        createWeakPoint({
+          type: "fatigued_without_gains",
+          muscleGroup: status.muscleGroup,
+          severity: status.acwrStatus === "High Risk" ? "High" : "Medium",
+          scoreImpact: 15,
+          title: `${status.muscleGroup} is fatigued without progress`,
+          message: `${status.muscleGroup} is carrying a heavy training load (ACWR ${status.acwr}), but strength on it isn't climbing.`,
+          recommendation: `Back off ${status.muscleGroup.toLowerCase()} volume or intensity for a week before pushing it further.`,
+          evidence: { acwr: status.acwr, acwrStatus: status.acwrStatus, strengthTrendPercent: status.strengthTrendPercent }
+        })
+      );
+    }
+
+    if (status.quadrant === "Detraining") {
+      weakPoints.push(
+        createWeakPoint({
+          type: "detraining",
+          muscleGroup: status.muscleGroup,
+          severity: "Medium",
+          scoreImpact: 10,
+          title: `${status.muscleGroup} is being neglected`,
+          message: `Training load on ${status.muscleGroup} has dropped well below normal and strength is trending down.`,
+          recommendation: `Add ${status.muscleGroup.toLowerCase()} back into your next couple of sessions to stop the slide.`,
+          evidence: { acwr: status.acwr, acwrStatus: status.acwrStatus, strengthTrendPercent: status.strengthTrendPercent }
         })
       );
     }

@@ -6,14 +6,15 @@ import Workout from "../models/Workout.js";
 import { calculateTrainingBalance } from "./calculateTrainingBalance.js";
 import { detectWeakPoints } from "./detectWeakPoints.js";
 import { recalculateUserRanks } from "./calculateRanks.js";
+import { recalculateTrainingLoadFromWorkouts } from "./recalculateTrainingLoadFromWorkouts.js";
 
-const getRecentWorkouts = (userId) => {
-  const since = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+const getWorkoutsSince = (userId, days) => {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   return Workout.find({ userId, date: { $gte: since } }).sort({ date: -1, createdAt: -1 });
 };
 
 export const updateWeakPoints = async (user) => {
-  const workouts = await getRecentWorkouts(user._id);
+  const workouts = await getWorkoutsSince(user._id, 28);
   let muscleRanks = await MuscleRank.find({ userId: user._id });
 
   if (!muscleRanks.length && workouts.length) {
@@ -28,7 +29,9 @@ export const updateWeakPoints = async (user) => {
     { $set: { userId: user._id, ...balanceData } },
     { new: true, upsert: true, sort: { updatedAt: -1 } }
   );
-  const weakPoints = detectWeakPoints({ user, workouts, muscleRanks, trainingBalance, personalRecords });
+  const workouts90d = await getWorkoutsSince(user._id, 90);
+  const trainingLoad = await recalculateTrainingLoadFromWorkouts({ user, workouts90d });
+  const weakPoints = detectWeakPoints({ user, workouts, muscleRanks, trainingBalance, personalRecords, trainingLoad });
 
   await WeakPoint.updateMany({ userId: user._id, active: true }, { $set: { active: false } });
 
@@ -38,6 +41,7 @@ export const updateWeakPoints = async (user) => {
 
   return {
     trainingBalance,
+    trainingLoad,
     weakPoints: savedWeakPoints
   };
 };

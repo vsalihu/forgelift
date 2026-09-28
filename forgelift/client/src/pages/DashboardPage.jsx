@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, ClipboardCheck, Dumbbell, Flame, ListChecks, Medal, ShieldAlert, Trophy, Zap } from "lucide-react";
+import { Activity, ClipboardCheck, Dumbbell, Flame, ListChecks, Medal, ShieldAlert, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
@@ -14,6 +14,7 @@ import ProgressRing from "../components/visuals/ProgressRing.jsx";
 import StatPill from "../components/visuals/StatPill.jsx";
 import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
 import RankBadge from "../components/ranks/RankBadge.jsx";
+import WeakPointCard from "../components/weakPoints/WeakPointCard.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { advancedAnalyticsService } from "../services/advancedAnalyticsService.js";
 import { bodyweightService } from "../services/bodyweightService.js";
@@ -279,6 +280,42 @@ const DashboardPage = () => {
 
       {!loading && !error ? (
         <div className="space-y-6">
+          {weakPoints.length ? (
+            <section
+              data-tour-id="dashboard-path-to-max"
+              className="rounded-xl border border-forge-copper/25 bg-gradient-to-br from-forge-copper/10 via-transparent to-transparent p-5"
+            >
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
+                    Path to {rankData?.overallProgress?.nextRank?.name || "Max"}
+                  </p>
+                  <h2 className="mt-2 text-xl font-black text-white">What&apos;s holding back your progress</h2>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
+                    {rankData?.overallProgress?.pointsToNextRank
+                      ? `${formatNumber(rankData.overallProgress.pointsToNextRank)} points to ${rankData.overallProgress.nextRank?.name}. Your overall rank is the average of your trained muscles, so your weakest ones are what's pulling it down.`
+                      : "You've reached the top rank. This is what ForgeLift thinks is still holding your weakest muscles back."}
+                  </p>
+                </div>
+                <Link className="whitespace-nowrap text-sm font-semibold text-forge-ember hover:text-orange-300" to="/weak-points">
+                  View all {weakPoints.length}
+                </Link>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {weakPoints.slice(0, 3).map((weakPoint) => (
+                  <WeakPointCard key={weakPoint._id} weakPoint={weakPoint} />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-5 text-center">
+              <p className="font-bold text-white">Nothing holding you back right now.</p>
+              <p className="mt-1 text-sm text-slate-300">
+                ForgeLift isn&apos;t seeing any imbalances, gaps, or neglected muscles. Keep training and logging consistently.
+              </p>
+            </section>
+          )}
+
           <VisualSummaryGrid>
             <IconMetricCard
               icon={Trophy}
@@ -324,7 +361,7 @@ const DashboardPage = () => {
                   <h2 className="mt-2 text-xl font-black text-white">Most important now</h2>
                 </div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3">
                 <CompactCard
                   tourId="dashboard-overload"
                   icon={Zap}
@@ -332,14 +369,6 @@ const DashboardPage = () => {
                   value={topOverload?.exerciseName || "No target yet"}
                   note={topOverload?.reason || "Log more workouts to unlock recommendations"}
                   to="/overload"
-                />
-                <CompactCard
-                  icon={AlertTriangle}
-                  title="Top Weak Point"
-                  value={weakPoints[0]?.muscleGroup || weakPoints[0]?.title || "None active"}
-                  note={weakPoints[0]?.recommendation || "No major imbalance warning"}
-                  tone={weakPoints[0] ? "warning" : "default"}
-                  to="/weak-points"
                 />
               </div>
             </div>

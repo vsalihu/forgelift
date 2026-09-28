@@ -13,6 +13,41 @@ const getIntensityModifier = (rpe) => {
   return 1.3;
 };
 
+// How fatiguing a set really is depends on the weight relative to what this
+// person can actually lift, not the raw kg. 50kg is a near-max grind for a
+// lifter whose best is 55kg, and a warm-up for one whose best is 150kg.
+const getRelativeIntensityModifier = (percentOf1RM) => {
+  if (percentOf1RM >= 1.05) return 1.5;
+  if (percentOf1RM >= 0.93) return 1.3;
+  if (percentOf1RM >= 0.85) return 1.15;
+  if (percentOf1RM >= 0.75) return 1;
+  if (percentOf1RM >= 0.65) return 0.85;
+  if (percentOf1RM >= 0.5) return 0.7;
+  return 0.55;
+};
+
+const normalizeName = (name) => (name || "").trim().toLowerCase();
+
+const resolveKnownOneRepMax = (exercise, oneRepMaxLookup) => {
+  if (!oneRepMaxLookup) return null;
+  const byId = exercise.exerciseId && oneRepMaxLookup.get(String(exercise.exerciseId));
+  if (byId) return byId;
+  return oneRepMaxLookup.get(normalizeName(exercise.exerciseName)) || null;
+};
+
+// Blend the objective "how heavy is this for me" signal with the subjective
+// "how did it feel today" RPE signal; either alone is a fine fallback when
+// the other isn't available (no PR/baseline yet, or RPE wasn't logged).
+const getSetIntensityModifier = (set, knownOneRepMax) => {
+  const rpeModifier = getIntensityModifier(set.rpe);
+  const weight = Number(set.weight) || 0;
+
+  if (!knownOneRepMax || !weight) return rpeModifier;
+
+  const relativeModifier = getRelativeIntensityModifier(weight / knownOneRepMax);
+  return set.rpe ? relativeModifier * 0.6 + rpeModifier * 0.4 : relativeModifier;
+};
+
 const getMuscleRole = (muscle, exercise) => {
   const normalized = normalizeMuscleName(muscle);
   if (exercise.primaryMuscles?.map(normalizeMuscleName).includes(normalized)) return "directLoad";
@@ -46,17 +81,18 @@ export const finaliseMuscleLoadSummary = (summary = {}) => {
   return summary;
 };
 
-export const calculateMuscleLoad = (exercises = []) => {
+export const calculateMuscleLoad = (exercises = [], oneRepMaxLookup = null) => {
   const summary = {};
 
   exercises.forEach((exercise) => {
     const impactProfile = exercise.impactProfile || {};
+    const knownOneRepMax = resolveKnownOneRepMax(exercise, oneRepMaxLookup);
 
     exercise.sets?.forEach((set) => {
       if (set.completed === false) return;
 
       const setVolume = Number(set.setVolume) || 0;
-      const intensityModifier = getIntensityModifier(set.rpe);
+      const intensityModifier = getSetIntensityModifier(set, knownOneRepMax);
 
       Object.entries(impactProfile).forEach(([rawMuscle, impact]) => {
         const muscle = normalizeMuscleName(rawMuscle);

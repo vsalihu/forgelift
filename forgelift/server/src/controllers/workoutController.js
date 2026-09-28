@@ -6,6 +6,7 @@ import PersonalRecord from "../models/PersonalRecord.js";
 import Workout from "../models/Workout.js";
 import { calculateXP } from "../utils/calculateXP.js";
 import { recalculateUserRanks } from "../utils/calculateRanks.js";
+import { buildOneRepMaxLookup } from "../utils/buildOneRepMaxLookup.js";
 import { calculateWorkoutStats } from "../utils/calculateWorkoutStats.js";
 import { detectPersonalRecords } from "../utils/detectPersonalRecords.js";
 import { generateWorkoutAnalysis } from "../utils/generateWorkoutAnalysis.js";
@@ -142,9 +143,9 @@ const hydrateExercises = async (workoutExercises = []) => {
   );
 };
 
-const buildWorkoutData = async (payload) => {
+const buildWorkoutData = async (payload, oneRepMaxLookup) => {
   const exercises = await hydrateExercises(payload.exercises);
-  const stats = calculateWorkoutStats(exercises);
+  const stats = calculateWorkoutStats(exercises, oneRepMaxLookup);
 
   return {
     title: payload.title?.trim() || "Workout",
@@ -171,7 +172,8 @@ export const createWorkout = async (req, res) => {
       return res.status(400).json({ message: errors[0], errors });
     }
 
-    const workoutData = await buildWorkoutData(req.body);
+    const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
+    const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
     const workout = await Workout.create({
       userId: req.user._id,
       ...workoutData
@@ -334,7 +336,8 @@ export const updateWorkout = async (req, res) => {
       return res.status(400).json({ message: errors[0], errors });
     }
 
-    const workoutData = await buildWorkoutData(req.body);
+    const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
+    const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
     Object.assign(workout, workoutData);
     await workout.save();
     await PersonalRecord.deleteMany({ userId: req.user._id, workoutId: workout._id });

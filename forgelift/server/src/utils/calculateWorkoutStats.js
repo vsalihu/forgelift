@@ -4,7 +4,7 @@ import { normalizeMuscleName } from "./muscleTaxonomy.js";
 
 const roundOne = (value) => Math.round(value * 10) / 10;
 
-export const calculateWorkoutStats = (exercises = []) => {
+export const calculateWorkoutStats = (exercises = [], oneRepMaxLookup = null) => {
   let totalVolume = 0;
   let totalSets = 0;
   let totalReps = 0;
@@ -110,7 +110,7 @@ export const calculateWorkoutStats = (exercises = []) => {
     };
   });
 
-  const muscleLoadSummary = calculateMuscleLoad(enrichedExercises);
+  const muscleLoadSummary = calculateMuscleLoad(enrichedExercises, oneRepMaxLookup);
   const groupedMuscleLoadSummary = groupMuscleLoadSummary(muscleLoadSummary);
 
   return {

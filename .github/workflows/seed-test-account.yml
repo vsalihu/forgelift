@@ -1,0 +1,50 @@
+name: Seed test account
+
+# Manual only: Actions tab -> "Seed test account" -> Run workflow.
+# Needs a repository secret named MONGO_URI (Settings -> Secrets and variables -> Actions).
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Account email
+        default: test@gmail.com
+      password:
+        description: Account password
+        default: Test123
+      username:
+        description: Account username
+        default: testuser
+      start_date:
+        description: History start date (YYYY-MM-DD). Leave empty for July 1 of this year.
+        default: ""
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: forgelift/server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: forgelift/server/package-lock.json
+
+      - run: npm ci
+
+      - name: Seed the test account
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          SEED_EMAIL: ${{ inputs.email }}
+          SEED_PASSWORD: ${{ inputs.password }}
+          SEED_USERNAME: ${{ inputs.username }}
+          SEED_START_DATE: ${{ inputs.start_date }}
+        run: |
+          if [ -z "$MONGO_URI" ]; then
+            echo "The MONGO_URI repository secret is missing. Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          npm run seed:test-account

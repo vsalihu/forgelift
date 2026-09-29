@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "seed:exercises": "node src/utils/seedExercises.js",
     "seed:demo": "node src/utils/seedDemoData.js",
-    "test:smoke": "node src/utils/smokeTest.js"
+    "test:smoke": "node src/utils/smokeTest.js",
+    "seed:test-account": "node src/utils/seedTestAccount.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

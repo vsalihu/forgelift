@@ -7,6 +7,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const ACUTE_WINDOW_DAYS = 7;
 const CHRONIC_WINDOW_DAYS = 28;
 const STRENGTH_BASELINE_LOOKBACK_DAYS = 60;
+const DIRECT_IMPACT_THRESHOLD = 60;
 
 const exerciseKey = (exerciseId, exerciseName) =>
   exerciseId ? String(exerciseId) : `name:${(exerciseName || "").trim().toLowerCase()}`;
@@ -36,10 +37,20 @@ export const recalculateTrainingLoadFromWorkouts = async ({ user, workouts90d = 
         muscleEarliestDate[muscle] = workoutDate;
       }
     });
+  });
 
+  // Which exercises train which muscle isn't limited to the chronic window: a
+  // muscle can still have a strength trend from exercises done a while ago.
+  // Muscle keys must match muscleLoadSummary, which is keyed by impactProfile,
+  // so heavily-loaded impactProfile muscles count alongside primaryMuscles.
+  workouts90d.forEach((workout) => {
     (workout.exercises || []).forEach((exercise) => {
-      (exercise.primaryMuscles || []).forEach((rawMuscle) => {
-        const muscle = normalizeMuscleName(rawMuscle);
+      const muscles = new Set((exercise.primaryMuscles || []).map(normalizeMuscleName));
+      Object.entries(exercise.impactProfile || {}).forEach(([rawMuscle, impact]) => {
+        if (Number(impact) >= DIRECT_IMPACT_THRESHOLD) muscles.add(normalizeMuscleName(rawMuscle));
+      });
+
+      muscles.forEach((muscle) => {
         muscleExercises[muscle] = muscleExercises[muscle] || new Set();
         muscleExercises[muscle].add(exerciseKey(exercise.exerciseId, exercise.exerciseName));
       });
@@ -75,10 +86,8 @@ export const recalculateTrainingLoadFromWorkouts = async ({ user, workouts90d = 
     return { current, baseline };
   };
 
-  const muscles = new Set([...Object.keys(muscleChronicLoad), ...Object.keys(muscleExercises)]);
-
   const results = await Promise.all(
-    [...muscles].map(async (muscleGroup) => {
+    Object.keys(muscleChronicLoad).map(async (muscleGroup) => {
       const exerciseKeys = [...(muscleExercises[muscleGroup] || [])];
       const strengthDataPoints = exerciseKeys.map((key) => strengthPointForExercise(key)).filter(Boolean);
       const earliestDate = muscleEarliestDate[muscleGroup];

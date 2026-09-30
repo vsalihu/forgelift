@@ -75,6 +75,23 @@ const strengthBaselineSchema = new mongoose.Schema(
   { _id: true }
 );
 
+const strengthGoalSchema = new mongoose.Schema(
+  {
+    exerciseName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100
+    },
+    target: {
+      type: Number,
+      required: true,
+      min: 1
+    }
+  },
+  { _id: false, timestamps: true }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -194,6 +211,10 @@ const userSchema = new mongoose.Schema(
     },
     strengthBaselineUpdatedAt: {
       type: Date
+    },
+    strengthGoals: {
+      type: [strengthGoalSchema],
+      default: []
     },
     beginnerTipsEnabled: {
       type: Boolean,

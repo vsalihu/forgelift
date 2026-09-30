@@ -269,8 +269,8 @@ export const tutorialConfig = {
   analytics: [
     {
       target: "analytics-overview",
-      title: "Advanced analytics",
-      content: "Analytics use your workout history to show volume, strength trends, muscle load, PRs, recovery, and missions.",
+      title: "Analytics",
+      content: "Your progress over time and where it's heading: strength per lift with projections and goals, rank journey, consistency, fatigue vs progress, muscle balance, bodyweight and PRs. Use \"Show as table\" on any chart to see the exact numbers.",
       placement: "bottom"
     }
   ],

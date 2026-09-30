@@ -1,109 +1,160 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AnalyticsOverviewCards from "../components/analytics/AnalyticsOverviewCards.jsx";
 import InsightList from "../components/analytics/InsightList.jsx";
-import MuscleLoadChart from "../components/analytics/MuscleLoadChart.jsx";
 import PeriodSelector from "../components/analytics/PeriodSelector.jsx";
-import StrengthTrendChart from "../components/analytics/StrengthTrendChart.jsx";
-import VolumeTrendChart from "../components/analytics/VolumeTrendChart.jsx";
+import BodyweightChart from "../components/analytics/progress/BodyweightChart.jsx";
+import ConsistencyHeatmap from "../components/analytics/progress/ConsistencyHeatmap.jsx";
+import FatigueProgressChart from "../components/analytics/progress/FatigueProgressChart.jsx";
+import MuscleBalanceRadar from "../components/analytics/progress/MuscleBalanceRadar.jsx";
+import MuscleVolumeChart from "../components/analytics/progress/MuscleVolumeChart.jsx";
+import PrTimelineChart from "../components/analytics/progress/PrTimelineChart.jsx";
+import ProjectionSummary from "../components/analytics/progress/ProjectionSummary.jsx";
+import RankJourneyChart from "../components/analytics/progress/RankJourneyChart.jsx";
+import StrengthProjectionChart from "../components/analytics/progress/StrengthProjectionChart.jsx";
 import Layout from "../components/Layout.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { advancedAnalyticsService } from "../services/advancedAnalyticsService.js";
-import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 
 const AdvancedAnalyticsPage = () => {
-  const [period, setPeriod] = useState("month");
+  const [period, setPeriod] = useState("180d");
   const [overview, setOverview] = useState(null);
-  const [volumeTrends, setVolumeTrends] = useState(null);
-  const [strengthTrends, setStrengthTrends] = useState([]);
-  const [muscleLoadDistribution, setMuscleLoadDistribution] = useState([]);
   const [insights, setInsights] = useState(null);
+  const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [selectedLiftName, setSelectedLiftName] = useState("");
+  const [goalBusy, setGoalBusy] = useState(false);
+  const [goalError, setGoalError] = useState("");
+
+  const loadAnalytics = useCallback(async (nextPeriod) => {
+    setRefreshing(true);
+    setError("");
+
+    try {
+      const [overviewData, insightData, progressData] = await Promise.all([
+        advancedAnalyticsService.getAnalyticsOverview(nextPeriod),
+        advancedAnalyticsService.getInsights(nextPeriod),
+        advancedAnalyticsService.getProgress(nextPeriod)
+      ]);
+      setOverview(overviewData.overview);
+      setInsights(insightData);
+      setProgress(progressData.progress);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadAnalytics = async () => {
-      setLoading(true);
-      setError("");
+    loadAnalytics(period);
+  }, [period, loadAnalytics]);
 
-      try {
-        const [overviewData, volumeData, strengthData, muscleData, insightData] = await Promise.all([
-          advancedAnalyticsService.getAnalyticsOverview(period),
-          advancedAnalyticsService.getVolumeTrends(period),
-          advancedAnalyticsService.getStrengthTrends(period),
-          advancedAnalyticsService.getMuscleLoadDistribution(period),
-          advancedAnalyticsService.getInsights(period)
-        ]);
-        setOverview(overviewData.overview);
-        setVolumeTrends(volumeData.volumeTrends);
-        setStrengthTrends(strengthData.strengthTrends || []);
-        setMuscleLoadDistribution(muscleData.muscleLoadDistribution || []);
-        setInsights(insightData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const lifts = progress?.lifts || [];
+  const selectedLift = lifts.find((lift) => lift.exerciseName === selectedLiftName) || lifts[0];
 
-    loadAnalytics();
-  }, [period]);
+  const refreshProgress = async () => {
+    const progressData = await advancedAnalyticsService.getProgress(period);
+    setProgress(progressData.progress);
+  };
 
-  const primaryStrengthTrend = strengthTrends[0];
+  const saveGoal = async (exerciseName, target) => {
+    setGoalBusy(true);
+    setGoalError("");
+    try {
+      await advancedAnalyticsService.setGoal(exerciseName, target);
+      setSelectedLiftName(exerciseName);
+      await refreshProgress();
+    } catch (err) {
+      setGoalError(err.message);
+    } finally {
+      setGoalBusy(false);
+    }
+  };
+
+  const removeGoal = async (exerciseName) => {
+    setGoalBusy(true);
+    setGoalError("");
+    try {
+      await advancedAnalyticsService.removeGoal(exerciseName);
+      await refreshProgress();
+    } catch (err) {
+      setGoalError(err.message);
+    } finally {
+      setGoalBusy(false);
+    }
+  };
 
   return (
     <Layout>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Advanced Analytics</p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Analytics</p>
           <h1 className="mt-2 flex items-center gap-2 text-3xl font-black text-white">
-            Progress insights <HelpTooltip title="Progress Insights" content="Long-term summaries that help you see what is improving and what needs attention." />
+            Progress &amp; projections{" "}
+            <HelpTooltip
+              title="How projections work"
+              content="ForgeLift draws a trend line through your last 8 weeks and extends it forward. Gains are assumed to slow down over time, faster for experienced lifters, so projections curve instead of rising forever. The shaded range widens the further ahead it looks."
+            />
           </h1>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <PeriodSelector value={period} onChange={setPeriod} />
           <TutorialLauncher pageKey="analytics" steps={getTutorialSteps("analytics")} />
         </div>
       </div>
 
-      {loading ? <p className="text-forge-steel">Loading advanced analytics...</p> : null}
-      {error ? <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
+      {loading ? <p className="text-forge-steel">Loading analytics...</p> : null}
+      {error ? <div className="mb-6 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
 
-      {!loading && !error ? (
-        <div className="space-y-6">
-          <div data-tour-id="analytics-overview">
-          {overview?.totalWorkouts === 0 ? (
+      {!loading && progress ? (
+        <div className={`space-y-6 transition-opacity ${refreshing ? "opacity-60" : ""}`} data-tour-id="analytics-overview">
+          {overview?.totalWorkouts === 0 && !lifts.length ? (
             <div className="metal-panel rounded-lg p-8 text-center text-slate-400">
               No analytics yet. Log workouts to start building progress insights.
             </div>
           ) : null}
+
+          <ProjectionSummary progress={progress} selectedLift={selectedLift} />
+
+          <StrengthProjectionChart
+            goalBusy={goalBusy}
+            goalError={goalError}
+            lifts={lifts}
+            selectedLiftName={selectedLift?.exerciseName}
+            unit={progress.unit}
+            onRemoveGoal={removeGoal}
+            onSaveGoal={saveGoal}
+            onSelectLift={(name) => {
+              setGoalError("");
+              setSelectedLiftName(name);
+            }}
+          />
+
+          <RankJourneyChart rankJourney={progress.rankJourney} />
+
+          <ConsistencyHeatmap consistency={progress.consistency} />
+
+          <FatigueProgressChart weeks={progress.fatigueVsProgress} />
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <MuscleVolumeChart weeks={progress.volumeByMuscle} />
+            <MuscleBalanceRadar balance={progress.muscleBalance} />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <BodyweightChart bodyweight={progress.bodyweight} lift={selectedLift} unit={progress.unit} />
+            <PrTimelineChart unit={progress.unit} weeks={progress.prTimeline} />
           </div>
 
           <AnalyticsOverviewCards overview={overview} />
 
-          <div className="grid gap-6 xl:grid-cols-2">
-            <section className="metal-panel rounded-lg p-5">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">Volume trend <HelpTooltip {...helpText.volume} /></h2>
-              <VolumeTrendChart data={volumeTrends?.byWeek?.length ? volumeTrends.byWeek : volumeTrends?.byMonth || []} />
-            </section>
-            <section className="metal-panel rounded-lg p-5">
-              <h2 className="mb-4 text-xl font-bold text-white">
-                Strength trend {primaryStrengthTrend ? `- ${primaryStrengthTrend.exerciseName}` : ""} <HelpTooltip {...helpText.strengthTrend} />
-              </h2>
-              <StrengthTrendChart trend={primaryStrengthTrend} />
-            </section>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <section className="metal-panel rounded-lg p-5">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-white">Muscle load distribution <HelpTooltip {...helpText.muscleLoadDistribution} /></h2>
-              <MuscleLoadChart data={muscleLoadDistribution} />
-            </section>
+          <div className="grid gap-6 xl:grid-cols-3">
             <InsightList title="Recommendations" items={insights?.recommendations || []} />
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-2">
             <InsightList
               title="PR insights"
               items={[

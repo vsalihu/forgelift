@@ -77,7 +77,7 @@ const navItems = [
       { to: "/missions", label: "Missions", icon: ListChecks },
       { to: "/progress", label: "Progress", icon: TrendingUp },
       { to: "/progress/prs", label: "PR Timeline", icon: Medal },
-      { to: "/analytics/advanced", label: "Advanced Analytics", icon: AreaChart },
+      { to: "/analytics/advanced", label: "Analytics", icon: AreaChart },
       { to: "/reports/monthly", label: "Monthly Reports", icon: FileText }
     ]
   },

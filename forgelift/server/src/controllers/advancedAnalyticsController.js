@@ -1,4 +1,5 @@
 import AnalyticsSnapshot from "../models/AnalyticsSnapshot.js";
+import BodyweightEntry from "../models/BodyweightEntry.js";
 import DeloadRecommendation from "../models/DeloadRecommendation.js";
 import Mission from "../models/Mission.js";
 import MuscleRank from "../models/MuscleRank.js";
@@ -10,6 +11,7 @@ import WeakPoint from "../models/WeakPoint.js";
 import Workout from "../models/Workout.js";
 import { calculateAdvancedAnalytics } from "../utils/calculateAdvancedAnalytics.js";
 import { getAnalyticsPeriod } from "../utils/analyticsPeriod.js";
+import { calculateProgressAnalytics } from "../utils/calculateProgressAnalytics.js";
 
 const loadAnalytics = async (user, period = "month") => {
   const { periodStart, periodEnd, periodType } = getAnalyticsPeriod(period);
@@ -148,5 +150,64 @@ export const createSnapshot = async (req, res) => {
     return res.json({ snapshot });
   } catch (error) {
     return res.status(500).json({ message: "Unable to create analytics snapshot.", error: error.message });
+  }
+};
+
+const PROGRESS_PERIODS = ["month", "90d", "180d", "365d", "all"];
+const MAX_GOALS = 12;
+
+const buildProgress = async (user, period) => {
+  const [workouts, personalRecords, bodyweightEntries] = await Promise.all([
+    Workout.find({ userId: user._id }).sort({ date: 1, createdAt: 1 }),
+    PersonalRecord.find({ userId: user._id }),
+    BodyweightEntry.find({ userId: user._id }).sort({ recordedAt: 1 })
+  ]);
+
+  return calculateProgressAnalytics({ user, workouts, personalRecords, bodyweightEntries, period });
+};
+
+export const getProgressAnalytics = async (req, res) => {
+  try {
+    const period = PROGRESS_PERIODS.includes(req.query.period) ? req.query.period : "180d";
+    return res.json({ progress: await buildProgress(req.user, period) });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to build progress analytics.", error: error.message });
+  }
+};
+
+export const setStrengthGoal = async (req, res) => {
+  try {
+    const exerciseName = String(req.body.exerciseName || "").trim();
+    const target = Number(req.body.target);
+
+    if (!exerciseName || exerciseName.length > 100) {
+      return res.status(400).json({ message: "Choose a lift for this goal." });
+    }
+
+    if (!Number.isFinite(target) || target <= 0 || target > 2000) {
+      return res.status(400).json({ message: "Enter a goal weight between 1 and 2000." });
+    }
+
+    const goals = (req.user.strengthGoals || []).filter((goal) => goal.exerciseName !== exerciseName);
+    if (goals.length >= MAX_GOALS) {
+      return res.status(400).json({ message: `You can track up to ${MAX_GOALS} goals at once.` });
+    }
+
+    req.user.strengthGoals = [...goals, { exerciseName, target }];
+    await req.user.save();
+    return res.json({ strengthGoals: req.user.strengthGoals });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to save goal.", error: error.message });
+  }
+};
+
+export const deleteStrengthGoal = async (req, res) => {
+  try {
+    const exerciseName = decodeURIComponent(req.params.exerciseName || "");
+    req.user.strengthGoals = (req.user.strengthGoals || []).filter((goal) => goal.exerciseName !== exerciseName);
+    await req.user.save();
+    return res.json({ strengthGoals: req.user.strengthGoals });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to remove goal.", error: error.message });
   }
 };

@@ -97,13 +97,12 @@ const getExerciseBestMap = (workouts) => {
   return bestMap;
 };
 
-const calculateMuscleRank = ({ user, muscleGroup, workouts, personalRecords, exerciseBestMap }) => {
+const calculateMuscleRank = ({ user, muscleGroup, workouts, personalRecords, exerciseBestMap, now = Date.now() }) => {
   const bodyweightKg = getBodyweightKg(user);
   const selectedStrengthStandard = user.selectedStrengthStandard || "neutral";
   const groupExercises = MUSCLE_GROUP_EXERCISES[muscleGroup] || [];
   const groupWorkouts = workouts.filter((workout) => workoutTrainsGroup(workout, muscleGroup));
   const totalVolume = groupWorkouts.reduce((total, workout) => total + calculateGroupLoad(workout, muscleGroup), 0);
-  const now = Date.now();
 
   let strongestExercise = "";
   let bestEstimated1RM = 0;
@@ -166,6 +165,22 @@ const calculateMuscleRank = ({ user, muscleGroup, workouts, personalRecords, exe
   };
 };
 
+// Pure: the overall rank score for a set of workouts/PRs as of `now`, so past
+// scores can be reconstructed by passing only the data that existed back then.
+export const calculateOverallScore = ({ user, workouts, personalRecords, xp = 0, now = Date.now() }) => {
+  const exerciseBestMap = getExerciseBestMap(workouts);
+  const muscleRanks = MUSCLE_GROUPS.map((muscleGroup) =>
+    calculateMuscleRank({ user, muscleGroup, workouts, personalRecords, exerciseBestMap, now })
+  );
+  const trainedRanks = muscleRanks.filter((rank) => rank.workoutCount > 0);
+  const averageMuscleScore = trainedRanks.length
+    ? trainedRanks.reduce((total, rank) => total + rank.score, 0) / trainedRanks.length
+    : 0;
+  const xpContribution = Math.min(1000, (xp || 0) * 0.2);
+
+  return { muscleRanks, overallScore: roundScore(averageMuscleScore + xpContribution) };
+};
+
 export const recalculateUserRanks = async (user) => {
   const [workouts, personalRecords, oldMuscleRankDocs] = await Promise.all([
     Workout.find({ userId: user._id }).sort({ date: -1, createdAt: -1 }),
@@ -178,17 +193,7 @@ export const recalculateUserRanks = async (user) => {
     return map;
   }, {});
   const oldOverallRank = user.currentOverallRank || "Copper";
-  const exerciseBestMap = getExerciseBestMap(workouts);
-
-  const muscleRanks = MUSCLE_GROUPS.map((muscleGroup) =>
-    calculateMuscleRank({ user, muscleGroup, workouts, personalRecords, exerciseBestMap })
-  );
-  const trainedRanks = muscleRanks.filter((rank) => rank.workoutCount > 0);
-  const averageMuscleScore = trainedRanks.length
-    ? trainedRanks.reduce((total, rank) => total + rank.score, 0) / trainedRanks.length
-    : 0;
-  const xpContribution = Math.min(1000, (user.xp || 0) * 0.2);
-  const overallScore = roundScore(averageMuscleScore + xpContribution);
+  const { muscleRanks, overallScore } = calculateOverallScore({ user, workouts, personalRecords, xp: user.xp });
   const overallProgress = getRankProgress(overallScore);
 
   await Promise.all(

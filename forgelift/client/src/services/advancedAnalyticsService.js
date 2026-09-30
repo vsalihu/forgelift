@@ -8,6 +8,16 @@ export const advancedAnalyticsService = {
   getStrengthTrends: (period) => request(`/advanced-analytics/strength${query(period)}`),
   getMuscleLoadDistribution: (period) => request(`/advanced-analytics/muscle-load${query(period)}`),
   getInsights: (period) => request(`/advanced-analytics/insights${query(period)}`),
+  getProgress: (period) => request(`/advanced-analytics/progress${query(period)}`),
+  setGoal: (exerciseName, target) =>
+    request("/advanced-analytics/goals", {
+      method: "PUT",
+      body: JSON.stringify({ exerciseName, target })
+    }),
+  removeGoal: (exerciseName) =>
+    request(`/advanced-analytics/goals/${encodeURIComponent(exerciseName)}`, {
+      method: "DELETE"
+    }),
   createSnapshot: (period) =>
     request(`/advanced-analytics/snapshot${query(period)}`, {
       method: "POST"

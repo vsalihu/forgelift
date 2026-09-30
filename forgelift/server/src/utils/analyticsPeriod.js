@@ -16,6 +16,11 @@ export const getAnalyticsPeriod = (period = "month") => {
     return { periodStart: new Date(0), periodEnd: now, periodType: "monthly" };
   }
 
+  const rollingDays = { "90d": 90, "180d": 180, "365d": 365 }[period];
+  if (rollingDays) {
+    return { periodStart: new Date(now.getTime() - rollingDays * 24 * 60 * 60 * 1000), periodEnd: now, periodType: "monthly" };
+  }
+
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   return { periodStart: start, periodEnd: end, periodType: "monthly" };

@@ -489,7 +489,7 @@ const GymModePage = () => {
         {rpeOptions.map((rpe) => (
           <button
             className={`min-h-10 shrink-0 rounded-full px-3 text-sm font-black transition ${
-              Number(set.rpe) === rpe ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300 hover:bg-white/15"
+              Number(set.rpe) === rpe ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-300 hover:bg-white/15"
             }`}
             key={rpe}
             type="button"
@@ -827,7 +827,7 @@ const GymModePage = () => {
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto">
           {restOptions.map((seconds) => (
-            <button className={`rounded-md px-3 py-2 text-sm font-semibold ${timerSeconds === seconds ? "bg-forge-ember text-white" : "bg-white/10 text-slate-200"}`} key={seconds} type="button" onClick={() => { setTimerSeconds(seconds); setRemainingSeconds(seconds); }}>
+            <button className={`rounded-md px-3 py-2 text-sm font-semibold ${timerSeconds === seconds ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-200"}`} key={seconds} type="button" onClick={() => { setTimerSeconds(seconds); setRemainingSeconds(seconds); }}>
               {seconds}s
             </button>
           ))}

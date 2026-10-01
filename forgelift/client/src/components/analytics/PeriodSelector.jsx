@@ -11,7 +11,7 @@ const PeriodSelector = ({ value, onChange }) => (
     {options.map((option) => (
       <button
         className={`rounded px-3 py-2 text-sm font-semibold transition ${
-          value === option.value ? "bg-forge-ember text-white" : "text-slate-300 hover:bg-white/10"
+          value === option.value ? "bg-forge-ember text-[#160a02]" : "text-slate-300 hover:bg-white/10"
         }`}
         aria-pressed={value === option.value}
         key={option.value}

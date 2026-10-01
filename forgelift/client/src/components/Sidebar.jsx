@@ -1,5 +1,6 @@
-import { X } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth.js";
+import { rankSrc } from "./landing/shared.jsx";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
 import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon, ChatIcon, CompeteIcon, DashboardIcon, DataIcon, DeloadIcon, DesignWorkoutIcon, ExerciseLibraryIcon, FriendsIcon, GymModeIcon, HistoryIcon, LogWorkoutIcon, MissionsIcon, OverloadIcon, PrTimelineIcon, ProfileIcon, ProgressIcon, RanksIcon, RecoveryIcon, ReportsIcon, TrainingLoadIcon, WeakPointsIcon } from "./icons/navIcons.jsx";
@@ -7,7 +8,6 @@ import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon
 const navItems = [
   {
     section: "Main",
-    accent: "text-cyan-300",
     items: [
       { to: "/dashboard", label: "Dashboard", icon: DashboardIcon },
       { to: "/gym-mode", label: "Gym Mode", icon: GymModeIcon },
@@ -17,7 +17,6 @@ const navItems = [
   },
   {
     section: "Training",
-    accent: "text-emerald-300",
     items: [
       { to: "/calendar", label: "Calendar", icon: CalendarIcon },
       { to: "/workouts", label: "Workout History", icon: HistoryIcon },
@@ -28,7 +27,6 @@ const navItems = [
   },
   {
     section: "Intelligence",
-    accent: "text-violet-300",
     items: [
       { to: "/recovery", label: "Recovery", icon: RecoveryIcon },
       { to: "/training-load", label: "Training Load", icon: TrainingLoadIcon },
@@ -40,7 +38,6 @@ const navItems = [
   },
   {
     section: "Social",
-    accent: "text-pink-300",
     items: [
       { to: "/friends", label: "Friends", icon: FriendsIcon },
       { to: "/chat", label: "Chat", icon: ChatIcon }
@@ -48,7 +45,6 @@ const navItems = [
   },
   {
     section: "Progress",
-    accent: "text-amber-300",
     items: [
       { to: "/ranks", label: "Ranks", icon: RanksIcon },
       { to: "/missions", label: "Missions", icon: MissionsIcon },
@@ -60,7 +56,6 @@ const navItems = [
   },
   {
     section: "Account",
-    accent: "text-slate-300",
     items: [
       { to: "/assessment", label: "Assessment", icon: AssessmentIcon },
       { to: "/profile", label: "Profile", icon: ProfileIcon },
@@ -69,56 +64,57 @@ const navItems = [
   }
 ];
 
-const Sidebar = ({ open, onClose, unreadMessages = 0, competePlace = null }) => {
+// Desktop navigation. Phones and tablets use the bottom bar and its More sheet instead.
+const Sidebar = ({ unreadMessages = 0, competePlace = null }) => {
+  const { user } = useAuth();
+  const rank = user?.currentOverallRank || "Copper";
+
   return (
-    <>
-      <div
-        className={`fixed inset-0 z-40 bg-black/70 transition lg:hidden ${open ? "block" : "hidden"}`}
-        onClick={onClose}
-      />
-      <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden border-r border-white/10 bg-forge-panel p-5 transition-transform lg:sticky lg:top-16 lg:z-0 lg:h-[calc(100vh-4rem)] lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="mb-8 flex shrink-0 items-center justify-between lg:hidden">
-          <img alt="ForgeLift" className="h-7 w-auto" src="/logo-full.png" />
-          <button className="rounded-md p-2 text-slate-300 hover:bg-white/10" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1 [scrollbar-color:rgba(148,163,184,0.45)_rgba(15,23,42,0.45)] [scrollbar-width:thin]">
-          {navItems.map((group) => (
-            <div key={group.section}>
-              <p className={`mb-2 px-3 text-[11px] font-black uppercase tracking-[0.18em] ${group.accent || "text-slate-500"}`}>
-                {group.section}
-              </p>
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      `flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
-                        isActive
-                          ? "bg-forge-ember text-white shadow-lg shadow-orange-950/20"
-                          : "text-slate-300 hover:bg-white/10 hover:text-white"
-                      }`
-                    }
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                    {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
-                    {item.to === "/compete" ? <PlaceBadge className="ml-auto" place={competePlace} /> : null}
-                  </NavLink>
-                ))}
-              </div>
+    <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 flex-col border-r border-white/[0.06] lg:flex">
+      <nav aria-label="Main" className="scrollbar-none min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {navItems.map((group) => (
+          <div key={group.section}>
+            <p className="mb-1.5 px-3 text-xs font-semibold text-zinc-500">{group.section}</p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => (
+                <NavLink
+                  end={item.to === "/workouts" || item.to === "/progress"}
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `group relative flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-forge-ember/[0.16] to-transparent text-white before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-forge-ember before:shadow-[0_0_12px_rgba(249,115,22,0.9)]"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <item.icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? "text-orange-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
+                      <span className="truncate">{item.label}</span>
+                      {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
+                      {item.to === "/compete" ? <PlaceBadge className="ml-auto" place={competePlace} /> : null}
+                    </>
+                  )}
+                </NavLink>
+              ))}
             </div>
-          ))}
-        </nav>
-      </aside>
-    </>
+          </div>
+        ))}
+      </nav>
+
+      <Link
+        className="m-3 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 transition-colors hover:border-forge-ember/40 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+        to="/ranks"
+      >
+        <img alt="" className="h-10 w-10 shrink-0 object-contain drop-shadow-[0_6px_16px_rgba(249,115,22,0.35)]" height="320" src={rankSrc(rank)} width="320" />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-bold text-white">{user?.name || "Your rank"}</span>
+          <span className="block text-xs text-zinc-400">{rank} rank</span>
+        </span>
+      </Link>
+    </aside>
   );
 };
 

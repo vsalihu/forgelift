@@ -231,7 +231,7 @@ const CompetePage = () => {
                   aria-pressed={filters.type === type.value}
                   className={`min-h-10 rounded-full border px-4 text-sm font-bold transition ${
                     filters.type === type.value
-                      ? "border-forge-ember bg-forge-ember text-white"
+                      ? "border-forge-ember bg-forge-ember text-[#160a02]"
                       : "border-white/10 bg-black/25 text-slate-300 hover:bg-white/10"
                   }`}
                   key={type.value}

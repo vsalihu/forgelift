@@ -55,7 +55,7 @@ const WorkoutCompleteModal = ({ open, analysis, onClose }) => {
             Workout History
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
             to="/dashboard"
           >
             Home Screen

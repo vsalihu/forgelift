@@ -210,7 +210,7 @@ const ChatThreadPage = () => {
               <div className={`flex ${isMine ? "justify-end" : "justify-start"}`} key={message._id}>
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
-                    isMine ? "bg-forge-ember text-white" : "bg-white/10 text-slate-100"
+                    isMine ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-100"
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{message.text}</p>

@@ -351,7 +351,7 @@ const AssessmentPage = () => {
                   <button
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       answers.limitations.includes(limitation)
-                        ? "bg-forge-ember text-white"
+                        ? "bg-forge-ember text-[#160a02]"
                         : "bg-white/10 text-slate-300 hover:bg-white/15"
                     }`}
                     key={limitation}

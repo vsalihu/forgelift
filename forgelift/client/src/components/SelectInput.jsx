@@ -1,9 +1,9 @@
 const SelectInput = ({ label, options, error, className = "", ...props }) => {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-2 block text-sm font-medium text-slate-200">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-zinc-200">{label}</span>
       <select
-        className="min-h-11 w-full rounded-md border border-white/10 bg-black/30 px-3 py-3 text-base text-white outline-none transition focus:border-forge-ember focus:ring-2 focus:ring-forge-ember/20 sm:text-sm"
+        className="min-h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-base text-white outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-zinc-500 hover:border-white/20 focus:border-forge-ember/70 focus:bg-white/[0.05] focus:shadow-[0_0_0_4px_rgba(249,115,22,0.14)] sm:text-sm bg-[#101217]"
         {...props}
       >
         <option value="">Select...</option>

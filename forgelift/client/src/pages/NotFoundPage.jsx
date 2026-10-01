@@ -10,7 +10,7 @@ const NotFoundPage = () => {
         <h1 className="mt-3 text-4xl font-black text-white">Page not found</h1>
         <p className="mt-4 text-slate-400">The route you requested does not exist in ForgeLift Stage 1.</p>
         <Link
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
           to="/dashboard"
         >
           Return to dashboard

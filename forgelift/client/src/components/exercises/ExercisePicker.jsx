@@ -96,7 +96,7 @@ const ExercisePicker = ({
             >
               <SlidersHorizontal className="h-4 w-4" />
               Filters
-              {activeFilterCount ? <span className="ml-0.5 rounded-full bg-forge-ember px-1.5 py-0.5 text-xs text-white">{activeFilterCount}</span> : null}
+              {activeFilterCount ? <span className="ml-0.5 rounded-full bg-forge-ember px-1.5 py-0.5 text-xs text-[#160a02]">{activeFilterCount}</span> : null}
               {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
           </div>
@@ -107,7 +107,7 @@ const ExercisePicker = ({
               return (
                 <button
                   className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-black ${
-                    filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
+                    filters.muscle === muscle ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-300"
                   }`}
                   key={muscle}
                   type="button"
@@ -141,7 +141,7 @@ const ExercisePicker = ({
                     return (
                       <button
                         className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-black ${
-                          filters.muscle === muscle ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300"
+                          filters.muscle === muscle ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-300"
                         }`}
                         key={muscle}
                         type="button"

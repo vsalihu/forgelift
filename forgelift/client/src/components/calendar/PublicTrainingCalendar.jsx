@@ -35,7 +35,7 @@ const DayCellIcon = ({ dayData, isPast }) => {
 
   if (dayData.completed) {
     return (
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forge-ember text-white shadow">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forge-ember text-[#160a02] shadow">
         <DumbbellIcon className="h-3.5 w-3.5" />
       </span>
     );

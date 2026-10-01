@@ -73,7 +73,7 @@ const CoopSessionMessageCard = ({ session: initialSession, onChanged }) => {
               <span className="text-slate-300">{formatNumber(participant.totalVolume)}kg · {participant.completedSets || 0} sets</span>
             </div>
           ))}
-          <Link className="mt-2 inline-flex min-h-10 items-center rounded-md bg-forge-ember px-3 text-sm font-semibold text-white" to="/gym-mode">
+          <Link className="mt-2 inline-flex min-h-10 items-center rounded-full bg-forge-ember px-3 text-sm font-semibold text-[#160a02]" to="/gym-mode">
             Go to Gym Mode
           </Link>
         </div>

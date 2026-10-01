@@ -298,7 +298,7 @@ const ProfilePage = () => {
               </p>
             ) : null}
             <Link
-              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
               to="/assessment"
             >
               {user?.assessmentCompleted ? "Retake Assessment" : "Start Assessment"}
@@ -329,7 +329,7 @@ const ProfilePage = () => {
               related exercises.
             </p>
             <Link
-              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+              className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
               to="/strength-baselines"
             >
               Open Strength Baselines

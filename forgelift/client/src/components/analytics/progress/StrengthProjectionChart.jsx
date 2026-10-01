@@ -126,7 +126,7 @@ const StrengthProjectionChart = ({ lifts, selectedLiftName, onSelectLift, unit, 
               />
             </label>
             <button
-              className="min-h-10 rounded-md bg-forge-ember px-4 text-sm font-bold text-white transition hover:bg-orange-600 disabled:opacity-50"
+              className="min-h-10 rounded-full bg-forge-ember px-4 text-sm font-bold text-[#160a02] transition hover:bg-orange-400 disabled:opacity-50"
               disabled={goalBusy || !Number(goalInput)}
               type="submit"
             >

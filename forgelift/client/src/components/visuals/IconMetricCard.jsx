@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import StatusGlowCard from "./StatusGlowCard.jsx";
 
 const IconMetricCard = ({ icon: Icon, label, value, status, variant = "neutral", to, tourId }) => {
@@ -19,7 +20,11 @@ const IconMetricCard = ({ icon: Icon, label, value, status, variant = "neutral",
   );
 
   if (!to) return content;
-  return <a href={to}>{content}</a>;
+  return (
+    <Link className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200" to={to}>
+      {content}
+    </Link>
+  );
 };
 
 export default IconMetricCard;

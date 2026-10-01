@@ -10,7 +10,7 @@ const FilterChipGroup = ({ items = [], value, onChange, className = "" }) => (
       return (
         <button
           className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-40 ${
-            active ? "bg-forge-ember text-white" : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
+            active ? "bg-forge-ember text-[#160a02]" : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
           }`}
           disabled={disabled}
           key={itemValue || label}

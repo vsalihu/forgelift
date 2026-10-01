@@ -103,7 +103,7 @@ const ChatListPage = () => {
             <div className="flex shrink-0 flex-col items-end gap-1">
               <span className="text-xs text-slate-500">{formatRelativeTime(conversation.lastMessageAt)}</span>
               {conversation.unreadCount ? (
-                <span className="rounded-full bg-forge-ember px-2 py-0.5 text-xs font-bold text-white">{conversation.unreadCount}</span>
+                <span className="rounded-full bg-forge-ember px-2 py-0.5 text-xs font-bold text-[#160a02]">{conversation.unreadCount}</span>
               ) : null}
             </div>
           </Link>

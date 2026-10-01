@@ -1,19 +1,21 @@
 const variants = {
-  primary: "bg-forge-ember text-white hover:bg-orange-600 focus:ring-orange-400",
-  secondary: "bg-white/10 text-white hover:bg-white/15 focus:ring-white/30",
-  ghost: "bg-transparent text-forge-steel hover:bg-white/10 focus:ring-white/20",
-  danger: "bg-red-500/15 text-red-100 hover:bg-red-500/25 focus:ring-red-400/50",
-  success: "bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25 focus:ring-emerald-400/50"
+  primary:
+    "bg-gradient-to-b from-orange-400 to-forge-ember text-[#160a02] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_10px_30px_-12px_rgba(249,115,22,0.9)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_14px_40px_-10px_rgba(249,115,22,1)]",
+  secondary: "border border-white/12 bg-white/[0.05] text-white hover:border-white/25 hover:bg-white/[0.09]",
+  ghost: "bg-transparent text-zinc-300 hover:bg-white/[0.07] hover:text-white",
+  danger: "border border-red-400/25 bg-red-500/10 text-red-100 hover:bg-red-500/20",
+  success: "border border-emerald-400/25 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20"
 };
 
+// Primary uses dark text on ember: white on this orange fails contrast.
 const Button = ({ children, className = "", variant = "primary", loading = false, ...props }) => {
   return (
     <button
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant] || variants.primary} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition-[background-color,border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07080a] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant] || variants.primary} ${className}`}
       disabled={loading || props.disabled}
       {...props}
     >
-      {loading ? "Loading..." : children}
+      {loading ? "Loading…" : children}
     </button>
   );
 };

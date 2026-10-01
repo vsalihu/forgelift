@@ -54,26 +54,27 @@ export const moreMenuGroups = [
 ];
 
 const MobileMoreMenu = ({ open, onClose, unreadMessages = 0 }) => (
-  <BottomSheet open={open} title="More ForgeLift" onClose={onClose}>
-    <div className="space-y-5">
+  <BottomSheet open={open} title="Everything in ForgeLift" onClose={onClose}>
+    <div className="space-y-6">
       {moreMenuGroups.map((group) => (
         <section key={group.title}>
-          <p className="mb-2 px-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">{group.title}</p>
-          <div className="grid gap-2">
+          <p className="mb-2 px-1 text-xs font-semibold text-zinc-500">{group.title}</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {group.items.map((item) => (
               <NavLink
                 className={({ isActive }) =>
-                  `flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-bold transition ${
-                    isActive ? "bg-forge-ember text-white" : "bg-white/10 text-slate-200 hover:bg-white/15"
+                  `relative flex min-h-[4.5rem] flex-col justify-between gap-2 rounded-2xl border p-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+                    isActive ? "border-forge-ember/50 bg-forge-ember/[0.12] text-white" : "border-white/[0.07] bg-white/[0.03] text-zinc-200 hover:border-white/20"
                   }`
                 }
+                end={item.to === "/workouts"}
                 key={item.to}
                 to={item.to}
                 onClick={onClose}
               >
-                <item.icon className="h-5 w-5 shrink-0 text-forge-copper" />
-                {item.label}
-                {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
+                <item.icon className="h-5 w-5 text-orange-300" />
+                <span className="leading-tight">{item.label}</span>
+                {item.to === "/chat" ? <UnreadBadge className="absolute right-3 top-3" count={unreadMessages} /> : null}
               </NavLink>
             ))}
           </div>

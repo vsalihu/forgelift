@@ -54,7 +54,7 @@ const MissionDetailModal = ({ mission, onClose, onComplete }) => {
             </section>
           ) : null}
           <section className="grid gap-3 sm:grid-cols-2">
-            <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white" to="/gym-mode">
+            <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02]" to="/gym-mode">
               <DumbbellIcon className="h-4 w-4" />
               Start Related Workout
             </Link>

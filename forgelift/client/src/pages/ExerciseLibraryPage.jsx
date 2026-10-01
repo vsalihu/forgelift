@@ -316,7 +316,7 @@ const ExerciseLibraryPage = () => {
                 type="button"
                 className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
                   active
-                    ? "bg-forge-ember text-white"
+                    ? "bg-forge-ember text-[#160a02]"
                     : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
                 }`}
                 onClick={() => setFilters({ ...filters, muscle: value })}
@@ -338,7 +338,7 @@ const ExerciseLibraryPage = () => {
                   type="button"
                   className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
                     active
-                      ? "bg-forge-ember text-white"
+                      ? "bg-forge-ember text-[#160a02]"
                       : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
                   }`}
                   onClick={() => setFilters({ ...filters, muscle })}

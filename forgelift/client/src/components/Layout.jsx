@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import Sidebar from "./Sidebar.jsx";
 import MobileNav from "./MobileNav.jsx";
@@ -8,17 +7,22 @@ import { useCompetitionStanding } from "../hooks/useCompetitionStanding.js";
 import StandingChangeModal from "./compete/StandingChangeModal.jsx";
 
 const Layout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const unreadMessages = useUnreadMessages();
   const standing = useCompetitionStanding();
   const competePlace = standing?.enabled ? standing.place : null;
 
   return (
-    <div className="min-h-screen">
-      <Navbar competePlace={competePlace} unreadMessages={unreadMessages} onMenuClick={() => setSidebarOpen(true)} />
+    <div className="min-h-[100dvh]">
+      <a
+        className="sr-only z-50 rounded-full bg-forge-ember px-4 py-2 font-bold text-[#160a02] focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        href="#main-content"
+      >
+        Skip to content
+      </a>
+      <Navbar unreadMessages={unreadMessages} />
       <div className="lg:flex">
-        <Sidebar competePlace={competePlace} open={sidebarOpen} unreadMessages={unreadMessages} onClose={() => setSidebarOpen(false)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden">
+        <Sidebar competePlace={competePlace} unreadMessages={unreadMessages} />
+        <main className="min-w-0 flex-1 overflow-x-clip" id="main-content">
           <PageContainer>{children}</PageContainer>
         </main>
       </div>

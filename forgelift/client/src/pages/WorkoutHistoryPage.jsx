@@ -73,7 +73,7 @@ const WorkoutHistoryPage = () => {
           <h1 className="mt-2 text-3xl font-black text-white">Logged sessions</h1>
         </div>
         <Link
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
           to="/workouts/new"
         >
           <Plus className="h-4 w-4" />
@@ -90,7 +90,7 @@ const WorkoutHistoryPage = () => {
           <p className="text-lg font-bold text-white">No workouts logged yet.</p>
           <p className="mt-2 text-slate-400">Start your first session to build your workout history.</p>
           <Link
-            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
             to="/workouts/new"
           >
             Start your first session

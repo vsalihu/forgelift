@@ -1,5 +1,7 @@
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
@@ -7,13 +9,8 @@ import ErrorState from "../components/ui/ErrorState.jsx";
 import DataReadinessCard from "../components/readiness/DataReadinessCard.jsx";
 import BodyweightCheckInCard from "../components/bodyweight/BodyweightCheckInCard.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
-import AnimatedProgressBar from "../components/visuals/AnimatedProgressBar.jsx";
-import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
-import ProgressRing from "../components/visuals/ProgressRing.jsx";
-import StatPill from "../components/visuals/StatPill.jsx";
-import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
-import RankBadge from "../components/ranks/RankBadge.jsx";
 import WeakPointCard from "../components/weakPoints/WeakPointCard.jsx";
+import { rankSrc } from "../components/landing/shared.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { advancedAnalyticsService } from "../services/advancedAnalyticsService.js";
 import { bodyweightService } from "../services/bodyweightService.js";
@@ -24,48 +21,140 @@ import { overloadService } from "../services/overloadService.js";
 import { personalRecordService } from "../services/personalRecordService.js";
 import { rankService } from "../services/rankService.js";
 import { recoveryService } from "../services/recoveryService.js";
-import { trainingBalanceService } from "../services/trainingBalanceService.js";
 import { userService } from "../services/userService.js";
 import { weakPointService } from "../services/weakPointService.js";
 import { workoutService } from "../services/workoutService.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { getMuscleImage } from "../utils/muscleImages.js";
 import { FlameIcon, MedalIcon } from "../components/icons/featureIcons.jsx";
-import { AssessmentIcon, DeloadIcon, DumbbellIcon, MissionsIcon, OverloadIcon, RanksIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
+import { AssessmentIcon, DeloadIcon, GymModeIcon, MissionsIcon, OverloadIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
 
-const formatDate = (date) =>
-  new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(new Date(date));
-
+const EASE = [0.16, 1, 0.3, 1];
+const formatDate = (date) => new Intl.DateTimeFormat("en", { weekday: "short", day: "numeric", month: "short" }).format(new Date(date));
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
+const greeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Late session";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
 
-const CompactCard = ({ title, value, note, icon: Icon, tone = "default", to, tourId }) => {
-  const toneClass =
-    tone === "warning"
-      ? "border-orange-400/20 bg-orange-500/10"
-      : tone === "good"
-        ? "border-emerald-400/20 bg-emerald-500/10"
-        : "border-white/10 bg-black/20";
-  const content = (
-    <div data-tour-id={tourId} className={`rounded-lg border p-4 transition ${toneClass} ${to ? "hover:border-forge-copper/60" : ""}`}>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-300">{title}</p>
-        {Icon ? <Icon className="h-5 w-5 text-forge-ember" /> : null}
-      </div>
-      <p className="text-xl font-black text-white">{value}</p>
-      {note ? <p className="mt-2 text-sm leading-5 text-slate-400">{note}</p> : null}
+// Section heading with an optional link on the right.
+const SectionTitle = ({ title, to, linkLabel }) => (
+  <div className="mb-4 flex items-end justify-between gap-4">
+    <h2 className="font-display text-xl text-white sm:text-2xl">{title}</h2>
+    {to ? (
+      <Link className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-orange-300 hover:text-orange-200" to={to}>
+        {linkLabel}
+        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+      </Link>
+    ) : null}
+  </div>
+);
+
+// Rank badge inside a ring that fills toward the next rank.
+const RankRing = ({ rank, progress }) => {
+  const reduce = useReducedMotion();
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  return (
+    <div className="relative h-36 w-36 shrink-0 sm:h-40 sm:w-40">
+      <div aria-hidden="true" className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.35),transparent_70%)] blur-xl" />
+      <svg aria-hidden="true" className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" fill="none" r={radius} stroke="rgba(255,255,255,0.07)" strokeWidth="5" />
+        <motion.circle
+          animate={{ strokeDashoffset: circumference * (1 - Math.min(100, Math.max(0, progress)) / 100) }}
+          cx="60"
+          cy="60"
+          fill="none"
+          initial={reduce ? false : { strokeDashoffset: circumference }}
+          r={radius}
+          stroke="url(#rank-ring)"
+          strokeDasharray={circumference}
+          strokeLinecap="round"
+          strokeWidth="5"
+          style={{ filter: "drop-shadow(0 0 6px rgba(249,115,22,0.7))" }}
+          transition={{ duration: 1.4, ease: EASE, delay: 0.2 }}
+        />
+        <defs>
+          <linearGradient id="rank-ring" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stopColor="#b87333" />
+            <stop offset="100%" stopColor="#fdba74" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <img alt={`${rank} rank badge`} className="absolute inset-[22%] h-[56%] w-[56%] object-contain drop-shadow-[0_10px_24px_rgba(249,115,22,0.4)]" height="320" src={rankSrc(rank)} width="320" />
     </div>
   );
+};
 
-  return to ? <Link to={to}>{content}</Link> : content;
+const StatTile = ({ to, icon: Icon, label, value, detail, tone = "default", tourId }) => (
+  <Link
+    className={`group flex min-h-[8.5rem] flex-col justify-between rounded-2xl border p-4 transition-[border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 sm:p-5 ${
+      tone === "alert"
+        ? "border-forge-ember/40 bg-forge-ember/[0.08] hover:border-forge-ember/70"
+        : "border-white/[0.07] bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.04]"
+    }`}
+    data-tour-id={tourId}
+    to={to}
+  >
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-sm font-semibold text-zinc-400">{label}</p>
+      <Icon className={`h-5 w-5 shrink-0 ${tone === "alert" ? "text-orange-300" : "text-zinc-500 group-hover:text-orange-300"}`} />
+    </div>
+    <div className="mt-3 min-w-0">
+      <p className="font-display text-xl leading-tight text-white [overflow-wrap:anywhere] sm:text-[1.65rem]">{value}</p>
+      {detail ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-zinc-400">{detail}</p> : null}
+    </div>
+  </Link>
+);
+
+const MuscleTile = ({ score }) => {
+  const image = getMuscleImage(score.muscleGroup);
+  const value = Math.round(score.score ?? 0);
+  const ready = value >= 75;
+  const low = value < 60;
+  const radius = 26;
+  const circumference = 2 * Math.PI * radius;
+  return (
+    <div className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-2.5 sm:gap-3 sm:p-3">
+      <div className="relative h-12 w-12 shrink-0 sm:h-16 sm:w-16">
+        <svg aria-hidden="true" className="absolute inset-0 -rotate-90" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" fill="none" r={radius} stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+          <circle
+            cx="30"
+            cy="30"
+            fill="none"
+            r={radius}
+            stroke={ready ? "#fb923c" : low ? "rgba(248,113,113,0.8)" : "rgba(249,115,22,0.5)"}
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - value / 100)}
+            strokeLinecap="round"
+            strokeWidth="3"
+          />
+        </svg>
+        {image ? <img alt="" className="absolute inset-[12%] h-[76%] w-[76%] object-contain" height="160" loading="lazy" src={image} width="160" /> : null}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate font-semibold text-white">{score.muscleGroup}</p>
+        <p className={`text-xs tabular-nums sm:text-sm ${ready ? "text-orange-300" : low ? "text-red-300" : "text-zinc-400"}`}>
+          {value}% {ready ? "ready" : low ? "go easy" : "recovering"}
+        </p>
+      </div>
+    </div>
+  );
 };
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const [state, setState] = useState({
     recentWorkouts: [],
     prSummary: null,
     rankData: null,
     recoveryData: null,
-    trainingBalance: null,
     weakPoints: [],
     overloadRecommendations: [],
     deloadRecommendations: [],
@@ -89,7 +178,6 @@ const DashboardPage = () => {
         prData,
         ranks,
         recovery,
-        balance,
         weakPointData,
         overloadData,
         deloadData,
@@ -104,7 +192,6 @@ const DashboardPage = () => {
         personalRecordService.getSummary(),
         rankService.getRanks(),
         recoveryService.getTodayRecommendation(),
-        trainingBalanceService.getTrainingBalance(),
         weakPointService.getWeakPoints(),
         overloadService.getOverloadRecommendations(),
         deloadService.getDeloadRecommendations(),
@@ -121,7 +208,6 @@ const DashboardPage = () => {
         prSummary: prData,
         rankData: ranks,
         recoveryData: recovery,
-        trainingBalance: balance.trainingBalance,
         weakPoints: weakPointData.weakPoints || [],
         overloadRecommendations: overloadData.recommendations || [],
         deloadRecommendations: deloadData.recommendations || [],
@@ -148,7 +234,6 @@ const DashboardPage = () => {
     prSummary,
     rankData,
     recoveryData,
-    trainingBalance,
     weakPoints,
     overloadRecommendations,
     deloadRecommendations,
@@ -160,119 +245,124 @@ const DashboardPage = () => {
     bodyweight
   } = state;
 
-  const latestPR = prSummary?.latestPR;
-  const todayRecommendation = recoveryData?.todayRecommendation;
-  const topOverload = overloadRecommendations[0];
+  const firstName = user?.name?.split(" ")[0] || "lifter";
+  const rank = rankData?.overallRank || user?.currentOverallRank || "Copper";
+  const progress = rankData?.overallProgress || {};
+  const nextRank = progress.nextRank?.name;
+  const today = recoveryData?.todayRecommendation;
+  const unit = user?.preferredUnits === "imperial" ? "lb" : "kg";
   const severityOrder = { Critical: 4, High: 3, Medium: 2, Low: 1 };
-  const highestDeload = [...deloadRecommendations].sort(
-    (a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0)
-  )[0];
-  const topMission = missionData?.activeMissions?.[0];
+  const topDeload = [...deloadRecommendations].sort((a, b) => (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0))[0];
   const weeklyTarget = missionData?.weeklyTarget;
-  const readyMuscles = recoveryData?.recoveryScores?.filter((score) => score.score >= 75).slice(0, 3) || [];
-  const avoidMuscles = recoveryData?.recoveryScores?.filter((score) => score.score < 60).slice(0, 3) || [];
-  const bodyweightUnit = user?.preferredUnits === "imperial" ? "lb" : "kg";
-  const handleBodyweightSave = async (payload) => {
-    const data = await bodyweightService.checkIn(payload);
-    setState((current) => ({ ...current, bodyweight: data }));
-  };
+  const topMission = missionData?.activeMissions?.[0];
+  const scores = (recoveryData?.recoveryScores || []).filter((score) => score.score !== null && score.score !== undefined);
+  const readyCount = scores.filter((score) => score.score >= 75).length;
+  const avoid = scores.filter((score) => score.score < 60);
+  const muscleTiles = [...scores].sort((a, b) => a.score - b.score).slice(0, 6);
+  const latestPR = prSummary?.latestPR;
+  const insight = monthlyInsights?.recommendations?.[0] || monthlyReport?.summary;
+  const showReadiness = readiness && readiness.overallReadiness !== "ready";
+
+  const rise = (delay = 0) => ({
+    initial: reduce ? false : { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.7, delay, ease: EASE }
+  });
 
   return (
     <Layout>
-      <section data-tour-id="dashboard-hero" className="mb-6 rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] p-5 shadow-metal sm:p-6">
-        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Today</p>
-            <h1 className="mt-2 text-2xl font-black text-white sm:text-4xl">Welcome, {user?.name}</h1>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <RankBadge rank={rankData?.overallRank || user?.currentOverallRank || "Copper"} />
-              <StatPill variant="rank">{rankData?.xp || user?.xp || 0} XP</StatPill>
-              <StatPill variant="info">{todayRecommendation?.bestWorkoutType || "Any Workout"}</StatPill>
+      <motion.section
+        {...rise(0)}
+        className="relative mb-6 overflow-hidden rounded-3xl border border-white/[0.08] bg-[radial-gradient(70%_120%_at_100%_0%,rgba(249,115,22,0.16),transparent_60%),linear-gradient(180deg,#111318,#0b0c10)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-8"
+        data-tour-id="dashboard-hero"
+      >
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 max-w-2xl">
+            <p className="text-sm font-semibold text-zinc-400">{greeting()},</p>
+            <h1 className="font-display mt-1 text-4xl leading-[1.05] text-white sm:text-5xl">{firstName}.</h1>
+            <p className="mt-5 flex flex-wrap items-baseline gap-x-2 text-lg text-zinc-300">
+              Best today:
+              <span className="font-display text-2xl text-orange-300">{today?.bestWorkoutType || "Any workout"}</span>
+            </p>
+            {today?.reasons?.length ? (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {today.reasons.slice(0, 3).map((reason) => (
+                  <li className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-sm text-zinc-300" key={reason}>
+                    {reason}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-base text-zinc-400">Start Gym Mode whenever you're ready to train.</p>
+            )}
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Button className="min-h-12 px-6 text-base" data-tour-id="dashboard-start-gym-mode" type="button" onClick={() => navigate("/gym-mode")}>
+                <GymModeIcon className="h-5 w-5" />
+                Start Gym Mode
+              </Button>
+              <Link
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] px-6 text-base font-bold text-white transition-colors hover:border-white/25 hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                to="/workouts/new"
+              >
+                Log a workout
+              </Link>
               <TutorialLauncher autoStart pageKey="dashboard" steps={getTutorialSteps("dashboard")} />
             </div>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-              Best today: {todayRecommendation?.bestWorkoutType || "Any Workout"}.{" "}
-              {todayRecommendation?.reasons?.[0] || "Start with Gym Mode when you are ready to train."}
-            </p>
-            {todayRecommendation?.reasons?.length ? (
-              <div className="mt-3 flex max-w-2xl flex-wrap gap-2">
-                {todayRecommendation.reasons.slice(0, 4).map((reason) => (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200" key={reason}>
-                    {reason}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            <div className="mt-4 max-w-xl">
-              <AnimatedProgressBar
-                label={`Progress to ${rankData?.overallProgress?.nextRank?.name || "next rank"}`}
-                value={rankData?.overallProgress?.progressPercentage || 0}
-                variant="rank"
-              />
-            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <Button data-tour-id="dashboard-start-gym-mode" className="min-h-12 w-full text-base" type="button" onClick={() => { window.location.href = "/gym-mode"; }}>
-              <DumbbellIcon className="h-5 w-5" />
-              Start Gym Mode
-            </Button>
-            <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-base font-semibold text-white transition hover:bg-white/15" to="/workouts/new">
-              Log Workout
-            </Link>
-          </div>
-        </div>
-      </section>
 
-      {!user?.assessmentCompleted ? (
-        <section className="mb-6 rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-3">
-              <span className="mt-1 rounded-lg bg-forge-ember/20 p-2 text-forge-ember">
-                <AssessmentIcon className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="font-black text-white">Complete your ForgeLift Assessment</h2>
-                <p className="mt-1 text-sm leading-6 text-orange-100">
-                  Answer a few questions so ForgeLift can estimate your starting level, create strength baselines,
-                  and personalise your recommendations.
-                </p>
-              </div>
-            </div>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
-              to="/assessment"
-            >
-              Start Assessment
-            </Link>
-          </div>
-        </section>
-      ) : (
-        <section className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            className="flex items-center gap-5 rounded-3xl p-2 transition-colors hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 lg:flex-col lg:gap-3 lg:p-4 lg:text-center"
+            to="/ranks"
+          >
+            <RankRing progress={progress.progressPercentage || 0} rank={rank} />
             <div>
-              <p className="text-sm font-bold text-slate-300">
-                Assessment Level: {user.assessmentSummary?.determinedLevel || user.trainingExperience || "Not set"}
+              <p className="font-display text-2xl text-white">{rank}</p>
+              <p className="mt-1 text-sm text-zinc-400">
+                {nextRank ? (
+                  <>
+                    <span className="font-semibold tabular-nums text-orange-300">{Math.round(progress.progressPercentage || 0)}%</span> to {nextRank}
+                  </>
+                ) : (
+                  "Top rank reached"
+                )}
               </p>
-              <p className="mt-1 text-sm text-slate-400">
-                Confidence: {user.assessmentSummary?.confidence || "Low"}
-                {user.assessmentCompletedAt ? ` / Last completed: ${formatDate(user.assessmentCompletedAt)}` : ""}
-              </p>
+              {progress.pointsToNextRank ? <p className="mt-0.5 text-xs tabular-nums text-zinc-500">{formatNumber(progress.pointsToNextRank)} points to go</p> : null}
             </div>
-            <Link className="text-sm font-semibold text-forge-ember hover:text-orange-300" to="/assessment">
-              Retake Assessment
-            </Link>
-          </div>
-        </section>
-      )}
+          </Link>
+        </div>
+      </motion.section>
 
       {!loading && !error && bodyweight?.isCheckInDue ? (
         <section className="mb-6">
           <BodyweightCheckInCard
             currentBodyweight={bodyweight.currentBodyweight || user?.bodyweight}
             due={bodyweight.isCheckInDue}
-            unit={bodyweightUnit}
-            onSave={handleBodyweightSave}
+            unit={unit}
+            onSave={async (payload) => {
+              const data = await bodyweightService.checkIn(payload);
+              setState((current) => ({ ...current, bodyweight: data }));
+            }}
           />
+        </section>
+      ) : null}
+
+      {!user?.assessmentCompleted ? (
+        <Link
+          className="mb-6 flex items-center gap-4 rounded-2xl border border-forge-ember/30 bg-forge-ember/[0.07] p-4 transition-colors hover:border-forge-ember/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+          to="/assessment"
+        >
+          <AssessmentIcon className="h-6 w-6 shrink-0 text-orange-300" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold text-white">Finish your assessment</span>
+            <span className="block text-sm text-zinc-400">Two minutes for better starting weights and recommendations.</span>
+          </span>
+          <ArrowRight aria-hidden="true" className="h-5 w-5 shrink-0 text-orange-300" />
+        </Link>
+      ) : null}
+
+      {showReadiness ? (
+        <section className="mb-6" data-tour-id="dashboard-data-readiness">
+          <DataReadinessCard readiness={readiness} />
         </section>
       ) : null}
 
@@ -280,226 +370,194 @@ const DashboardPage = () => {
       {error ? <ErrorState message={error} onRetry={loadDashboardData} /> : null}
 
       {!loading && !error ? (
-        <div className="space-y-6">
-          {weakPoints.length ? (
-            <section
-              data-tour-id="dashboard-path-to-max"
-              className="rounded-xl border border-forge-copper/25 bg-gradient-to-br from-forge-copper/10 via-transparent to-transparent p-5"
-            >
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
-                    Path to {rankData?.overallProgress?.nextRank?.name || "Max"}
-                  </p>
-                  <h2 className="mt-2 text-xl font-black text-white">What&apos;s holding back your progress</h2>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
-                    {rankData?.overallProgress?.pointsToNextRank
-                      ? `${formatNumber(rankData.overallProgress.pointsToNextRank)} points to ${rankData.overallProgress.nextRank?.name}. Your overall rank is the average of your trained muscles, so your weakest ones are what's pulling it down.`
-                      : "You've reached the top rank. This is what ForgeLift thinks is still holding your weakest muscles back."}
-                  </p>
-                </div>
-                <Link className="whitespace-nowrap text-sm font-semibold text-forge-ember hover:text-orange-300" to="/weak-points">
-                  View all {weakPoints.length}
-                </Link>
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                {weakPoints.slice(0, 3).map((weakPoint) => (
-                  <WeakPointCard key={weakPoint._id} weakPoint={weakPoint} />
-                ))}
-              </div>
-            </section>
-          ) : (
-            <section className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-5 text-center">
-              <p className="font-bold text-white">Nothing holding you back right now.</p>
-              <p className="mt-1 text-sm text-slate-300">
-                ForgeLift isn&apos;t seeing any imbalances, gaps, or neglected muscles. Keep training and logging consistently.
-              </p>
-            </section>
-          )}
-
-          <VisualSummaryGrid>
-            <IconMetricCard
-              icon={RanksIcon}
-              label="Overall Rank"
-              value={rankData?.overallRank || "Copper"}
-              status={`${rankData?.xp || 0} XP`}
-              variant="rank"
-              to="/ranks"
+        <div className="space-y-10">
+          <motion.section {...rise(0.08)} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile
+              detail={topMission?.title || "Open missions for this week's plan"}
+              icon={MissionsIcon}
+              label="This week"
+              to="/missions"
+              tourId="dashboard-missions"
+              value={weeklyTarget ? `${weeklyTarget.completedWorkouts} of ${weeklyTarget.targetWorkouts}` : "No target"}
             />
-            <IconMetricCard
-              tourId="dashboard-recovery"
+            <StatTile
+              detail={avoid.length ? `Go easy on ${avoid.slice(0, 2).map((item) => item.muscleGroup).join(", ")}` : "Nothing to avoid today"}
               icon={RecoveryIcon}
               label="Recovery"
-              value={todayRecommendation?.bestWorkoutType || "No data"}
-              status={avoidMuscles.length ? `Avoid: ${avoidMuscles.map((item) => item.muscleGroup).join(", ")}` : "No major avoid warning"}
-              variant={avoidMuscles.length ? "warning" : "success"}
               to="/recovery"
+              tourId="dashboard-recovery"
+              value={scores.length ? `${readyCount} ready` : "No data yet"}
             />
-            <IconMetricCard
-              tourId="dashboard-missions"
-              icon={MissionsIcon}
-              label="Weekly Target"
-              value={weeklyTarget ? `${weeklyTarget.completedWorkouts}/${weeklyTarget.targetWorkouts}` : "No target"}
-              status={topMission?.title || "Open missions for this week's plan"}
-              variant="info"
-              to="/missions"
+            <StatTile
+              detail={`${monthlyOverview?.totalPRs || 0} PRs, ${monthlyOverview?.missionsCompleted || 0} missions`}
+              icon={FlameIcon}
+              label="This month"
+              to="/analytics/advanced"
+              value={`${monthlyOverview?.totalWorkouts || 0} workouts`}
             />
-            <IconMetricCard
+            <StatTile
+              detail={topDeload?.reason || "No fatigue or plateau warning"}
               icon={DeloadIcon}
               label="Deload"
-              value={highestDeload ? `${highestDeload.severity} alert` : "Clear"}
-              status={highestDeload?.reason || "No strong fatigue or plateau signal"}
-              variant={highestDeload ? "danger" : "success"}
               to="/deload"
+              tone={topDeload && severityOrder[topDeload.severity] >= 3 ? "alert" : "default"}
+              value={topDeload ? `${topDeload.severity} alert` : "All clear"}
             />
-          </VisualSummaryGrid>
+          </motion.section>
 
-          <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-            <div className="metal-panel rounded-xl p-5">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Action Required</p>
-                  <h2 className="mt-2 text-xl font-black text-white">Most important now</h2>
-                </div>
-              </div>
-              <div className="grid gap-3">
-                <CompactCard
-                  tourId="dashboard-overload"
-                  icon={OverloadIcon}
-                  title="Smart Overload"
-                  value={topOverload?.exerciseName || "No target yet"}
-                  note={topOverload?.reason || "Log more workouts to unlock recommendations"}
-                  to="/overload"
-                />
-              </div>
-            </div>
+          {insight ? (
+            <p className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 text-base leading-7 text-zinc-300">
+              <span className="font-semibold text-orange-300">This month: </span>
+              {insight}
+            </p>
+          ) : null}
 
-            <div className="metal-panel rounded-xl p-5">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Rank Progress</p>
-              <h2 className="mt-2 text-xl font-black text-white">{rankData?.overallRank || "Copper"}</h2>
-              <div className="mt-5 flex items-center gap-5">
-                <ProgressRing
-                  label="Rank"
-                  size={120}
-                  sublabel={rankData?.overallProgress?.nextRank?.name || "Max"}
-                  value={rankData?.overallProgress?.progressPercentage || 0}
-                  variant="rank"
-                />
-                <div className="flex-1">
-                  <AnimatedProgressBar
-                    label={`${rankData?.overallProgress?.pointsToNextRank || 0} points to ${
-                      rankData?.overallProgress?.nextRank?.name || "max rank"
-                    }`}
-                    value={rankData?.overallProgress?.progressPercentage || 0}
-                    variant="rank"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
+          <div className="grid gap-10 xl:grid-cols-[1.15fr_1fr] xl:gap-6">
+            <section className="min-w-0" data-tour-id="dashboard-overload">
+              <SectionTitle linkLabel="All suggestions" title="Next session" to="/overload" />
+              {overloadRecommendations.length ? (
+                <ul className="space-y-2">
+                  {overloadRecommendations.slice(0, 3).map((item) => {
+                    const up = Number(item.recommendedWeight) > Number(item.currentWeight);
+                    return (
+                      <li key={item._id || item.exerciseName}>
+                        <Link
+                          className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 transition-colors hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                          to="/overload"
+                        >
+                          <span
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                              up ? "bg-forge-ember/15 text-orange-300" : "bg-white/[0.06] text-zinc-300"
+                            }`}
+                          >
+                            {up ? <OverloadIcon className="h-5 w-5" /> : <DeloadIcon className="h-5 w-5" />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold text-white">{item.exerciseName}</span>
+                            <span className="block truncate text-sm text-zinc-400">{item.recommendedRepTarget ? `${item.recommendedRepTarget} reps` : item.reason}</span>
+                          </span>
+                          {item.recommendedWeight ? (
+                            <span className="shrink-0 text-right">
+                              <span className="font-display block text-lg tabular-nums text-white">
+                                {formatNumber(item.recommendedWeight)} {unit}
+                              </span>
+                              {item.currentWeight && item.currentWeight !== item.recommendedWeight ? (
+                                <span className="block text-xs tabular-nums text-zinc-500">
+                                  from {formatNumber(item.currentWeight)} {unit}
+                                </span>
+                              ) : null}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-white/12 p-5 text-base text-zinc-400">
+                  Log a few workouts and ForgeLift will suggest the weight for your next session.
+                </p>
+              )}
+            </section>
 
-          <section className="grid gap-6 xl:grid-cols-2">
-            <div className="metal-panel rounded-xl p-5">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Recovery</p>
-                  <h2 className="mt-2 text-xl font-black text-white">Ready vs avoid</h2>
+            <section className="min-w-0">
+              <SectionTitle linkLabel="Recovery" title="Muscles today" to="/recovery" />
+              {muscleTiles.length ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {muscleTiles.map((score) => (
+                    <MuscleTile key={score.muscleGroup} score={score} />
+                  ))}
                 </div>
-                <Link className="text-sm font-semibold text-forge-ember hover:text-orange-300" to="/recovery">
-                  View
-                </Link>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg bg-black/20 p-4">
-                  <p className="mb-3 font-bold text-white">Ready</p>
-                  <div className="flex flex-wrap gap-2">
-                    {readyMuscles.length ? readyMuscles.map((score) => (
-                      <span className="rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-200" key={score.muscleGroup}>
-                        {score.muscleGroup} {score.score}%
-                      </span>
-                    )) : <span className="text-sm text-slate-400">No ready muscles yet.</span>}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-black/20 p-4">
-                  <p className="mb-3 font-bold text-white">Avoid heavy work</p>
-                  <div className="flex flex-wrap gap-2">
-                    {avoidMuscles.length ? avoidMuscles.map((score) => (
-                      <span className="rounded-full bg-red-500/10 px-3 py-1 text-sm font-semibold text-red-200" key={score.muscleGroup}>
-                        {score.muscleGroup} {score.score}%
-                      </span>
-                    )) : <span className="text-sm text-slate-400">No avoid warning.</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-white/12 p-5 text-base text-zinc-400">
+                  Recovery scores show up after your first logged workout.
+                </p>
+              )}
+            </section>
+          </div>
 
-            <div className="metal-panel rounded-xl p-5">
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Progress</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <CompactCard
-                  icon={MedalIcon}
-                  title="Latest PR"
-                  value={latestPR?.exerciseName || "None yet"}
-                  note={latestPR?.recordType?.replaceAll("_", " ") || "Log workouts to detect PRs"}
-                  to="/progress/prs"
-                />
-                <CompactCard
-                  icon={FlameIcon}
-                  title="This Month"
-                  value={`${monthlyOverview?.totalWorkouts || 0} workouts`}
-                  note={`${monthlyOverview?.totalPRs || 0} PRs / ${monthlyOverview?.missionsCompleted || 0} missions`}
-                  to="/analytics/advanced"
-                />
-              </div>
-              <p className="mt-4 rounded-lg bg-black/20 p-4 text-sm leading-6 text-slate-400">
-                {monthlyInsights?.recommendations?.[0] || monthlyReport?.summary || "Log more workouts to unlock monthly insights."}
-              </p>
-            </div>
-          </section>
-
-          <section className="metal-panel rounded-xl p-5">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Recent Activity</p>
-                <h2 className="mt-2 text-xl font-black text-white">Latest sessions</h2>
-              </div>
-              <Link className="text-sm font-semibold text-forge-ember hover:text-orange-300" to="/workouts">
-                History
-              </Link>
-            </div>
-            {recentWorkouts.length ? (
-              <div className="grid gap-4 md:grid-cols-3">
-                {recentWorkouts.map((workout) => {
-                  const muscles = Object.keys(workout.muscleLoadSummary || workout.muscleVolumeSummary || {});
-                  return (
-                    <Link className="rounded-lg border border-white/10 bg-black/20 p-4 transition hover:border-forge-copper/60" key={workout._id} to={`/workouts/${workout._id}`}>
-                      <p className="text-sm text-forge-steel">{formatDate(workout.date)}</p>
-                      <h3 className="mt-2 font-bold text-white">{workout.title}</h3>
-                      <p className="mt-3 text-sm text-slate-400">Volume: {formatNumber(workout.totalVolume)}kg</p>
-                      <p className="mt-1 line-clamp-2 text-sm text-slate-400">{muscles.length ? muscles.join(", ") : "No muscles listed"}</p>
-                    </Link>
-                  );
-                })}
-              </div>
+          <section data-tour-id="dashboard-path-to-max">
+            <SectionTitle linkLabel={weakPoints.length ? `All ${weakPoints.length}` : ""} title={`Path to ${nextRank || "the top"}`} to={weakPoints.length ? "/weak-points" : undefined} />
+            {weakPoints.length ? (
+              <>
+                <p className="-mt-2 mb-4 max-w-3xl text-base leading-7 text-zinc-400">
+                  {progress.pointsToNextRank
+                    ? `${formatNumber(progress.pointsToNextRank)} points to ${nextRank}. Your overall rank averages your trained muscles, so the weakest ones pull it down most.`
+                    : "You're at the top rank. These are the muscles still lagging behind the rest."}
+                </p>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {weakPoints.slice(0, 3).map((weakPoint) => (
+                    <WeakPointCard key={weakPoint._id} weakPoint={weakPoint} />
+                  ))}
+                </div>
+              </>
             ) : (
-              <div className="rounded-lg border border-dashed border-white/15 p-6 text-center">
-                <p className="font-bold text-white">Your training log is empty.</p>
-                <p className="mt-2 text-sm text-slate-400">Start Gym Mode to record your first session.</p>
-                <Link className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white" to="/gym-mode">
-                  Start Gym Mode
-                </Link>
-              </div>
+              <p className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-base text-zinc-300">
+                Nothing is holding you back right now. Keep training and logging consistently.
+              </p>
             )}
           </section>
-        </div>
-      ) : null}
 
-      {readiness && readiness.overallReadiness !== "ready" ? (
-        <section className="mb-6">
-          <div data-tour-id="dashboard-data-readiness">
-            <DataReadinessCard readiness={readiness} />
-          </div>
-        </section>
+          <section>
+            <SectionTitle linkLabel="History" title="Recent sessions" to="/workouts" />
+            <div className="grid gap-3 lg:grid-cols-[1fr_20rem]">
+              {recentWorkouts.length ? (
+                <ul className="min-w-0 space-y-2">
+                  {recentWorkouts.map((workout) => {
+                    const muscles = Object.keys(workout.muscleLoadSummary || workout.muscleVolumeSummary || {});
+                    return (
+                      <li key={workout._id}>
+                        <Link
+                          className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 transition-colors hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                          to={`/workouts/${workout._id}`}
+                        >
+                          <span className="w-12 shrink-0 text-center leading-tight">
+                            <span className="block text-xs font-semibold uppercase text-zinc-500">{new Intl.DateTimeFormat("en", { weekday: "short" }).format(new Date(workout.date))}</span>
+                            <span className="font-display block text-lg text-white">{new Date(workout.date).getDate()}</span>
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold text-white">{workout.title}</span>
+                            <span className="block truncate text-sm text-zinc-400">{muscles.length ? muscles.slice(0, 4).join(", ") : "No muscles listed"}</span>
+                          </span>
+                          <span className="shrink-0 text-right text-sm tabular-nums text-zinc-300">
+                            {formatNumber(workout.totalVolume)} {unit}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/12 p-6 text-center">
+                  <p className="font-semibold text-white">Your training log is empty.</p>
+                  <p className="mt-1 text-sm text-zinc-400">Start Gym Mode to record your first session.</p>
+                </div>
+              )}
+              <Link
+                className="flex flex-col justify-between rounded-2xl border border-white/[0.07] bg-[radial-gradient(120%_120%_at_100%_0%,rgba(249,115,22,0.12),transparent_60%)] p-5 transition-colors hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                to="/progress/prs"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-zinc-400">Latest PR</p>
+                  <MedalIcon className="h-5 w-5 text-orange-300" />
+                </div>
+                <div className="mt-4">
+                  <p className="font-display text-2xl text-white">{latestPR?.exerciseName || "None yet"}</p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {latestPR ? (
+                      <>
+                        <span className="capitalize">{(latestPR.recordType || "record").replaceAll("_", " ").replace("1rm", "1RM")}</span>
+                        {latestPR.date ? `, ${formatDate(latestPR.date)}` : ""}
+                      </>
+                    ) : (
+                      "PRs appear here as you log workouts."
+                    )}
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </section>
+        </div>
       ) : null}
     </Layout>
   );

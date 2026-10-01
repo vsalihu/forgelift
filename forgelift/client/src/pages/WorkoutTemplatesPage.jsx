@@ -233,7 +233,7 @@ const WorkoutTemplatesPage = () => {
         title="Design a Workout"
         description="Search the exercise library, filter by muscle group, or add your own movement, then save it to train later."
         actions={
-          <Link className="inline-flex min-h-11 items-center rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white" to="/gym-mode">
+          <Link className="inline-flex min-h-11 items-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02]" to="/gym-mode">
             Start Gym Mode
           </Link>
         }

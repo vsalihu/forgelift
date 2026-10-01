@@ -1,13 +1,13 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
-import PageLoader from "./ui/PageLoader.jsx";
+import ServerWakeScreen from "./auth/ServerWakeScreen.jsx";
 
 const ProtectedRoute = ({ requireOnboarding = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <PageLoader text="Checking your session..." />;
+    return <ServerWakeScreen title="Checking your session…" />;
   }
 
   if (!isAuthenticated) {

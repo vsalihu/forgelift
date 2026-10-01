@@ -1,9 +1,12 @@
+import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import AuthShell from "../components/auth/AuthShell.jsx";
 import { AuthField, AuthSubmit, FormAlert, PasswordField, RememberMe } from "../components/auth/AuthFields.jsx";
+import ServerWakeScreen from "../components/auth/ServerWakeScreen.jsx";
 import { RANK_ORDER } from "../components/landing/shared.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { wakeServer } from "../services/api.js";
 
 const LoginPage = () => {
   const { login, user, loading } = useAuth();
@@ -13,6 +16,10 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [rankIndex, setRankIndex] = useState(5);
+
+  useEffect(() => {
+    wakeServer();
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
@@ -58,6 +65,7 @@ const LoginPage = () => {
       subtitle="Log in to pick up where you left off."
       title="Welcome back."
     >
+      <AnimatePresence>{submitting ? <ServerWakeScreen key="wake" title="Logging you in…" /> : null}</AnimatePresence>
       <FormAlert>{error}</FormAlert>
       <form className="space-y-5" noValidate onSubmit={handleSubmit}>
         <AuthField

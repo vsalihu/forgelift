@@ -1,5 +1,6 @@
 import "@fontsource-variable/archivo/wdth.css";
 import "../components/landing/landing.css";
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import CoachStory from "../components/landing/CoachStory.jsx";
 import CompeteSection from "../components/landing/CompeteSection.jsx";
@@ -9,9 +10,15 @@ import Hero from "../components/landing/Hero.jsx";
 import LandingNav from "../components/landing/LandingNav.jsx";
 import RankLadder from "../components/landing/RankLadder.jsx";
 import { useAuth } from "../hooks/useAuth.js";
+import { wakeServer } from "../services/api.js";
 
 const LandingPage = () => {
   const { user, loading } = useAuth();
+
+  // Most visitors log in or sign up next, so start waking the API now.
+  useEffect(() => {
+    wakeServer();
+  }, []);
 
   if (!loading && user) {
     return <Navigate to={user.onboardingCompleted ? "/dashboard" : "/onboarding"} replace />;

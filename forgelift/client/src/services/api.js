@@ -2,6 +2,17 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const getToken = () => localStorage.getItem("forgeliftToken");
 
+// The API host sleeps when idle. Pinging it as soon as someone opens the login or sign-up page
+// starts it waking up while they type. Fire-and-forget, once per page load.
+let wakeRequested = false;
+export const wakeServer = () => {
+  if (wakeRequested) return;
+  wakeRequested = true;
+  fetch(`${API_URL}/health`).catch(() => {
+    wakeRequested = false;
+  });
+};
+
 export const request = async (endpoint, options = {}) => {
   const token = getToken();
   const headers = {

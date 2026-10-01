@@ -2,12 +2,13 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import AuthShell from "../components/auth/AuthShell.jsx";
+import ServerWakeScreen from "../components/auth/ServerWakeScreen.jsx";
 import { AuthBack, AuthField, AuthSubmit, FieldMessage, FormAlert, PasswordField } from "../components/auth/AuthFields.jsx";
 import CitySearch from "../components/compete/CitySearch.jsx";
 import { ErrorIcon, SuccessIcon } from "../components/icons/featureIcons.jsx";
 import { EASE } from "../components/landing/shared.jsx";
 import { useAuth } from "../hooks/useAuth.js";
-import { api } from "../services/api.js";
+import { api, wakeServer } from "../services/api.js";
 
 const MIN_AGE = 13;
 const STEPS = [
@@ -125,6 +126,10 @@ const RegisterPage = () => {
   const today = new Date();
   const maxDob = isoDate(new Date(Date.UTC(today.getUTCFullYear() - MIN_AGE, today.getUTCMonth(), today.getUTCDate())));
   const minDob = isoDate(new Date(Date.UTC(today.getUTCFullYear() - 110, 0, 1)));
+
+  useEffect(() => {
+    wakeServer();
+  }, []);
 
   // Move focus to the first field of each new step (not on first load).
   useEffect(() => {
@@ -255,6 +260,7 @@ const RegisterPage = () => {
       subtitle={stepInfo.subtitle}
       title={stepInfo.title}
     >
+      <AnimatePresence>{submitting ? <ServerWakeScreen key="wake" title="Creating your account…" /> : null}</AnimatePresence>
       <StepProgress step={step} />
       <FormAlert>{formError}</FormAlert>
 

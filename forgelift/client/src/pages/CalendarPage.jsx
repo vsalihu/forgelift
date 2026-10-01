@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout.jsx";
-import PageHeader from "../components/ui/PageHeader.jsx";
-import CalendarGrid from "../components/calendar/CalendarGrid.jsx";
 import DayDetailSheet from "../components/calendar/DayDetailSheet.jsx";
 import GeneratePlanModal from "../components/calendar/GeneratePlanModal.jsx";
+import MonthGrid from "../components/calendar/MonthGrid.jsx";
 import PlanPanel from "../components/calendar/PlanPanel.jsx";
+import UpNext from "../components/calendar/UpNext.jsx";
+import { addDaysToKey, todayKey } from "../components/calendar/calendarUtils.js";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
 import { calendarService } from "../services/calendarService.js";
 import { trainingPlanService } from "../services/trainingPlanService.js";
 
@@ -13,9 +16,12 @@ const currentCursor = () => {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 };
 
+const monthOf = (key) => ({ year: Number(key.slice(0, 4)), month: Number(key.slice(5, 7)) });
+
 const CalendarPage = () => {
   const [cursor, setCursor] = useState(currentCursor);
   const [days, setDays] = useState([]);
+  const [agendaDays, setAgendaDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [planStatus, setPlanStatus] = useState(null);
   const [planBusy, setPlanBusy] = useState(false);
@@ -36,10 +42,21 @@ const CalendarPage = () => {
     }
   };
 
+  // The next 7 days can cross into next month, so they load on their own.
+  const loadAgenda = useCallback(async () => {
+    const today = todayKey();
+    const months = [monthOf(today), monthOf(addDaysToKey(today, 6))].filter((value, index, list) => index === 0 || value.month !== list[0].month);
+    try {
+      const results = await Promise.all(months.map(({ year, month }) => calendarService.getMonth(year, month)));
+      setAgendaDays(results.flatMap((data) => data.days || []));
+    } catch (_error) {
+      // The month grid shows the error; the strip just stays empty.
+    }
+  }, []);
+
   const loadPlanStatus = async () => {
     try {
-      const data = await trainingPlanService.getStatus();
-      setPlanStatus(data);
+      setPlanStatus(await trainingPlanService.getStatus());
     } catch (err) {
       setError(err.message);
     }
@@ -47,20 +64,37 @@ const CalendarPage = () => {
 
   useEffect(() => {
     loadMonth(cursor.year, cursor.month);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cursor]);
 
   useEffect(() => {
     loadPlanStatus();
-  }, []);
+    loadAgenda();
+  }, [loadAgenda]);
 
   const daysByDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
+  const agendaByDate = useMemo(() => new Map(agendaDays.map((day) => [day.date, day])), [agendaDays]);
+  const selectedData = selectedDate ? daysByDate.get(selectedDate) || agendaByDate.get(selectedDate) : null;
 
-  const goToMonth = (delta) => {
+  const goToMonth = (delta) =>
     setCursor((current) => {
-      const next = new Date(Date.UTC(current.year, current.month - 1 + delta, 1));
-      return { year: next.getUTCFullYear(), month: next.getUTCMonth() + 1 };
+      const next = new Date(current.year, current.month - 1 + delta, 1);
+      return { year: next.getFullYear(), month: next.getMonth() + 1 };
     });
+
+  const refreshAll = () => Promise.all([loadPlanStatus(), loadMonth(cursor.year, cursor.month), loadAgenda()]);
+
+  const runPlanAction = async (action) => {
+    if (!planStatus?.activePlan) return;
+    setPlanBusy(true);
+    setError("");
+    try {
+      await action(planStatus.activePlan._id);
+      await refreshAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPlanBusy(false);
+    }
   };
 
   const handleGenerate = async ({ durationWeeks }) => {
@@ -69,7 +103,7 @@ const CalendarPage = () => {
     try {
       await trainingPlanService.generate(durationWeeks);
       setGenerateOpen(false);
-      await Promise.all([loadPlanStatus(), loadMonth(cursor.year, cursor.month)]);
+      await refreshAll();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -77,75 +111,45 @@ const CalendarPage = () => {
     }
   };
 
-  const handleRegenerateRemainder = async () => {
-    if (!planStatus?.activePlan) return;
-    setPlanBusy(true);
-    setError("");
-    try {
-      await trainingPlanService.regenerateRemainder(planStatus.activePlan._id);
-      await Promise.all([loadPlanStatus(), loadMonth(cursor.year, cursor.month)]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setPlanBusy(false);
-    }
-  };
-
-  const handleCancelPlan = async () => {
-    if (!planStatus?.activePlan) return;
-    setPlanBusy(true);
-    setError("");
-    try {
-      await trainingPlanService.cancel(planStatus.activePlan._id);
-      await Promise.all([loadPlanStatus(), loadMonth(cursor.year, cursor.month)]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setPlanBusy(false);
-    }
-  };
-
   const handleDaySaved = async () => {
     setSelectedDate(null);
-    await Promise.all([loadMonth(cursor.year, cursor.month), loadPlanStatus()]);
+    await refreshAll();
   };
 
   return (
     <Layout>
-      <PageHeader
-        eyebrow="Training"
-        title="Calendar"
-        description="Plan your training, track rest and treatment days, and let ForgeLift build your next few weeks."
-      />
+      <div className="mx-auto max-w-5xl">
+        <PageHeader
+          description="Plan training, rest and treatment days, or let ForgeLift build your next few weeks. Tap any day to change it."
+          eyebrow="Calendar"
+          title="Your training month"
+        />
 
-      {error ? <div className="mb-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
+        {error ? <ErrorState message={error} /> : null}
 
-      <PlanPanel
-        planStatus={planStatus}
-        busy={planBusy}
-        onGenerateClick={() => setGenerateOpen(true)}
-        onRegenerateRemainder={handleRegenerateRemainder}
-        onCancelPlan={handleCancelPlan}
-      />
+        <UpNext daysByDate={agendaByDate} onSelectDate={setSelectedDate} />
 
-      <CalendarGrid
-        year={cursor.year}
-        month={cursor.month}
-        daysByDate={daysByDate}
-        loading={loading}
-        onPrevMonth={() => goToMonth(-1)}
-        onNextMonth={() => goToMonth(1)}
-        onToday={() => setCursor(currentCursor())}
-        onSelectDate={setSelectedDate}
-      />
+        <PlanPanel
+          busy={planBusy}
+          planStatus={planStatus}
+          onCancelPlan={() => runPlanAction(trainingPlanService.cancel)}
+          onGenerateClick={() => setGenerateOpen(true)}
+          onRegenerateRemainder={() => runPlanAction(trainingPlanService.regenerateRemainder)}
+        />
 
-      <DayDetailSheet
-        date={selectedDate}
-        dayData={selectedDate ? daysByDate.get(selectedDate) : null}
-        onClose={() => setSelectedDate(null)}
-        onSaved={handleDaySaved}
-      />
+        <MonthGrid
+          daysByDate={daysByDate}
+          loading={loading}
+          month={cursor.month}
+          year={cursor.year}
+          onNextMonth={() => goToMonth(1)}
+          onPrevMonth={() => goToMonth(-1)}
+          onSelectDate={setSelectedDate}
+          onToday={() => setCursor(currentCursor())}
+        />
+      </div>
 
+      <DayDetailSheet date={selectedDate} dayData={selectedData} onClose={() => setSelectedDate(null)} onSaved={handleDaySaved} />
       <GeneratePlanModal open={generateOpen} submitting={generating} onClose={() => setGenerateOpen(false)} onSubmit={handleGenerate} />
     </Layout>
   );

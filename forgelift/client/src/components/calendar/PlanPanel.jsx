@@ -1,26 +1,43 @@
-import { RefreshCw, Sparkles, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { useState } from "react";
-import Button from "../Button.jsx";
 import ConfirmModal from "../ui/ConfirmModal.jsx";
+import { CalendarIcon } from "../icons/navIcons.jsx";
 
-const formatDate = (date) => new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(date));
+const formatDate = (date) => new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+const Bar = ({ label, value, max }) => {
+  const percent = max ? Math.min(100, Math.round(((value || 0) / max) * 100)) : 0;
+  return (
+    <div>
+      <div className="flex justify-between text-sm">
+        <span className="text-zinc-400">{label}</span>
+        <span className="tabular-nums text-zinc-300">
+          {value || 0}/{max}
+        </span>
+      </div>
+      <div aria-label={`${label}: ${value || 0} of ${max}`} aria-valuemax={max} aria-valuemin={0} aria-valuenow={value || 0} className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.08]" role="progressbar">
+        <div className="h-full rounded-full bg-gradient-to-r from-forge-copper to-orange-300" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
+};
+
+const shell = "relative mb-6 overflow-clip rounded-[2rem] border p-5 sm:p-6";
 
 const PlanPanel = ({ planStatus, busy, onGenerateClick, onRegenerateRemainder, onCancelPlan }) => {
   const [confirmCancel, setConfirmCancel] = useState(false);
-
   if (!planStatus) return null;
-
   const { activePlan, readiness } = planStatus;
 
   if (activePlan) {
-    const { adherence } = activePlan;
+    const { adherence = {} } = activePlan;
     return (
-      <section className="metal-panel mb-5 rounded-xl border-forge-copper/30 p-5">
+      <section aria-labelledby="plan-title" className={`${shell} border-forge-ember/25 bg-gradient-to-br from-forge-ember/[0.1] via-white/[0.02] to-transparent`}>
         {confirmCancel ? (
           <ConfirmModal
-            title="Cancel this plan?"
-            description="Future planned days from this plan will be cleared. Days already completed stay in your history."
             confirmLabel="Cancel plan"
+            description="Future planned days from this plan are cleared. Days you've already done stay in your history."
+            title="Cancel this plan?"
             onCancel={() => setConfirmCancel(false)}
             onConfirm={() => {
               setConfirmCancel(false);
@@ -28,38 +45,41 @@ const PlanPanel = ({ planStatus, busy, onGenerateClick, onRegenerateRemainder, o
             }}
           />
         ) : null}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-forge-copper">Active training plan</p>
-            <p className="mt-1 text-lg font-black text-white">{activePlan.splitSummary}</p>
-            <p className="mt-1 text-sm text-slate-400">
-              {formatDate(activePlan.startDate)} - {formatDate(activePlan.endDate)} ({activePlan.durationWeeks} weeks)
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-orange-300">
+              Your plan · {formatDate(activePlan.startDate)} – {formatDate(activePlan.endDate)}
             </p>
+            <h2 className="font-display mt-1 text-2xl leading-tight text-white sm:text-3xl" id="plan-title">
+              {activePlan.splitSummary || `${activePlan.durationWeeks}-week plan`}
+            </h2>
           </div>
-          <div className="flex gap-2">
-            <Button disabled={busy} type="button" variant="secondary" onClick={onRegenerateRemainder}>
-              <RefreshCw className="h-4 w-4" />
-              Regenerate remainder
-            </Button>
-            <Button disabled={busy} type="button" variant="ghost" onClick={() => setConfirmCancel(true)}>
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 text-sm font-bold text-white hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50"
+              disabled={busy}
+              type="button"
+              onClick={onRegenerateRemainder}
+            >
+              <RefreshCw aria-hidden="true" className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+              Rebuild the rest
+            </button>
+            <button
+              aria-label="Cancel plan"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-zinc-400 hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50"
+              disabled={busy}
+              type="button"
+              onClick={() => setConfirmCancel(true)}
+            >
+              <X aria-hidden="true" className="h-5 w-5" />
+            </button>
           </div>
         </div>
-
-        <div className="mt-4">
-          <div className="mb-1 flex items-center justify-between text-sm">
-            <span className="font-bold text-white">Plan adherence</span>
-            <span className="text-slate-400">
-              {adherence.completed}/{adherence.total} days · {adherence.percentage}%
-            </span>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-forge-ember transition-all" style={{ width: `${adherence.percentage}%` }} />
-          </div>
-          {adherence.missed ? (
-            <p className="mt-2 text-xs text-slate-500">{adherence.missed} missed so far · keep going.</p>
-          ) : null}
+        <div className="mt-5 max-w-xl">
+          <Bar label="Plan days done" max={adherence.total || 0} value={adherence.completed} />
+          <p className="mt-2 text-sm text-zinc-500">
+            {adherence.percentage ?? 0}% on track{adherence.missed ? ` · ${adherence.missed} missed, keep going` : ""}
+          </p>
         </div>
       </section>
     );
@@ -69,48 +89,40 @@ const PlanPanel = ({ planStatus, busy, onGenerateClick, onRegenerateRemainder, o
 
   if (unlocked) {
     return (
-      <section className="metal-panel mb-5 rounded-xl border-forge-copper/40 p-5 text-center">
-        <Sparkles className="mx-auto mb-2 h-7 w-7 text-forge-copper" />
-        <p className="text-lg font-black text-white">Ready to generate your plan</p>
-        <p className="mt-1 text-sm text-slate-400">
-          ForgeLift has enough training history to build your next few weeks.
-        </p>
-        <Button className="mt-4" type="button" onClick={onGenerateClick}>
-          <Sparkles className="h-4 w-4" />
-          Generate Plan
-        </Button>
+      <section className={`${shell} border-forge-ember/30 bg-gradient-to-br from-forge-ember/[0.12] via-white/[0.02] to-transparent`}>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-forge-ember/15 text-orange-200">
+              <CalendarIcon className="h-6 w-6" />
+            </span>
+            <div>
+              <h2 className="font-display text-2xl leading-tight text-white">Your plan is ready to build.</h2>
+              <p className="mt-1 text-sm leading-6 text-zinc-400">ForgeLift has learned your training pattern and can schedule the next few weeks for you.</p>
+            </div>
+          </div>
+          <button
+            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-6 text-sm font-bold text-[#160a02] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_12px_34px_-12px_rgba(249,115,22,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+            type="button"
+            onClick={onGenerateClick}
+          >
+            Build my plan
+          </button>
+        </div>
       </section>
     );
   }
 
-  const dayProgress = daysNeeded ? Math.min(100, Math.round(((daysLogged || 0) / daysNeeded) * 100)) : 0;
-  const workoutProgress = workoutDaysNeeded ? Math.min(100, Math.round(((workoutDaysLogged || 0) / workoutDaysNeeded) * 100)) : 0;
-
   return (
-    <section className="metal-panel mb-5 rounded-xl p-5">
-      <p className="text-sm font-bold uppercase tracking-[0.18em] text-forge-copper">Plan generator</p>
-      <p className="mt-1 text-lg font-black text-white">Keep logging to unlock plan generation</p>
-      <p className="mt-1 text-sm text-slate-400">
-        ForgeLift needs a bit more history to understand your training pattern before it can build a smart plan.
-      </p>
-      <div className="mt-4 space-y-3">
+    <section className={`${shell} border-white/[0.08] bg-white/[0.025]`}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
         <div>
-          <div className="mb-1 flex justify-between text-xs text-slate-400">
-            <span>Days since your first workout</span>
-            <span>{daysLogged || 0}/{daysNeeded}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-forge-copper" style={{ width: `${dayProgress}%` }} />
-          </div>
+          <p className="text-sm font-semibold text-orange-300">Plan builder</p>
+          <h2 className="font-display mt-1 text-2xl leading-tight text-white">Keep logging to unlock your plan.</h2>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">A little more history and ForgeLift can schedule your next few weeks around how you actually train.</p>
         </div>
-        <div>
-          <div className="mb-1 flex justify-between text-xs text-slate-400">
-            <span>Workout days logged</span>
-            <span>{workoutDaysLogged || 0}/{workoutDaysNeeded}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-forge-copper" style={{ width: `${workoutProgress}%` }} />
-          </div>
+        <div className="space-y-4">
+          <Bar label="Days since your first workout" max={daysNeeded || 0} value={daysLogged} />
+          <Bar label="Workout days logged" max={workoutDaysNeeded || 0} value={workoutDaysLogged} />
         </div>
       </div>
     </section>

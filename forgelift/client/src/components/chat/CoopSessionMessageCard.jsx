@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Dumbbell } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../Button.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 import { coopSessionService } from "../../services/coopSessionService.js";
+import { DumbbellIcon } from "../icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
@@ -47,7 +47,7 @@ const CoopSessionMessageCard = ({ session: initialSession, onChanged }) => {
   return (
     <div className="w-full max-w-sm rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4">
       <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-cyan-200">
-        <Dumbbell className="h-4 w-4" />
+        <DumbbellIcon className="h-4 w-4" />
         Workout together
       </div>
       <p className="text-sm text-slate-200">{session.title}</p>

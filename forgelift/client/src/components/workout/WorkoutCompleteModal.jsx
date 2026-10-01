@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../Button.jsx";
+import { SuccessIcon } from "../icons/featureIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
@@ -25,7 +26,7 @@ const WorkoutCompleteModal = ({ open, analysis, onClose }) => {
           <X className="h-5 w-5" />
         </button>
 
-        <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-400" />
+        <SuccessIcon className="mx-auto h-14 w-14 text-emerald-400" />
         <h2 className="mt-4 text-2xl font-black text-white">Workout completed!</h2>
         <p className="mt-2 text-sm text-slate-400">Nice work. Your progress has been saved.</p>
 

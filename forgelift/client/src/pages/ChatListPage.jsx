@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, MessageCircle, Trophy } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { chatService } from "../services/chatService.js";
+import { ChallengeIcon } from "../components/icons/featureIcons.jsx";
+import { ChatIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const formatRelativeTime = (date) => {
   if (!date) return "";
@@ -71,7 +72,7 @@ const ChatListPage = () => {
 
       {!loading && !conversations.length ? (
         <EmptyState
-          icon={MessageCircle}
+          icon={ChatIcon}
           title="No conversations yet"
           description="Message a friend from the Friends page to start a chat, send a challenge, or train together."
         />
@@ -87,11 +88,11 @@ const ChatListPage = () => {
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forge-ember/15 text-forge-ember">
                 {conversation.lastMessageType === "challenge" ? (
-                  <Trophy className="h-5 w-5" />
+                  <ChallengeIcon className="h-5 w-5" />
                 ) : conversation.lastMessageType === "workout_session" ? (
-                  <Dumbbell className="h-5 w-5" />
+                  <DumbbellIcon className="h-5 w-5" />
                 ) : (
-                  <MessageCircle className="h-5 w-5" />
+                  <ChatIcon className="h-5 w-5" />
                 )}
               </span>
               <div>

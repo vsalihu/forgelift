@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Pause, Play, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Save, Trash2 } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -28,6 +28,7 @@ import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { helpText } from "../utils/helpText.js";
 import { copySetForNext, createEmptySet, describeSetLoad, isSetValid, normalizeSetForSave } from "../utils/workoutSetUtils.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { PauseIcon, PlayIcon, ResetIcon } from "../components/icons/featureIcons.jsx";
 
 const restOptions = [60, 90, 120, 180];
 const rpeOptions = [6, 7, 8, 9, 10];
@@ -820,8 +821,8 @@ const GymModePage = () => {
             <div className="mt-2"><StatPill variant={timerRunning ? "info" : "neutral"}>{timerRunning ? "Running" : "Paused"}</StatPill></div>
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setTimerRunning(!timerRunning)}>{timerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</Button>
-            <Button type="button" variant="ghost" onClick={() => { setRemainingSeconds(timerSeconds); setTimerRunning(false); }}><RotateCcw className="h-4 w-4" /></Button>
+            <Button type="button" variant="secondary" onClick={() => setTimerRunning(!timerRunning)}>{timerRunning ? <PauseIcon className="h-4 w-4" /> : <PlayIcon className="h-4 w-4" />}</Button>
+            <Button type="button" variant="ghost" onClick={() => { setRemainingSeconds(timerSeconds); setTimerRunning(false); }}><ResetIcon className="h-4 w-4" /></Button>
           </div>
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dumbbell, Edit3, PlusCircle, Search, Trash2 } from "lucide-react";
+import { Edit3, PlusCircle, Search, Trash2 } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import FormInput from "../components/FormInput.jsx";
 import SelectInput from "../components/SelectInput.jsx";
@@ -12,6 +12,7 @@ import { exerciseService } from "../services/exerciseService.js";
 import { advancedMuscleFilters, getMuscleFilterCounts, muscleFilters } from "../utils/exerciseMatchUtils.js";
 import { getBroadMuscleImage, getMuscleImage } from "../utils/muscleImages.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const typeOptions = [
   { value: "compound", label: "Compound" },
@@ -78,7 +79,7 @@ const ExerciseCard = ({ exercise, activeMuscle, onEdit, onDelete, tourId }) => {
           <h2 className="mt-2 text-xl font-black text-white">{exercise.name}</h2>
         </div>
         <span className="rounded-md bg-white/10 p-2 text-forge-ember">
-          <Dumbbell className="h-5 w-5" />
+          <DumbbellIcon className="h-5 w-5" />
         </span>
       </div>
 

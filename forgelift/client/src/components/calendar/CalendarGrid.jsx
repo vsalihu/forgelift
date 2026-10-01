@@ -1,4 +1,6 @@
-import { ChevronLeft, ChevronRight, Dumbbell, HeartPulse, Moon, Plus, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { DeloadWeekIcon, PhysioIcon, RestDayIcon } from "../icons/featureIcons.jsx";
+import { DumbbellIcon } from "../icons/navIcons.jsx";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -26,7 +28,7 @@ const CellIcon = ({ dayData, isPast }) => {
   if (dayData?.workouts?.length) {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forge-ember text-white shadow">
-        <Dumbbell className="h-3.5 w-3.5" />
+        <DumbbellIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -37,7 +39,7 @@ const CellIcon = ({ dayData, isPast }) => {
   if (entry.type === "rest") {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-600/40 text-slate-200">
-        <Moon className="h-3.5 w-3.5" />
+        <RestDayIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -45,7 +47,7 @@ const CellIcon = ({ dayData, isPast }) => {
   if (entry.type === "treatment") {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-500/30 text-teal-200">
-        <HeartPulse className="h-3.5 w-3.5" />
+        <PhysioIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -57,10 +59,10 @@ const CellIcon = ({ dayData, isPast }) => {
         missed ? "border-red-400/70 text-red-300" : "border-forge-ember text-orange-200"
       }`}
     >
-      <Dumbbell className="h-3.5 w-3.5" />
+      <DumbbellIcon className="h-3.5 w-3.5" />
       {entry.isDeloadWeek ? (
         <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400 text-black">
-          <Sparkles className="h-2.5 w-2.5" />
+          <DeloadWeekIcon className="h-2.5 w-2.5" />
         </span>
       ) : null}
     </span>
@@ -133,7 +135,7 @@ const CalendarGrid = ({ year, month, daysByDate, loading, onPrevMonth, onNextMon
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border-2 border-red-400/70" />Missed</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-slate-600/40" />Rest</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-teal-500/30" />Treatment</span>
-        <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-amber-400" />Deload week</span>
+        <span className="inline-flex items-center gap-1.5"><DeloadWeekIcon className="h-3 w-3 text-amber-400" />Deload week</span>
       </div>
     </section>
   );

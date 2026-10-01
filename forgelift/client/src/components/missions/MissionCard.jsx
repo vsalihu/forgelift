@@ -1,10 +1,11 @@
-import { CheckCircle2, Dumbbell, Flame, Target, Trophy } from "lucide-react";
 import Button from "../Button.jsx";
 import MissionPriorityBadge from "./MissionPriorityBadge.jsx";
 import MissionTypeBadge from "./MissionTypeBadge.jsx";
 import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
 import StatPill from "../visuals/StatPill.jsx";
 import StatusGlowCard from "../visuals/StatusGlowCard.jsx";
+import { FlameIcon, GoalIcon, SuccessIcon } from "../icons/featureIcons.jsx";
+import { CompeteIcon, DumbbellIcon } from "../icons/navIcons.jsx";
 
 const formatDate = (date) =>
   date
@@ -15,11 +16,11 @@ const formatDate = (date) =>
     : "-";
 
 const missionIcons = {
-  workout_frequency: Dumbbell,
-  muscle_focus: Target,
-  overload_target: Trophy,
-  consistency: Flame,
-  goal_path: Target
+  workout_frequency: DumbbellIcon,
+  muscle_focus: GoalIcon,
+  overload_target: CompeteIcon,
+  consistency: FlameIcon,
+  goal_path: GoalIcon
 };
 
 const MissionCard = ({ mission, onComplete, onOpen }) => {
@@ -40,7 +41,7 @@ const MissionCard = ({ mission, onComplete, onOpen }) => {
       </div>
       {mission.status === "active" && onComplete ? (
         <Button type="button" variant="secondary" onClick={() => onComplete(mission._id)}>
-          <CheckCircle2 className="h-4 w-4" />
+          <SuccessIcon className="h-4 w-4" />
           Mark complete
         </Button>
       ) : null}
@@ -49,7 +50,7 @@ const MissionCard = ({ mission, onComplete, onOpen }) => {
     <div className="mb-4 flex flex-wrap gap-2">
       <MissionTypeBadge type={mission.missionType} />
       <MissionPriorityBadge priority={mission.priority} />
-      <StatPill icon={Flame} variant="rank">+{mission.xpReward || 0} XP</StatPill>
+      <StatPill icon={FlameIcon} variant="rank">+{mission.xpReward || 0} XP</StatPill>
       <StatPill variant={mission.status === "completed" ? "success" : "neutral"}>{mission.status}</StatPill>
     </div>
 

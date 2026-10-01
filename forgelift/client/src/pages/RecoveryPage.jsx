@@ -13,7 +13,9 @@ import { useAuth } from "../hooks/useAuth.js";
 import { recoveryService } from "../services/recoveryService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
-import { Activity, AlertTriangle, Dumbbell, HeartPulse } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { ActivityIcon } from "../components/icons/featureIcons.jsx";
+import { DumbbellIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
 
 const RecoveryPage = () => {
   const { user } = useAuth();
@@ -125,10 +127,10 @@ const RecoveryPage = () => {
       </div>
 
       <VisualSummaryGrid className="mt-6">
-        <IconMetricCard icon={Dumbbell} label="Best today" value={todayRecommendation?.bestWorkoutType || "Any Workout"} status="Recommended workout type" variant="info" />
-        <IconMetricCard icon={HeartPulse} label="Ready muscles" value={readyMuscles.length} status={readyMuscles.slice(0, 3).join(", ") || "None yet"} variant="success" />
+        <IconMetricCard icon={DumbbellIcon} label="Best today" value={todayRecommendation?.bestWorkoutType || "Any Workout"} status="Recommended workout type" variant="info" />
+        <IconMetricCard icon={RecoveryIcon} label="Ready muscles" value={readyMuscles.length} status={readyMuscles.slice(0, 3).join(", ") || "None yet"} variant="success" />
         <IconMetricCard icon={AlertTriangle} label="Avoid heavy" value={avoidMuscles.length} status={avoidMuscles.slice(0, 3).join(", ") || "No avoid warnings"} variant={avoidMuscles.length ? "warning" : "success"} />
-        <IconMetricCard icon={Activity} label="Tracked muscles" value={recoveryScores.length} status="Recovery cards below" variant="neutral" />
+        <IconMetricCard icon={ActivityIcon} label="Tracked muscles" value={recoveryScores.length} status="Recovery cards below" variant="neutral" />
       </VisualSummaryGrid>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">

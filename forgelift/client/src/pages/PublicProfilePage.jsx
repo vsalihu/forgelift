@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Ban, Lock, MapPin, MessageCircle, Swords, Trophy, UserCheck, UserMinus, UserPlus } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
@@ -17,6 +16,8 @@ import { challengeService } from "../services/challengeService.js";
 import { friendService } from "../services/friendService.js";
 import { profileService } from "../services/profileService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
+import { AddFriendIcon, BlockIcon, ChallengeIcon, CityIcon, FriendAddedIcon, PrivateIcon, RemoveFriendIcon } from "../components/icons/featureIcons.jsx";
+import { ChatIcon, HistoryIcon } from "../components/icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 const formatDate = (date) => new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(date));
@@ -142,13 +143,13 @@ const PublicProfilePage = () => {
     if (isFriend) {
       return (
         <Button loading={actionBusy} type="button" variant="ghost" onClick={() => setShowRemoveConfirm(true)}>
-          <UserMinus className="h-4 w-4" />
+          <RemoveFriendIcon className="h-4 w-4" />
           Remove Friend
         </Button>
       );
     }
     if (friendRequestStatus === "sent") {
-      return <Button disabled type="button" variant="secondary"><UserCheck className="h-4 w-4" />Request Sent</Button>;
+      return <Button disabled type="button" variant="secondary"><FriendAddedIcon className="h-4 w-4" />Request Sent</Button>;
     }
     if (friendRequestStatus === "received") {
       return (
@@ -160,7 +161,7 @@ const PublicProfilePage = () => {
     }
     return (
       <Button loading={actionBusy} type="button" onClick={sendRequest}>
-        <UserPlus className="h-4 w-4" />
+        <AddFriendIcon className="h-4 w-4" />
         Add Friend
       </Button>
     );
@@ -186,7 +187,7 @@ const PublicProfilePage = () => {
           </p>
           {profile.competition ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-300">
-              <MapPin className="h-4 w-4 text-forge-copper" />
+              <CityIcon className="h-4 w-4 text-forge-copper" />
               {profile.competition.cityName}, {profile.competition.countryName} · competes on leaderboards
             </p>
           ) : null}
@@ -216,7 +217,7 @@ const PublicProfilePage = () => {
             <>
               {interaction.canChallenge ? (
                 <Button type="button" variant="secondary" onClick={() => setChallengeOpen(true)}>
-                  <Swords className="h-4 w-4" />
+                  <ChallengeIcon className="h-4 w-4" />
                   Challenge
                 </Button>
               ) : null}
@@ -225,7 +226,7 @@ const PublicProfilePage = () => {
                   className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
                   to={`/chat/${username}`}
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <ChatIcon className="h-4 w-4" />
                   Message
                 </Link>
               ) : null}
@@ -245,7 +246,7 @@ const PublicProfilePage = () => {
 
       {isBlocked ? (
         <div className="metal-panel rounded-xl p-8 text-center">
-          <Ban className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+          <BlockIcon className="mx-auto mb-3 h-8 w-8 text-slate-400" />
           <p className="text-lg font-bold text-white">You blocked @{profile.username}</p>
           <p className="mt-2 text-sm text-slate-400">
             You won&apos;t see each other on leaderboards, and they can&apos;t message, challenge or friend you. Unblock above to undo.
@@ -253,7 +254,7 @@ const PublicProfilePage = () => {
         </div>
       ) : !isSelf && !isFriend ? (
         <div className="metal-panel rounded-xl p-8 text-center">
-          <Lock className="mx-auto mb-3 h-8 w-8 text-forge-copper" />
+          <PrivateIcon className="mx-auto mb-3 h-8 w-8 text-forge-copper" />
           <p className="text-lg font-bold text-white">This profile is private</p>
           <p className="mt-2 text-sm text-slate-400">
             {profile.currentOverallRank} rank. Add @{profile.username} as a friend to see their full stats, ranks, and public workouts.
@@ -336,7 +337,7 @@ const PublicProfilePage = () => {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={Trophy} title="No workouts logged yet" description="Completed workouts will show up here." />
+              <EmptyState icon={HistoryIcon} title="No workouts logged yet" description="Completed workouts will show up here." />
             )}
           </section>
         </div>

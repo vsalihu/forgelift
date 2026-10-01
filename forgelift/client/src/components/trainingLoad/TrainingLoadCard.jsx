@@ -1,13 +1,14 @@
-import { AlertTriangle, Flame, Snowflake, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import StatPill from "../visuals/StatPill.jsx";
+import { DetrainingIcon, FlameIcon, TrendingDownIcon, TrendingUpIcon } from "../icons/featureIcons.jsx";
 
 const quadrantConfig = {
-  "Real Progress": { variant: "success", icon: TrendingUp, label: "Real Progress" },
-  Overreaching: { variant: "warning", icon: Flame, label: "Overreaching" },
+  "Real Progress": { variant: "success", icon: TrendingUpIcon, label: "Real Progress" },
+  Overreaching: { variant: "warning", icon: FlameIcon, label: "Overreaching" },
   "Fatigued Without Gains": { variant: "danger", icon: AlertTriangle, label: "Fatigued, No Gains" },
-  Detraining: { variant: "info", icon: Snowflake, label: "Detraining" },
-  Maintaining: { variant: "neutral", icon: TrendingUp, label: "Maintaining" },
-  "Not Enough Data": { variant: "neutral", icon: TrendingDown, label: "Not Enough Data" }
+  Detraining: { variant: "info", icon: DetrainingIcon, label: "Detraining" },
+  Maintaining: { variant: "neutral", icon: TrendingUpIcon, label: "Maintaining" },
+  "Not Enough Data": { variant: "neutral", icon: TrendingDownIcon, label: "Not Enough Data" }
 };
 
 const acwrVariant = {

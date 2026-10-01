@@ -1,7 +1,9 @@
-import { Dumbbell, ExternalLink, Flame, Target, X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../Button.jsx";
 import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
+import { FlameIcon, GoalIcon } from "../icons/featureIcons.jsx";
+import { DumbbellIcon } from "../icons/navIcons.jsx";
 
 const MissionDetailModal = ({ mission, onClose, onComplete }) => {
   if (!mission) return null;
@@ -27,7 +29,7 @@ const MissionDetailModal = ({ mission, onClose, onComplete }) => {
             </div>
             <div className="rounded-lg bg-black/25 p-4">
               <p className="text-sm text-slate-400">Reward</p>
-              <p className="mt-1 flex items-center gap-2 text-xl font-black text-forge-copper"><Flame className="h-5 w-5" />{mission.xpReward || 0} XP</p>
+              <p className="mt-1 flex items-center gap-2 text-xl font-black text-forge-copper"><FlameIcon className="h-5 w-5" />{mission.xpReward || 0} XP</p>
             </div>
             <div className="rounded-lg bg-black/25 p-4">
               <p className="text-sm text-slate-400">Priority</p>
@@ -53,7 +55,7 @@ const MissionDetailModal = ({ mission, onClose, onComplete }) => {
           ) : null}
           <section className="grid gap-3 sm:grid-cols-2">
             <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-forge-ember px-4 py-2 text-sm font-semibold text-white" to="/gym-mode">
-              <Dumbbell className="h-4 w-4" />
+              <DumbbellIcon className="h-4 w-4" />
               Start Related Workout
             </Link>
             <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white" to="/exercises">
@@ -65,7 +67,7 @@ const MissionDetailModal = ({ mission, onClose, onComplete }) => {
         <div className="border-t border-white/10 p-4">
           {mission.status === "active" ? (
             <Button className="w-full" type="button" onClick={() => onComplete?.(mission._id)}>
-              <Target className="h-4 w-4" />
+              <GoalIcon className="h-4 w-4" />
               Mark Mission Complete
             </Button>
           ) : null}

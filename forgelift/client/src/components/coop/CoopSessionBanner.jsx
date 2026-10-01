@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Users } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth.js";
 import { coopSessionService } from "../../services/coopSessionService.js";
+import { FriendsIcon } from "../icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
@@ -40,7 +40,7 @@ const CoopSessionBanner = ({ sessionId }) => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-200">
-            <Users className="h-5 w-5" />
+            <FriendsIcon className="h-5 w-5" />
           </span>
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-cyan-200">Training together</p>

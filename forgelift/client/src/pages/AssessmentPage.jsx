@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, Dumbbell, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
@@ -13,6 +13,8 @@ import { assessmentService } from "../services/assessmentService.js";
 import { helpText } from "../utils/helpText.js";
 import { goalPaths } from "../utils/onboarding.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { InfoIcon, SuccessIcon } from "../components/icons/featureIcons.jsx";
+import { AssessmentIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const mainLifts = [
   "Bench Press",
@@ -206,17 +208,17 @@ const AssessmentPage = () => {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg bg-black/20 p-4">
-                <ClipboardCheck className="h-6 w-6 text-forge-ember" />
+                <AssessmentIcon className="h-6 w-6 text-forge-ember" />
                 <h3 className="mt-3 font-bold text-white">Training level</h3>
                 <p className="mt-2 text-sm text-slate-400">Beginner, Intermediate, or Advanced.</p>
               </div>
               <div className="rounded-lg bg-black/20 p-4">
-                <Dumbbell className="h-6 w-6 text-forge-ember" />
+                <DumbbellIcon className="h-6 w-6 text-forge-ember" />
                 <h3 className="mt-3 font-bold text-white">Strength baselines</h3>
                 <p className="mt-2 text-sm text-slate-400">Optional lift numbers for smarter starting weights.</p>
               </div>
               <div className="rounded-lg bg-black/20 p-4">
-                <Info className="h-6 w-6 text-forge-ember" />
+                <InfoIcon className="h-6 w-6 text-forge-ember" />
                 <h3 className="mt-3 font-bold text-white">Recommendations</h3>
                 <p className="mt-2 text-sm text-slate-400">Early guidance based on your goal and background.</p>
               </div>
@@ -381,7 +383,7 @@ const AssessmentPage = () => {
             {result ? (
               <div className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-200" />
+                  <SuccessIcon className="h-6 w-6 text-emerald-200" />
                   <div>
                     <p className="font-bold text-white">
                       Assessment Level: {result.levelResult?.calculatedLevel} ({result.levelResult?.confidence} confidence)

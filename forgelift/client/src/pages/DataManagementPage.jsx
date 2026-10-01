@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarX, Database, Dumbbell, RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -9,6 +9,8 @@ import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
 import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
 import { dataManagementService } from "../services/dataManagementService.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { ClearCalendarIcon } from "../components/icons/featureIcons.jsx";
+import { DataIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const formatDate = (date) =>
   date ? new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(date)) : "None";
@@ -90,10 +92,10 @@ const DataManagementPage = () => {
       {message ? <div className="mb-5 rounded-md bg-green-500/10 p-3 text-sm text-green-200">{message}</div> : null}
 
       <VisualSummaryGrid className="mb-6">
-        <IconMetricCard icon={Dumbbell} label="Workouts" value={summary?.workouts ?? "-"} status="Logged sessions" variant="info" />
-        <IconMetricCard icon={Database} label="PRs" value={summary?.personalRecords ?? "-"} status="Personal records" variant="rank" />
-        <IconMetricCard icon={Database} label="Baselines" value={summary?.strengthBaselines ?? "-"} status="Strength estimates" variant="neutral" />
-        <IconMetricCard icon={Database} label="Reports" value={summary?.reports ?? "-"} status="Monthly reports" variant="neutral" />
+        <IconMetricCard icon={DumbbellIcon} label="Workouts" value={summary?.workouts ?? "-"} status="Logged sessions" variant="info" />
+        <IconMetricCard icon={DataIcon} label="PRs" value={summary?.personalRecords ?? "-"} status="Personal records" variant="rank" />
+        <IconMetricCard icon={DataIcon} label="Baselines" value={summary?.strengthBaselines ?? "-"} status="Strength estimates" variant="neutral" />
+        <IconMetricCard icon={DataIcon} label="Reports" value={summary?.reports ?? "-"} status="Monthly reports" variant="neutral" />
       </VisualSummaryGrid>
 
       <section data-tour-id="data-summary" className="metal-panel mb-6 rounded-lg p-5">
@@ -109,7 +111,7 @@ const DataManagementPage = () => {
       <section className="grid gap-6 xl:grid-cols-2">
         <div data-tour-id="delete-date-range" className="metal-panel rounded-lg p-5">
           <h2 className="flex items-center gap-2 text-xl font-black text-white">
-            <CalendarX className="h-5 w-5 text-forge-ember" />
+            <ClearCalendarIcon className="h-5 w-5 text-forge-ember" />
             Delete by date range
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">

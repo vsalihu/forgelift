@@ -1,4 +1,3 @@
-import { CheckCircle2, XCircle } from "lucide-react";
 import Button from "../Button.jsx";
 import HelpTooltip from "../ui/HelpTooltip.jsx";
 import DeloadPlanList from "./DeloadPlanList.jsx";
@@ -7,6 +6,7 @@ import DeloadTypeBadge from "./DeloadTypeBadge.jsx";
 import { helpText } from "../../utils/helpText.js";
 import ProgressRing from "../visuals/ProgressRing.jsx";
 import StatusGlowCard from "../visuals/StatusGlowCard.jsx";
+import { ErrorIcon, SuccessIcon } from "../icons/featureIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
@@ -37,11 +37,11 @@ const DeloadRecommendationCard = ({ recommendation, onStatusChange }) => (
       {recommendation.status === "active" && onStatusChange ? (
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={() => onStatusChange(recommendation._id, "completed")}>
-            <CheckCircle2 className="h-4 w-4" />
+            <SuccessIcon className="h-4 w-4" />
             Complete
           </Button>
           <Button type="button" variant="ghost" onClick={() => onStatusChange(recommendation._id, "ignored")}>
-            <XCircle className="h-4 w-4" />
+            <ErrorIcon className="h-4 w-4" />
             Ignore
           </Button>
         </div>

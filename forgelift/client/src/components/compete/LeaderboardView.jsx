@@ -1,7 +1,7 @@
-import { Crown, Medal } from "lucide-react";
 import { Link } from "react-router-dom";
 import RankBadge from "../ranks/RankBadge.jsx";
 import { describeBoard, describeDivision, formatScore } from "./boards.js";
+import { FirstPlaceIcon, MedalIcon } from "../icons/featureIcons.jsx";
 
 const PODIUM_STYLES = [
   "border-amber-300/50 bg-gradient-to-b from-amber-300/15 to-transparent",
@@ -72,7 +72,7 @@ const LeaderboardView = ({ leaderboard, unit, viewerDivision }) => {
                   }`}
                   to={`/u/${entry.username}`}
                 >
-                  {entry.place === 1 ? <Crown className="h-6 w-6 text-amber-300" /> : <Medal className="h-6 w-6 text-slate-300" />}
+                  {entry.place === 1 ? <FirstPlaceIcon className="h-6 w-6 text-amber-300" /> : <MedalIcon className="h-6 w-6 text-slate-300" />}
                   <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-slate-400">#{entry.place}</p>
                   <p className="mt-1 truncate text-lg font-black text-white">{entry.isMe ? "You" : entry.name}</p>
                   <p className="truncate text-xs text-slate-400">@{entry.username}</p>

@@ -1,30 +1,7 @@
 import { NavLink } from "react-router-dom";
 import BottomSheet from "../ui/BottomSheet.jsx";
 import UnreadBadge from "../ui/UnreadBadge.jsx";
-import {
-  AnalyticsIcon,
-  AssessmentIcon,
-  BalanceIcon,
-  BaselinesIcon,
-  CalendarIcon,
-  ChatIcon,
-  DataIcon,
-  DeloadIcon,
-  DesignWorkoutIcon,
-  ExerciseLibraryIcon,
-  FriendsIcon,
-  HistoryIcon,
-  LogWorkoutIcon,
-  MissionsIcon,
-  OverloadIcon,
-  PrTimelineIcon,
-  ProfileIcon,
-  RanksIcon,
-  RecoveryIcon,
-  ReportsIcon,
-  TrainingLoadIcon,
-  WeakPointsIcon
-} from "../icons/navIcons.jsx";
+import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon, ChatIcon, DataIcon, DeloadIcon, DesignWorkoutIcon, ExerciseLibraryIcon, FriendsIcon, HistoryIcon, LogWorkoutIcon, MissionsIcon, OverloadIcon, PrTimelineIcon, ProfileIcon, RanksIcon, RecoveryIcon, ReportsIcon, TrainingLoadIcon, WeakPointsIcon } from "../icons/navIcons.jsx";
 
 export const moreMenuGroups = [
   {

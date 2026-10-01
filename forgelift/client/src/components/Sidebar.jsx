@@ -2,34 +2,7 @@ import { X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
-import {
-  AnalyticsIcon,
-  AssessmentIcon,
-  BalanceIcon,
-  BaselinesIcon,
-  CalendarIcon,
-  ChatIcon,
-  CompeteIcon,
-  DashboardIcon,
-  DataIcon,
-  DeloadIcon,
-  DesignWorkoutIcon,
-  ExerciseLibraryIcon,
-  FriendsIcon,
-  GymModeIcon,
-  HistoryIcon,
-  LogWorkoutIcon,
-  MissionsIcon,
-  OverloadIcon,
-  PrTimelineIcon,
-  ProfileIcon,
-  ProgressIcon,
-  RanksIcon,
-  RecoveryIcon,
-  ReportsIcon,
-  TrainingLoadIcon,
-  WeakPointsIcon
-} from "./icons/navIcons.jsx";
+import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon, ChatIcon, CompeteIcon, DashboardIcon, DataIcon, DeloadIcon, DesignWorkoutIcon, ExerciseLibraryIcon, FriendsIcon, GymModeIcon, HistoryIcon, LogWorkoutIcon, MissionsIcon, OverloadIcon, PrTimelineIcon, ProfileIcon, ProgressIcon, RanksIcon, RecoveryIcon, ReportsIcon, TrainingLoadIcon, WeakPointsIcon } from "./icons/navIcons.jsx";
 
 const navItems = [
   {

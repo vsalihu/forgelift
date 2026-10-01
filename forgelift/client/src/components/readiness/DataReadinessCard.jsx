@@ -1,7 +1,8 @@
-import { CheckCircle2, Circle, Info } from "lucide-react";
+import { Circle } from "lucide-react";
 import { Link } from "react-router-dom";
 import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
 import StatusGlowCard from "../visuals/StatusGlowCard.jsx";
+import { InfoIcon, SuccessIcon } from "../icons/featureIcons.jsx";
 
 const statusCopy = {
   empty: "Not enough data yet",
@@ -28,7 +29,7 @@ const DataReadinessCard = ({ readiness }) => {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Info className="h-5 w-5 text-forge-ember" />
+            <InfoIcon className="h-5 w-5 text-forge-ember" />
             <h2 className="text-lg font-black text-white">{statusCopy[readiness.overallReadiness] || "Data readiness"}</h2>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -45,7 +46,7 @@ const DataReadinessCard = ({ readiness }) => {
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {checklist.map((item) => (
           <Link className="flex items-center gap-2 rounded-md bg-black/20 p-3 text-sm text-slate-200 hover:bg-white/10" key={item.label} to={item.to}>
-            {item.done ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Circle className="h-4 w-4 text-slate-500" />}
+            {item.done ? <SuccessIcon className="h-4 w-4 text-emerald-300" /> : <Circle className="h-4 w-4 text-slate-500" />}
             {item.label}
           </Link>
         ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Flame, TrendingUp, Weight } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import BeginnerTip from "../components/ui/BeginnerTip.jsx";
@@ -8,6 +8,7 @@ import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
 import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { trainingLoadService } from "../services/trainingLoadService.js";
+import { FlameIcon, TrendingUpIcon, WeightPlateIcon } from "../components/icons/featureIcons.jsx";
 
 const BROAD_MUSCLES = ["Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Glutes", "Full Body"];
 
@@ -87,10 +88,10 @@ const TrainingLoadPage = () => {
 
       {trainingLoad.length ? (
         <VisualSummaryGrid className="mb-6">
-          <IconMetricCard icon={TrendingUp} label="Real progress" value={realProgressCount} status="Muscles getting stronger sustainably" variant="success" />
+          <IconMetricCard icon={TrendingUpIcon} label="Real progress" value={realProgressCount} status="Muscles getting stronger sustainably" variant="success" />
           <IconMetricCard icon={AlertTriangle} label="At risk" value={atRiskCount} status="Overreaching or fatigued without gains" variant={atRiskCount ? "danger" : "success"} />
-          <IconMetricCard icon={Flame} label="Avg strength trend" value={avgStrengthTrend === null ? "--" : `${avgStrengthTrend > 0 ? "+" : ""}${avgStrengthTrend}%`} status="Across tracked muscles" variant="info" />
-          <IconMetricCard icon={Weight} label="Tracked muscles" value={trainingLoad.length} status="Training load cards below" variant="neutral" />
+          <IconMetricCard icon={FlameIcon} label="Avg strength trend" value={avgStrengthTrend === null ? "--" : `${avgStrengthTrend > 0 ? "+" : ""}${avgStrengthTrend}%`} status="Across tracked muscles" variant="info" />
+          <IconMetricCard icon={WeightPlateIcon} label="Tracked muscles" value={trainingLoad.length} status="Training load cards below" variant="neutral" />
         </VisualSummaryGrid>
       ) : null}
 

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, Flame } from "lucide-react";
 import Button from "../Button.jsx";
+import { FlameIcon, SuccessIcon } from "../icons/featureIcons.jsx";
 
 const MissionCompleteAnimation = ({ missions = [], onClose }) => {
   if (!missions.length) return null;
@@ -19,7 +19,7 @@ const MissionCompleteAnimation = ({ missions = [], onClose }) => {
           className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-200"
           transition={{ duration: 0.35 }}
         >
-          <CheckCircle2 className="h-9 w-9" />
+          <SuccessIcon className="h-9 w-9" />
         </motion.div>
         <h2 className="mt-4 text-2xl font-black text-white">
           {missions.length === 1 ? "Mission Complete" : `${missions.length} Missions Complete`}
@@ -32,7 +32,7 @@ const MissionCompleteAnimation = ({ missions = [], onClose }) => {
           ))}
         </div>
         <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-forge-ember/15 px-4 py-2 font-black text-orange-100">
-          <Flame className="h-4 w-4" />
+          <FlameIcon className="h-4 w-4" />
           +{totalXp} XP
         </p>
         <Button className="mt-5 w-full" type="button" onClick={onClose}>

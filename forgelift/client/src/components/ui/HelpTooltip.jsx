@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleHelp } from "lucide-react";
+import { HelpIcon } from "../icons/featureIcons.jsx";
 
 const HelpTooltip = ({ title, content, example, size = "sm" }) => {
   const [open, setOpen] = useState(false);
@@ -39,7 +39,7 @@ const HelpTooltip = ({ title, content, example, size = "sm" }) => {
         onClick={() => setOpen((value) => !value)}
         onFocus={() => setOpen(true)}
       >
-        <CircleHelp className={iconSize} />
+        <HelpIcon className={iconSize} />
       </button>
       {open ? (
         <span className="fixed left-4 right-4 top-20 z-50 rounded-lg border border-white/10 bg-slate-950 p-4 text-left shadow-2xl shadow-black/50 sm:absolute sm:left-1/2 sm:right-auto sm:top-8 sm:w-[280px] sm:-translate-x-1/2">

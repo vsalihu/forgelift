@@ -1,4 +1,4 @@
-import { Activity } from "lucide-react";
+import { ActivityIcon } from "../icons/featureIcons.jsx";
 
 const TodayRecommendationCard = ({ recommendation }) => {
   return (
@@ -9,7 +9,7 @@ const TodayRecommendationCard = ({ recommendation }) => {
           <h2 className="mt-2 text-3xl font-black text-white">{recommendation?.bestWorkoutType || "Any Workout"}</h2>
         </div>
         <div className="rounded-full border border-forge-copper/50 bg-black/30 p-4 text-forge-ember">
-          <Activity className="h-7 w-7" />
+          <ActivityIcon className="h-7 w-7" />
         </div>
       </div>
 

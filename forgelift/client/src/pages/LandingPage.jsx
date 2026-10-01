@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Dumbbell, HeartPulse, MessageCircle, Shield, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, Navigate } from "react-router-dom";
 import BrandSignature from "../components/brand/BrandSignature.jsx";
@@ -6,37 +6,38 @@ import Footer from "../components/layout/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { getRankImage } from "../utils/rankImages.js";
+import { CalendarIcon, ChatIcon, DumbbellIcon, OverloadIcon, RanksIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
 
 const RANK_ORDER = ["Copper", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Elite", "Warrior", "Ultimate"];
 
 const features = [
   {
-    icon: Zap,
+    icon: OverloadIcon,
     title: "Smart Overload & Deload",
     text: "Know exactly when to push harder and when to back off, based on your real training data, not guesswork."
   },
   {
-    icon: CalendarDays,
+    icon: CalendarIcon,
     title: "AI-Generated Training Plans",
     text: "Mark rest and treatment days on your calendar. Once ForgeLift knows your pattern, it builds your next 3-4 weeks for you."
   },
   {
-    icon: Shield,
+    icon: RanksIcon,
     title: "9-Tier Rank System",
     text: "Copper to Ultimate, an overall rank plus a rank for every muscle group, built from your actual strength and volume."
   },
   {
-    icon: HeartPulse,
+    icon: RecoveryIcon,
     title: "Recovery & Muscle Load",
     text: "See exactly how loaded each muscle group is before you decide what's next, so you train hard without digging a hole."
   },
   {
-    icon: MessageCircle,
+    icon: ChatIcon,
     title: "Train With Friends",
     text: "Chat, send challenges, and train live together, watching each other's sets and volume update in real time."
   },
   {
-    icon: Dumbbell,
+    icon: DumbbellIcon,
     title: "Built For The Gym Floor",
     text: "Gym Mode is a live logging flow with rest timers and smart weight suggestions, made for one-handed use mid-set."
   }
@@ -164,7 +165,7 @@ const LandingPage = () => {
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-200">
-                <MessageCircle className="h-4 w-4" />
+                <ChatIcon className="h-4 w-4" />
               </span>
               <div>
                 <p className="text-xs font-bold text-white">Denis challenged you</p>

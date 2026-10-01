@@ -1,5 +1,5 @@
-import { Shield } from "lucide-react";
 import { getRankImage } from "../../utils/rankImages.js";
+import { RanksIcon } from "../icons/navIcons.jsx";
 
 export const rankStyles = {
   Copper: "border-orange-700/60 bg-gradient-to-r from-orange-950/70 to-orange-800/20 text-orange-300 shadow-orange-950/30",
@@ -25,7 +25,7 @@ const RankBadge = ({ rank = "Copper", className = "" }) => {
       {image ? (
         <img alt="" aria-hidden="true" className="h-4 w-4 object-contain" src={image} />
       ) : (
-        <Shield className="h-3.5 w-3.5" />
+        <RanksIcon className="h-3.5 w-3.5" />
       )}
       {rank}
     </span>

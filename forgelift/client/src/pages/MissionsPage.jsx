@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, Target } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import MissionCard from "../components/missions/MissionCard.jsx";
@@ -12,6 +12,7 @@ import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { missionService } from "../services/missionService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { GoalIcon } from "../components/icons/featureIcons.jsx";
 
 const MissionsPage = () => {
   const [weeklyTarget, setWeeklyTarget] = useState(null);
@@ -164,7 +165,7 @@ const MissionsPage = () => {
               </div>
             ) : (
               <div className="metal-panel rounded-lg p-8 text-center">
-                <Target className="mx-auto h-10 w-10 text-forge-copper" />
+                <GoalIcon className="mx-auto h-10 w-10 text-forge-copper" />
                 <h3 className="mt-4 text-lg font-bold text-white">No active missions</h3>
                 <p className="mt-2 text-sm text-slate-400">
                   Recalculate missions or log a workout to generate a fresh weekly plan.

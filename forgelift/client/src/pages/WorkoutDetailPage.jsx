@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BarChart3, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
 import { workoutService } from "../services/workoutService.js";
+import { BarChartIcon } from "../components/icons/featureIcons.jsx";
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("en", {
@@ -241,7 +242,7 @@ const WorkoutDetailPage = () => {
             <aside className="space-y-4">
               <section className="metal-panel rounded-lg p-5">
                 <div className="mb-4 flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-forge-ember" />
+                  <BarChartIcon className="h-5 w-5 text-forge-ember" />
                   <h2 className="text-xl font-bold text-white">Muscle load</h2>
                 </div>
                 <div className="space-y-3">

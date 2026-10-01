@@ -1,4 +1,4 @@
-import { Dumbbell } from "lucide-react";
+import { DumbbellIcon } from "../icons/navIcons.jsx";
 
 const roleStyles = {
   primary: "from-emerald-400 to-cyan-300 text-emerald-200",
@@ -58,7 +58,7 @@ const ExerciseImpactCard = ({ exercise, match, onSelect }) => {
           <h3 className="mt-1 text-lg font-black text-white">{exercise.name}</h3>
         </div>
         <span className="rounded-lg bg-white/10 p-2 text-forge-ember">
-          <Dumbbell className="h-5 w-5" />
+          <DumbbellIcon className="h-5 w-5" />
         </span>
       </div>
 

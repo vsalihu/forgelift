@@ -1,6 +1,6 @@
-import { MapPin } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { competitionService } from "../../services/competitionService.js";
+import { CityIcon } from "../icons/featureIcons.jsx";
 
 const formatPopulation = (population) =>
   population >= 1000000 ? `${(population / 1000000).toFixed(1)}M people` : `${Math.round(population / 1000)}k people`;
@@ -67,7 +67,7 @@ const CitySearch = ({ value, onChange }) => {
       <label className="block">
         <span className="mb-2 block text-sm font-medium text-slate-200">Your city</span>
         <div className="relative">
-          <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <CityIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             aria-autocomplete="list"
             aria-controls={listId}

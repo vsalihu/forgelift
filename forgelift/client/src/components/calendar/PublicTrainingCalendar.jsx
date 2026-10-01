@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Dumbbell, HeartPulse, Moon, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { calendarService } from "../../services/calendarService.js";
+import { DeloadWeekIcon, PhysioIcon, RestDayIcon } from "../icons/featureIcons.jsx";
+import { DumbbellIcon } from "../icons/navIcons.jsx";
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -34,7 +36,7 @@ const DayCellIcon = ({ dayData, isPast }) => {
   if (dayData.completed) {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-forge-ember text-white shadow">
-        <Dumbbell className="h-3.5 w-3.5" />
+        <DumbbellIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -42,7 +44,7 @@ const DayCellIcon = ({ dayData, isPast }) => {
   if (dayData.type === "rest") {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-600/40 text-slate-200">
-        <Moon className="h-3.5 w-3.5" />
+        <RestDayIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -50,7 +52,7 @@ const DayCellIcon = ({ dayData, isPast }) => {
   if (dayData.type === "treatment") {
     return (
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-500/30 text-teal-200">
-        <HeartPulse className="h-3.5 w-3.5" />
+        <PhysioIcon className="h-3.5 w-3.5" />
       </span>
     );
   }
@@ -63,10 +65,10 @@ const DayCellIcon = ({ dayData, isPast }) => {
           missed ? "border-red-400/70 text-red-300" : "border-forge-ember text-orange-200"
         }`}
       >
-        <Dumbbell className="h-3.5 w-3.5" />
+        <DumbbellIcon className="h-3.5 w-3.5" />
         {dayData.isDeloadWeek ? (
           <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400 text-black">
-            <Sparkles className="h-2.5 w-2.5" />
+            <DeloadWeekIcon className="h-2.5 w-2.5" />
           </span>
         ) : null}
       </span>

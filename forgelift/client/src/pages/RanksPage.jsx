@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Shield } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
@@ -9,6 +8,7 @@ import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import { rankService } from "../services/rankService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { RanksIcon } from "../components/icons/navIcons.jsx";
 
 const RanksPage = () => {
   const [rankData, setRankData] = useState(null);
@@ -85,7 +85,7 @@ const RanksPage = () => {
 
           {!hasTrainingData ? (
             <div className="metal-panel mt-6 rounded-lg p-8 text-center">
-              <Shield className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
+              <RanksIcon className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
               <p className="text-lg font-bold text-white">No muscle ranks yet.</p>
               <p className="mt-2 text-slate-400">Log completed workouts, then recalculate ranks to build your ranking profile.</p>
             </div>

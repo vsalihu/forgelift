@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Dumbbell, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -17,6 +17,7 @@ import { exerciseService } from "../services/exerciseService.js";
 import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
+import { DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const emptyTemplate = { name: "", description: "", exercises: [] };
 const numberFieldClass = "min-h-10 w-16 rounded-md border border-white/10 bg-black/30 px-2 text-center text-sm text-white outline-none focus:border-forge-ember";
@@ -357,7 +358,7 @@ const WorkoutTemplatesPage = () => {
                 type="button"
                 onClick={() => setPickerOpen(true)}
               >
-                <Dumbbell className="mx-auto mb-2 h-6 w-6" />
+                <DumbbellIcon className="mx-auto mb-2 h-6 w-6" />
                 Search or filter the exercise library to add your first movement.
               </button>
             )}

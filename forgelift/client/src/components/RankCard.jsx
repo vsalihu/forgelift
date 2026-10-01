@@ -1,6 +1,6 @@
-import { Award } from "lucide-react";
 import { motion } from "framer-motion";
 import ProgressBar from "./ProgressBar.jsx";
+import { AwardIcon } from "./icons/featureIcons.jsx";
 
 const RankCard = ({ rank = "Copper", xp = 0 }) => {
   return (
@@ -18,7 +18,7 @@ const RankCard = ({ rank = "Copper", xp = 0 }) => {
           <h2 className="mt-2 text-4xl font-black text-white">{rank}</h2>
         </div>
         <div className="rounded-full border border-forge-copper/50 bg-black/30 p-4">
-          <Award className="h-9 w-9 text-forge-copper" />
+          <AwardIcon className="h-9 w-9 text-forge-copper" />
         </div>
       </div>
       <ProgressBar label="Next rank target" value={0} />

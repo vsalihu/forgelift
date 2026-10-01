@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Activity, ClipboardCheck, Dumbbell, Flame, ListChecks, Medal, ShieldAlert, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
@@ -30,6 +29,8 @@ import { userService } from "../services/userService.js";
 import { weakPointService } from "../services/weakPointService.js";
 import { workoutService } from "../services/workoutService.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { FlameIcon, MedalIcon } from "../components/icons/featureIcons.jsx";
+import { AssessmentIcon, DeloadIcon, DumbbellIcon, MissionsIcon, OverloadIcon, RanksIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(new Date(date));
@@ -212,7 +213,7 @@ const DashboardPage = () => {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <Button data-tour-id="dashboard-start-gym-mode" className="min-h-12 w-full text-base" type="button" onClick={() => { window.location.href = "/gym-mode"; }}>
-              <Dumbbell className="h-5 w-5" />
+              <DumbbellIcon className="h-5 w-5" />
               Start Gym Mode
             </Button>
             <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-base font-semibold text-white transition hover:bg-white/15" to="/workouts/new">
@@ -227,7 +228,7 @@ const DashboardPage = () => {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-3">
               <span className="mt-1 rounded-lg bg-forge-ember/20 p-2 text-forge-ember">
-                <ClipboardCheck className="h-5 w-5" />
+                <AssessmentIcon className="h-5 w-5" />
               </span>
               <div>
                 <h2 className="font-black text-white">Complete your ForgeLift Assessment</h2>
@@ -318,7 +319,7 @@ const DashboardPage = () => {
 
           <VisualSummaryGrid>
             <IconMetricCard
-              icon={Trophy}
+              icon={RanksIcon}
               label="Overall Rank"
               value={rankData?.overallRank || "Copper"}
               status={`${rankData?.xp || 0} XP`}
@@ -327,7 +328,7 @@ const DashboardPage = () => {
             />
             <IconMetricCard
               tourId="dashboard-recovery"
-              icon={Activity}
+              icon={RecoveryIcon}
               label="Recovery"
               value={todayRecommendation?.bestWorkoutType || "No data"}
               status={avoidMuscles.length ? `Avoid: ${avoidMuscles.map((item) => item.muscleGroup).join(", ")}` : "No major avoid warning"}
@@ -336,7 +337,7 @@ const DashboardPage = () => {
             />
             <IconMetricCard
               tourId="dashboard-missions"
-              icon={ListChecks}
+              icon={MissionsIcon}
               label="Weekly Target"
               value={weeklyTarget ? `${weeklyTarget.completedWorkouts}/${weeklyTarget.targetWorkouts}` : "No target"}
               status={topMission?.title || "Open missions for this week's plan"}
@@ -344,7 +345,7 @@ const DashboardPage = () => {
               to="/missions"
             />
             <IconMetricCard
-              icon={ShieldAlert}
+              icon={DeloadIcon}
               label="Deload"
               value={highestDeload ? `${highestDeload.severity} alert` : "Clear"}
               status={highestDeload?.reason || "No strong fatigue or plateau signal"}
@@ -364,7 +365,7 @@ const DashboardPage = () => {
               <div className="grid gap-3">
                 <CompactCard
                   tourId="dashboard-overload"
-                  icon={Zap}
+                  icon={OverloadIcon}
                   title="Smart Overload"
                   value={topOverload?.exerciseName || "No target yet"}
                   note={topOverload?.reason || "Log more workouts to unlock recommendations"}
@@ -436,14 +437,14 @@ const DashboardPage = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Progress</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <CompactCard
-                  icon={Medal}
+                  icon={MedalIcon}
                   title="Latest PR"
                   value={latestPR?.exerciseName || "None yet"}
                   note={latestPR?.recordType?.replaceAll("_", " ") || "Log workouts to detect PRs"}
                   to="/progress/prs"
                 />
                 <CompactCard
-                  icon={Flame}
+                  icon={FlameIcon}
                   title="This Month"
                   value={`${monthlyOverview?.totalWorkouts || 0} workouts`}
                   note={`${monthlyOverview?.totalPRs || 0} PRs / ${monthlyOverview?.missionsCompleted || 0} missions`}

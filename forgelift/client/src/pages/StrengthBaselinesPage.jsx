@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calculator, RefreshCw, Trash2 } from "lucide-react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
@@ -13,6 +13,7 @@ import { exerciseService } from "../services/exerciseService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { BaselinesIcon } from "../components/icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 const estimatedOneRepMax = (weight, reps) => {
@@ -216,7 +217,7 @@ const StrengthBaselinesPage = () => {
       <section className="metal-panel mb-6 rounded-lg p-5">
         <div className="mb-4 flex items-center gap-3">
           <span className="rounded-md bg-forge-ember/15 p-2 text-forge-ember">
-            <Calculator className="h-5 w-5" />
+            <BaselinesIcon className="h-5 w-5" />
           </span>
           <h2 className="text-xl font-bold text-white">Add or update baseline</h2>
         </div>

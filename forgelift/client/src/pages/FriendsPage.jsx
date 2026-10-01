@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Dumbbell, MessageCircle, Search, Trophy, UserMinus, UserPlus, Users } from "lucide-react";
+import { Search } from "lucide-react";
 import Button from "../components/Button.jsx";
 import FormInput from "../components/FormInput.jsx";
 import Layout from "../components/Layout.jsx";
@@ -14,6 +14,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
+import { AddFriendIcon, FirstPlaceIcon, RemoveFriendIcon } from "../components/icons/featureIcons.jsx";
+import { ChatIcon, CompeteIcon, DumbbellIcon, FriendsIcon } from "../components/icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 
@@ -198,7 +200,7 @@ const FriendsPage = () => {
           </div>
         ) : (
           <EmptyState
-            icon={Users}
+            icon={FriendsIcon}
             title="No activity yet"
             description="Add friends and finish a workout to see activity here."
           />
@@ -241,7 +243,7 @@ const FriendsPage = () => {
                           variant="secondary"
                           onClick={() => sendRequest(result.username)}
                         >
-                          <UserPlus className="h-4 w-4" />
+                          <AddFriendIcon className="h-4 w-4" />
                           {alreadyConnected ? "Pending/Added" : "Add"}
                         </Button>
                       </div>
@@ -308,7 +310,7 @@ const FriendsPage = () => {
                         title="Message"
                         to={`/chat/${friend.username}`}
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <ChatIcon className="h-4 w-4" />
                       </Link>
                       <button
                         className="rounded-md p-2 text-red-300 hover:bg-red-500/10"
@@ -316,14 +318,14 @@ const FriendsPage = () => {
                         type="button"
                         onClick={() => setPendingRemoveId(friend._id)}
                       >
-                        <UserMinus className="h-4 w-4" />
+                        <RemoveFriendIcon className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState icon={Users} title="No friends yet" description="Search for a username above to send your first friend request." />
+              <EmptyState icon={FriendsIcon} title="No friends yet" description="Search for a username above to send your first friend request." />
             )}
           </section>
         </div>
@@ -387,7 +389,7 @@ const FriendsPage = () => {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={Dumbbell} title="No public workouts yet" description="Friends' workouts marked public will show up here." />
+              <EmptyState icon={DumbbellIcon} title="No public workouts yet" description="Friends' workouts marked public will show up here." />
             )}
           </section>
         </div>
@@ -411,7 +413,7 @@ const FriendsPage = () => {
                 {leaderboard.map((entry, index) => (
                   <tr className={`border-t border-white/5 ${entry.isSelf ? "bg-forge-ember/10" : ""}`} key={entry._id}>
                     <td className="p-3 font-bold text-white">
-                      {index === 0 ? <Trophy className="h-4 w-4 text-yellow-300" /> : index + 1}
+                      {index === 0 ? <FirstPlaceIcon className="h-4 w-4 text-yellow-300" /> : index + 1}
                     </td>
                     <td className="p-3 text-white">
                       <Link className="hover:underline" to={`/u/${entry.username}`}>
@@ -429,7 +431,7 @@ const FriendsPage = () => {
             </table>
           </div>
         ) : (
-          <EmptyState icon={Trophy} title="Nothing to compare yet" description="Add friends to see how you stack up." />
+          <EmptyState icon={CompeteIcon} title="Nothing to compare yet" description="Add friends to see how you stack up." />
         )
       ) : null}
     </Layout>

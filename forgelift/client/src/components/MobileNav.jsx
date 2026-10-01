@@ -3,13 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
-import {
-  CalendarIcon,
-  CompeteIcon,
-  DashboardIcon,
-  GymModeIcon,
-  MoreIcon
-} from "./icons/navIcons.jsx";
+import { CalendarIcon, CompeteIcon, DashboardIcon, GymModeIcon, MoreIcon } from "./icons/navIcons.jsx";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: DashboardIcon },

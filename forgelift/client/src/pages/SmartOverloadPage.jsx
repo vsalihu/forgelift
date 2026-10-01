@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Zap } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import OverloadRecommendationCard from "../components/overload/OverloadRecommendationCard.jsx";
@@ -12,6 +12,7 @@ import { deloadService } from "../services/deloadService.js";
 import { overloadService } from "../services/overloadService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { OverloadIcon } from "../components/icons/navIcons.jsx";
 
 const typeOptions = [
   { value: "", label: "All types" },
@@ -154,7 +155,7 @@ const SmartOverloadPage = () => {
 
       {!loading && !error && recommendations.length === 0 ? (
         <div className="metal-panel rounded-lg p-8 text-center">
-          <Zap className="mx-auto h-10 w-10 text-forge-copper" />
+          <OverloadIcon className="mx-auto h-10 w-10 text-forge-copper" />
           <h2 className="mt-4 text-xl font-bold text-white">No overload recommendations yet</h2>
           <p className="mt-2 text-sm text-slate-400">
             Log workouts to generate next-session targets for each exercise.

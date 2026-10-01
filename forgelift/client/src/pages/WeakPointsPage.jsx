@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import HelpTooltip from "../components/ui/HelpTooltip.jsx";
@@ -8,6 +7,7 @@ import WeakPointCard from "../components/weakPoints/WeakPointCard.jsx";
 import { weakPointService } from "../services/weakPointService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { WeakPointsIcon } from "../components/icons/navIcons.jsx";
 
 const WeakPointsPage = () => {
   const [weakPoints, setWeakPoints] = useState([]);
@@ -73,7 +73,7 @@ const WeakPointsPage = () => {
 
       {!loading && !error && weakPoints.length === 0 ? (
         <div className="metal-panel rounded-lg p-8 text-center">
-          <AlertTriangle className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
+          <WeakPointsIcon className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
           <p className="text-lg font-bold text-white">No weak point data yet.</p>
           <p className="mt-2 text-slate-400">Log workouts to start detecting imbalances.</p>
         </div>

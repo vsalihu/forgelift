@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Medal } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import SelectInput from "../components/SelectInput.jsx";
 import { exerciseService } from "../services/exerciseService.js";
 import { personalRecordService } from "../services/personalRecordService.js";
+import { MedalIcon } from "../components/icons/featureIcons.jsx";
 
 const recordTypeOptions = [
   { value: "heaviest_weight", label: "Heaviest weight" },
@@ -118,7 +118,7 @@ const PRTimelinePage = () => {
 
       {!loading && !error && personalRecords.length === 0 ? (
         <div className="metal-panel rounded-lg p-8 text-center">
-          <Medal className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
+          <MedalIcon className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
           <p className="text-lg font-bold text-white">No personal records yet.</p>
           <p className="mt-2 text-slate-400">Log completed workout sets to start building your PR timeline.</p>
         </div>

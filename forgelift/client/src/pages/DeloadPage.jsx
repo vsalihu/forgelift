@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import Button from "../components/Button.jsx";
 import DeloadRecommendationCard from "../components/deload/DeloadRecommendationCard.jsx";
 import FatigueSummaryCard from "../components/deload/FatigueSummaryCard.jsx";
@@ -12,6 +12,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { deloadService } from "../services/deloadService.js";
 import { helpText } from "../utils/helpText.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
+import { DeloadIcon } from "../components/icons/navIcons.jsx";
 
 const DeloadPage = () => {
   const { user } = useAuth();
@@ -134,7 +135,7 @@ const DeloadPage = () => {
               </div>
             ) : (
               <div className="rounded-md border border-dashed border-white/15 p-8 text-center">
-                <ShieldAlert className="mx-auto h-10 w-10 text-forge-copper" />
+                <DeloadIcon className="mx-auto h-10 w-10 text-forge-copper" />
                 <h3 className="mt-4 text-lg font-bold text-white">No deload needed right now</h3>
                 <p className="mt-2 text-sm text-slate-400">
                   Your recent training does not show strong plateau or fatigue signals.

@@ -1,9 +1,9 @@
-import { Ban, Flag } from "lucide-react";
 import { useState } from "react";
 import { safetyService } from "../../services/safetyService.js";
 import Button from "../Button.jsx";
 import BottomSheet from "../ui/BottomSheet.jsx";
 import ConfirmModal from "../ui/ConfirmModal.jsx";
+import { BlockIcon, ReportIcon } from "../icons/featureIcons.jsx";
 
 const REASONS = [
   { value: "fake_lifts", label: "Fake or impossible lifts" },
@@ -106,17 +106,17 @@ const SafetyActions = ({ username, isBlocked, onBlockedChange }) => {
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {isBlocked ? (
           <button className="inline-flex items-center gap-1.5 font-semibold text-forge-ember hover:text-orange-300" disabled={busy} type="button" onClick={unblock}>
-            <Ban className="h-4 w-4" />
+            <BlockIcon className="h-4 w-4" />
             Unblock
           </button>
         ) : (
           <button className="inline-flex items-center gap-1.5 font-semibold text-slate-400 hover:text-white" type="button" onClick={() => setConfirmBlock(true)}>
-            <Ban className="h-4 w-4" />
+            <BlockIcon className="h-4 w-4" />
             Block
           </button>
         )}
         <button className="inline-flex items-center gap-1.5 font-semibold text-slate-400 hover:text-white" type="button" onClick={() => setReportOpen(true)}>
-          <Flag className="h-4 w-4" />
+          <ReportIcon className="h-4 w-4" />
           Report
         </button>
         {message ? <span className="text-xs text-slate-400">{message}</span> : null}

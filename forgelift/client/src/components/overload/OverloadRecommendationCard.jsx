@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldAlert, XCircle, ArrowRight, TrendingUp, Repeat2, TrendingDown, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../Button.jsx";
@@ -9,18 +9,20 @@ import RecommendationTypeBadge from "./RecommendationTypeBadge.jsx";
 import { helpText } from "../../utils/helpText.js";
 import StatPill from "../visuals/StatPill.jsx";
 import StatusGlowCard from "../visuals/StatusGlowCard.jsx";
+import { ErrorIcon, RepeatIcon, SuccessIcon, TrendingDownIcon, TrendingUpIcon } from "../icons/featureIcons.jsx";
+import { DeloadIcon } from "../icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
 
 const typeVisuals = {
-  increase_weight: { variant: "success", icon: TrendingUp },
-  repeat_weight: { variant: "info", icon: Repeat2 },
-  increase_reps: { variant: "success", icon: TrendingUp },
-  reduce_weight: { variant: "warning", icon: TrendingDown },
+  increase_weight: { variant: "success", icon: TrendingUpIcon },
+  repeat_weight: { variant: "info", icon: RepeatIcon },
+  increase_reps: { variant: "success", icon: TrendingUpIcon },
+  reduce_weight: { variant: "warning", icon: TrendingDownIcon },
   recovery_warning: { variant: "warning", icon: AlertTriangle },
   plateau_warning: { variant: "warning", icon: AlertTriangle },
-  deload_flag: { variant: "danger", icon: ShieldAlert },
-  reduce_volume: { variant: "warning", icon: TrendingDown }
+  deload_flag: { variant: "danger", icon: DeloadIcon },
+  reduce_volume: { variant: "warning", icon: TrendingDownIcon }
 };
 
 const OverloadRecommendationCard = ({ recommendation, onStatusChange, activeDeload }) => {
@@ -33,7 +35,7 @@ const OverloadRecommendationCard = ({ recommendation, onStatusChange, activeDelo
       {activeDeload ? (
         <div className="mb-4 rounded-md border border-orange-400/20 bg-orange-500/10 p-3">
           <div className="flex items-center gap-2 text-sm font-bold text-orange-100">
-            <ShieldAlert className="h-4 w-4" />
+            <DeloadIcon className="h-4 w-4" />
             Deload recommendation active
           </div>
           <p className="mt-2 text-sm text-orange-100/90">
@@ -62,11 +64,11 @@ const OverloadRecommendationCard = ({ recommendation, onStatusChange, activeDelo
         {recommendation.status === "active" && onStatusChange ? (
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" onClick={() => onStatusChange(recommendation._id, "completed")}>
-              <CheckCircle2 className="h-4 w-4" />
+              <SuccessIcon className="h-4 w-4" />
               Complete
             </Button>
             <Button type="button" variant="ghost" onClick={() => onStatusChange(recommendation._id, "ignored")}>
-              <XCircle className="h-4 w-4" />
+              <ErrorIcon className="h-4 w-4" />
               Ignore
             </Button>
           </div>

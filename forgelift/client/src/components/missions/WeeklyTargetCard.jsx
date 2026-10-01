@@ -1,7 +1,7 @@
-import { Flame } from "lucide-react";
 import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
 import ProgressRing from "../visuals/ProgressRing.jsx";
 import StatPill from "../visuals/StatPill.jsx";
+import { FlameIcon } from "../icons/featureIcons.jsx";
 
 const formatDate = (date) =>
   date
@@ -38,7 +38,7 @@ const WeeklyTargetCard = ({ weeklyTarget }) => {
             {formatDate(weeklyTarget.weekStart)} - {formatDate(weeklyTarget.weekEnd)}
           </p>
           <div className="mt-3">
-            <StatPill icon={Flame} variant="rank">Weekly streak target</StatPill>
+            <StatPill icon={FlameIcon} variant="rank">Weekly streak target</StatPill>
           </div>
         </div>
       </div>

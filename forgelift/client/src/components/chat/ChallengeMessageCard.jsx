@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Trophy } from "lucide-react";
 import Button from "../Button.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 import { challengeService } from "../../services/challengeService.js";
+import { ChallengeIcon } from "../icons/featureIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
 const metricLabel = (metric) => (metric === "workout_count" ? "most workouts" : "most volume");
@@ -57,7 +57,7 @@ const ChallengeMessageCard = ({ challenge: initialChallenge, onChanged }) => {
   return (
     <div className="w-full max-w-sm rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-4">
       <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-forge-copper">
-        <Trophy className="h-4 w-4" />
+        <ChallengeIcon className="h-4 w-4" />
         Challenge
       </div>
       <p className="text-sm text-slate-200">

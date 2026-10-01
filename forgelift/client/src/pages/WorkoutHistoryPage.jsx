@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import { workoutService } from "../services/workoutService.js";
+import { ViewIcon } from "../components/icons/featureIcons.jsx";
+import { CalendarIcon } from "../components/icons/navIcons.jsx";
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("en", {
@@ -84,7 +86,7 @@ const WorkoutHistoryPage = () => {
 
       {!loading && !error && workouts.length === 0 ? (
         <div className="metal-panel rounded-lg p-8 text-center">
-          <CalendarDays className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
+          <CalendarIcon className="mx-auto mb-3 h-9 w-9 text-forge-copper" />
           <p className="text-lg font-bold text-white">No workouts logged yet.</p>
           <p className="mt-2 text-slate-400">Start your first session to build your workout history.</p>
           <Link
@@ -135,7 +137,7 @@ const WorkoutHistoryPage = () => {
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
                     to={`/workouts/${workout._id}`}
                   >
-                    <Eye className="h-4 w-4" />
+                    <ViewIcon className="h-4 w-4" />
                     View
                   </Link>
                   <Link

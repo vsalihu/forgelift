@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Dumbbell, Send, Trophy } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import ChallengeMessageCard from "../components/chat/ChallengeMessageCard.jsx";
@@ -13,6 +13,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { chatService } from "../services/chatService.js";
 import { challengeService } from "../services/challengeService.js";
 import { coopSessionService } from "../services/coopSessionService.js";
+import { ChallengeIcon } from "../components/icons/featureIcons.jsx";
+import { DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const formatTime = (date) => new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(date));
 
@@ -162,12 +164,12 @@ const ChatThreadPage = () => {
           </div>
           <div className="flex gap-2">
             <Button className="flex-1 sm:flex-none" type="button" variant="secondary" onClick={() => setChallengeModalOpen(true)}>
-              <Trophy className="h-4 w-4" />
+              <ChallengeIcon className="h-4 w-4" />
               Challenge
             </Button>
             {conversation.canMessage !== false ? (
               <Button className="flex-1 sm:flex-none" loading={sendingInvite} type="button" variant="secondary" onClick={sendWorkoutInvite}>
-                <Dumbbell className="h-4 w-4" />
+                <DumbbellIcon className="h-4 w-4" />
                 Train Together
               </Button>
             ) : null}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, Globe2, MapPin, Pin, Settings, Swords, Trophy, Users } from "lucide-react";
+import { Check, Settings } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import CompetitionForm from "../components/compete/CompetitionForm.jsx";
@@ -13,6 +13,8 @@ import { useAuth } from "../hooks/useAuth.js";
 import { clearStanding, refreshStanding } from "../hooks/useCompetitionStanding.js";
 import { competitionService } from "../services/competitionService.js";
 import { safetyService } from "../services/safetyService.js";
+import { BarChartIcon, ChallengeIcon, CityIcon, PinnedIcon, WorldIcon } from "../components/icons/featureIcons.jsx";
+import { CompeteIcon, FriendsIcon } from "../components/icons/navIcons.jsx";
 
 const selectClass =
   "min-h-10 rounded-md border border-white/10 bg-black/30 px-3 text-sm font-semibold text-white outline-none focus:border-forge-ember";
@@ -20,17 +22,17 @@ const selectClass =
 const JoinHero = ({ submitting, error, onJoin }) => (
   <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
     <section className="rounded-2xl border border-forge-copper/30 bg-gradient-to-br from-forge-copper/15 via-forge-panel to-black/40 p-6">
-      <Trophy className="h-10 w-10 text-forge-ember" />
+      <CompeteIcon className="h-10 w-10 text-forge-ember" />
       <h2 className="mt-4 text-2xl font-black text-white">Compete with lifters near you</h2>
       <p className="mt-2 text-sm leading-6 text-slate-300">
         Climb leaderboards in your city, your country and the world, against people in your own gender and age division.
       </p>
       <ul className="mt-5 space-y-3 text-sm text-slate-200">
         {[
-          [MapPin, "City, country and world leaderboards"],
-          [Users, "Divisions by gender and age, plus an Open board for everyone"],
-          [Swords, "Boards for volume, PRs, progress, and weight loss or gain"],
-          [Globe2, "Challenge anyone who competes, even if you're not friends"]
+          [WorldIcon, "City, country and world leaderboards"],
+          [FriendsIcon, "Divisions by gender and age, plus an Open board for everyone"],
+          [BarChartIcon, "Boards for volume, PRs, progress, and weight loss or gain"],
+          [ChallengeIcon, "Challenge anyone who competes, even if you're not friends"]
         ].map(([Icon, text]) => (
           <li className="flex items-center gap-3" key={text}>
             <Icon className="h-4 w-4 shrink-0 text-forge-copper" />
@@ -167,7 +169,7 @@ const CompetePage = () => {
           <h1 className="mt-2 text-3xl font-black text-white">Leaderboards</h1>
           {competition?.enabled ? (
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
-              <MapPin className="h-4 w-4" />
+              <CityIcon className="h-4 w-4" />
               {competition.cityName}, {competition.countryName} · {viewerDivisionLabel(competition)}
             </p>
           ) : null}
@@ -273,7 +275,7 @@ const CompetePage = () => {
               </span>
             ) : (
               <Button className="shrink-0" type="button" variant="secondary" onClick={pinBoard}>
-                <Pin className="h-4 w-4" />
+                <PinnedIcon className="h-4 w-4" />
                 Use for my nav badge
               </Button>
             )}

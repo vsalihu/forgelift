@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { BarChart3, FileText, LineChart, Medal } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
 import { analyticsService } from "../services/analyticsService.js";
+import { BarChartIcon, LineChartIcon, MedalIcon } from "../components/icons/featureIcons.jsx";
+import { ReportsIcon } from "../components/icons/navIcons.jsx";
 
 const formatDate = (date) => new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(new Date(date));
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
@@ -56,7 +57,7 @@ const AnalyticsPage = () => {
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
             <section className="metal-panel rounded-lg p-5">
               <div className="mb-5 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-forge-ember" />
+                <BarChartIcon className="h-5 w-5 text-forge-ember" />
                 <h2 className="text-xl font-bold text-white">Recent volume trend</h2>
               </div>
               {analytics.recentWorkoutsVolume.length ? (
@@ -108,7 +109,7 @@ const AnalyticsPage = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Advanced Analytics</p>
               <h2 className="mt-2 text-xl font-black text-white">Charts, insights, and progress trends</h2>
             </div>
-            <LineChart className="h-8 w-8 text-forge-ember" />
+            <LineChartIcon className="h-8 w-8 text-forge-ember" />
           </Link>
 
           <Link
@@ -119,7 +120,7 @@ const AnalyticsPage = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Monthly Reports</p>
               <h2 className="mt-2 text-xl font-black text-white">Generate a copyable monthly summary</h2>
             </div>
-            <FileText className="h-8 w-8 text-forge-ember" />
+            <ReportsIcon className="h-8 w-8 text-forge-ember" />
           </Link>
 
           <Link
@@ -130,7 +131,7 @@ const AnalyticsPage = () => {
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">PR Timeline</p>
               <h2 className="mt-2 text-xl font-black text-white">Review personal records</h2>
             </div>
-            <Medal className="h-8 w-8 text-forge-ember" />
+            <MedalIcon className="h-8 w-8 text-forge-ember" />
           </Link>
         </>
       ) : null}

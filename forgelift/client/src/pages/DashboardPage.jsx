@@ -246,6 +246,14 @@ const DashboardPage = () => {
   } = state;
 
   const firstName = user?.name?.split(" ")[0] || "lifter";
+  const gymDraftActive = (() => {
+    try {
+      const draft = JSON.parse(localStorage.getItem("forgeliftGymModeDraft") || "null");
+      return Boolean((draft?.workout || draft)?.exercises?.length);
+    } catch (_error) {
+      return false;
+    }
+  })();
   const rank = rankData?.overallRank || user?.currentOverallRank || "Copper";
   const progress = rankData?.overallProgress || {};
   const nextRank = progress.nextRank?.name;
@@ -298,7 +306,7 @@ const DashboardPage = () => {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Button className="min-h-12 px-6 text-base" data-tour-id="dashboard-start-gym-mode" type="button" onClick={() => navigate("/gym-mode")}>
                 <GymModeIcon className="h-5 w-5" />
-                Start Gym Mode
+                {gymDraftActive ? "Resume workout" : "Start Gym Mode"}
               </Button>
               <Link
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] px-6 text-base font-bold text-white transition-colors hover:border-white/25 hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"

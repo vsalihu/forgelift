@@ -67,46 +67,46 @@ export const tutorialConfig = {
     {
       target: "gym-add-exercise",
       title: "Add exercises",
-      content: "Add exercises to build your live workout. You can search, filter by muscle, or create custom exercises.",
-      placement: "top"
+      content: "Add exercises one at a time, or load a saved workout. Search, filter by muscle, or create your own.",
+      placement: "bottom"
     },
     {
       target: "gym-exercise-list",
-      title: "Exercise list",
-      content: "Your exercise list stays visible so you can jump between movements without losing context.",
-      placement: "bottom"
+      title: "Your session",
+      content: "Every exercise sits in this strip with its progress. Tap one to jump to it.",
+      placement: "bottom",
+      fallbackContent: "Add an exercise first and your session strip appears at the top."
     },
     {
       target: "gym-active-exercise",
       title: "Current exercise",
-      content: "Use the expanded panel to log weight, reps, bodyweight settings, and optional RPE.",
+      content: "Enter weight and reps for each set. Grey numbers are your last values: tick the set and they fill in for you.",
       placement: "top",
-      fallbackContent: "Add an exercise first, then the current exercise panel will appear."
+      fallbackContent: "Add an exercise first, then the current exercise appears here."
     },
     {
       target: "gym-add-set",
-      title: "Add Set",
-      content: "Add Set unlocks when your set has valid data. The next set copies your last values for faster logging.",
+      title: "Add a set",
+      content: "Need another set? Add one here. Tap a set number to rate how hard it felt (RPE).",
       placement: "top",
-      fallbackContent: "Add an exercise first to see the Add Set button."
+      fallbackContent: "Add an exercise first to see its sets."
     },
     {
       target: "gym-rest-timer",
       title: "Rest timer",
-      content: "Use the rest timer between working sets without leaving Gym Mode.",
+      content: "Ticking a set starts your rest. Pick the length here, add or remove 15 seconds while it runs.",
       placement: "top"
     },
     {
       target: "gym-finish-workout",
-      title: "Finish Workout",
-      content: "Finish saves the workout and shows your analysis, PRs, recovery impact, overload, and missions.",
-      placement: "top",
-      fallbackContent: "Finish Workout stays disabled until you log at least one valid set."
+      title: "Finish",
+      content: "Finish saves your ticked sets and shows your volume, XP, PRs and rank progress.",
+      placement: "bottom"
     },
     {
       target: "gym-reset-workout",
-      title: "Reset Workout",
-      content: "Reset clears only the current unsaved Gym Mode draft. Saved workouts are not affected.",
+      title: "More options",
+      content: "Load a saved workout, add notes, replay this tour, or reset the workout in progress. Reset never touches saved workouts.",
       placement: "bottom"
     }
   ],

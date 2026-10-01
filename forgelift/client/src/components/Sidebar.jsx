@@ -1,96 +1,97 @@
-import {
-  AlertTriangle,
-  AreaChart,
-  BookOpen,
-  Calculator,
-  CalendarDays,
-  ClipboardCheck,
-  ClipboardList,
-  Database,
-  Dumbbell,
-  Flame,
-  Gauge,
-  HeartPulse,
-  Medal,
-  MessageCircle,
-  PlusCircle,
-  ListChecks,
-  FileText,
-  Scale,
-  ShieldAlert,
-  Shield,
-  TrendingUp,
-  Trophy,
-  UserCircle,
-  Users,
-  X,
-  Zap
-} from "lucide-react";
+import { X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
+import {
+  AnalyticsIcon,
+  AssessmentIcon,
+  BalanceIcon,
+  BaselinesIcon,
+  CalendarIcon,
+  ChatIcon,
+  CompeteIcon,
+  DashboardIcon,
+  DataIcon,
+  DeloadIcon,
+  DesignWorkoutIcon,
+  ExerciseLibraryIcon,
+  FriendsIcon,
+  GymModeIcon,
+  HistoryIcon,
+  LogWorkoutIcon,
+  MissionsIcon,
+  OverloadIcon,
+  PrTimelineIcon,
+  ProfileIcon,
+  ProgressIcon,
+  RanksIcon,
+  RecoveryIcon,
+  ReportsIcon,
+  TrainingLoadIcon,
+  WeakPointsIcon
+} from "./icons/navIcons.jsx";
 
 const navItems = [
   {
     section: "Main",
     accent: "text-cyan-300",
     items: [
-      { to: "/dashboard", label: "Dashboard", icon: Gauge },
-      { to: "/gym-mode", label: "Gym Mode", icon: Dumbbell },
-      { to: "/workouts/new", label: "Log Workout", icon: PlusCircle },
-      { to: "/compete", label: "Compete", icon: Trophy }
+      { to: "/dashboard", label: "Dashboard", icon: DashboardIcon },
+      { to: "/gym-mode", label: "Gym Mode", icon: GymModeIcon },
+      { to: "/workouts/new", label: "Log Workout", icon: LogWorkoutIcon },
+      { to: "/compete", label: "Compete", icon: CompeteIcon }
     ]
   },
   {
     section: "Training",
     accent: "text-emerald-300",
     items: [
-      { to: "/calendar", label: "Calendar", icon: CalendarDays },
-      { to: "/workouts", label: "Workout History", icon: ClipboardList },
-      { to: "/workout-templates", label: "Design a Workout", icon: ClipboardList },
-      { to: "/exercises", label: "Exercise Library", icon: BookOpen },
-      { to: "/strength-baselines", label: "Strength Baselines", icon: Calculator }
+      { to: "/calendar", label: "Calendar", icon: CalendarIcon },
+      { to: "/workouts", label: "Workout History", icon: HistoryIcon },
+      { to: "/workout-templates", label: "Design a Workout", icon: DesignWorkoutIcon },
+      { to: "/exercises", label: "Exercise Library", icon: ExerciseLibraryIcon },
+      { to: "/strength-baselines", label: "Strength Baselines", icon: BaselinesIcon }
     ]
   },
   {
     section: "Intelligence",
     accent: "text-violet-300",
     items: [
-      { to: "/recovery", label: "Recovery", icon: HeartPulse },
-      { to: "/training-load", label: "Training Load", icon: Flame },
-      { to: "/overload", label: "Smart Overload", icon: Zap },
-      { to: "/deload", label: "Deload", icon: ShieldAlert },
-      { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },
-      { to: "/training-balance", label: "Training Balance", icon: Scale }
+      { to: "/recovery", label: "Recovery", icon: RecoveryIcon },
+      { to: "/training-load", label: "Training Load", icon: TrainingLoadIcon },
+      { to: "/overload", label: "Smart Overload", icon: OverloadIcon },
+      { to: "/deload", label: "Deload", icon: DeloadIcon },
+      { to: "/weak-points", label: "Weak Points", icon: WeakPointsIcon },
+      { to: "/training-balance", label: "Training Balance", icon: BalanceIcon }
     ]
   },
   {
     section: "Social",
     accent: "text-pink-300",
     items: [
-      { to: "/friends", label: "Friends", icon: Users },
-      { to: "/chat", label: "Chat", icon: MessageCircle }
+      { to: "/friends", label: "Friends", icon: FriendsIcon },
+      { to: "/chat", label: "Chat", icon: ChatIcon }
     ]
   },
   {
     section: "Progress",
     accent: "text-amber-300",
     items: [
-      { to: "/ranks", label: "Ranks", icon: Shield },
-      { to: "/missions", label: "Missions", icon: ListChecks },
-      { to: "/progress", label: "Progress", icon: TrendingUp },
-      { to: "/progress/prs", label: "PR Timeline", icon: Medal },
-      { to: "/analytics/advanced", label: "Analytics", icon: AreaChart },
-      { to: "/reports/monthly", label: "Monthly Reports", icon: FileText }
+      { to: "/ranks", label: "Ranks", icon: RanksIcon },
+      { to: "/missions", label: "Missions", icon: MissionsIcon },
+      { to: "/progress", label: "Progress", icon: ProgressIcon },
+      { to: "/progress/prs", label: "PR Timeline", icon: PrTimelineIcon },
+      { to: "/analytics/advanced", label: "Analytics", icon: AnalyticsIcon },
+      { to: "/reports/monthly", label: "Monthly Reports", icon: ReportsIcon }
     ]
   },
   {
     section: "Account",
     accent: "text-slate-300",
     items: [
-      { to: "/assessment", label: "Assessment", icon: ClipboardCheck },
-      { to: "/profile", label: "Profile", icon: UserCircle },
-      { to: "/data-management", label: "Data Management", icon: Database }
+      { to: "/assessment", label: "Assessment", icon: AssessmentIcon },
+      { to: "/profile", label: "Profile", icon: ProfileIcon },
+      { to: "/data-management", label: "Data Management", icon: DataIcon }
     ]
   }
 ];

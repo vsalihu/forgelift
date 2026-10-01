@@ -1,15 +1,21 @@
-import { CalendarDays, Dumbbell, Gauge, Menu, Trophy } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
+import {
+  CalendarIcon,
+  CompeteIcon,
+  DashboardIcon,
+  GymModeIcon,
+  MoreIcon
+} from "./icons/navIcons.jsx";
 
 const items = [
-  { to: "/dashboard", label: "Home", icon: Gauge },
-  { to: "/gym-mode", label: "Gym", icon: Dumbbell },
-  { to: "/compete", label: "Compete", icon: Trophy },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays }
+  { to: "/dashboard", label: "Home", icon: DashboardIcon },
+  { to: "/gym-mode", label: "Gym", icon: GymModeIcon },
+  { to: "/compete", label: "Compete", icon: CompeteIcon },
+  { to: "/calendar", label: "Calendar", icon: CalendarIcon }
 ];
 
 const morePaths = moreMenuGroups.flatMap((group) => group.items.map((item) => item.to));
@@ -45,7 +51,7 @@ const MobileNav = ({ unreadMessages = 0, competePlace = null }) => {
             type="button"
             onClick={() => setMoreOpen(true)}
           >
-            <Menu className="h-5 w-5" />
+            <MoreIcon className="h-5 w-5" />
             More
             {unreadMessages ? (
               <UnreadBadge className="absolute right-2 top-1" count={unreadMessages} />

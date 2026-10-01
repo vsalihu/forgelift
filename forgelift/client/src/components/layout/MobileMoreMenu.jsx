@@ -1,76 +1,77 @@
-import {
-  AlertTriangle,
-  AreaChart,
-  BookOpen,
-  Calculator,
-  CalendarDays,
-  ClipboardCheck,
-  ClipboardList,
-  Database,
-  FileText,
-  Flame,
-  HeartPulse,
-  ListChecks,
-  Medal,
-  MessageCircle,
-  PlusCircle,
-  Scale,
-  Shield,
-  ShieldAlert,
-  UserCircle,
-  Users,
-  Zap
-} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import BottomSheet from "../ui/BottomSheet.jsx";
 import UnreadBadge from "../ui/UnreadBadge.jsx";
+import {
+  AnalyticsIcon,
+  AssessmentIcon,
+  BalanceIcon,
+  BaselinesIcon,
+  CalendarIcon,
+  ChatIcon,
+  DataIcon,
+  DeloadIcon,
+  DesignWorkoutIcon,
+  ExerciseLibraryIcon,
+  FriendsIcon,
+  HistoryIcon,
+  LogWorkoutIcon,
+  MissionsIcon,
+  OverloadIcon,
+  PrTimelineIcon,
+  ProfileIcon,
+  RanksIcon,
+  RecoveryIcon,
+  ReportsIcon,
+  TrainingLoadIcon,
+  WeakPointsIcon
+} from "../icons/navIcons.jsx";
 
 export const moreMenuGroups = [
   {
     title: "Training",
     items: [
-      { to: "/workouts/new", label: "Log Workout", icon: PlusCircle },
-      { to: "/calendar", label: "Calendar", icon: CalendarDays },
-      { to: "/workouts", label: "Workout History", icon: ClipboardList },
-      { to: "/workout-templates", label: "Design a Workout", icon: ClipboardList },
-      { to: "/exercises", label: "Exercise Library", icon: BookOpen },
-      { to: "/strength-baselines", label: "Strength Baselines", icon: Calculator }
+      { to: "/workouts/new", label: "Log Workout", icon: LogWorkoutIcon },
+      { to: "/calendar", label: "Calendar", icon: CalendarIcon },
+      { to: "/workouts", label: "Workout History", icon: HistoryIcon },
+      { to: "/workout-templates", label: "Design a Workout", icon: DesignWorkoutIcon },
+      { to: "/exercises", label: "Exercise Library", icon: ExerciseLibraryIcon },
+      { to: "/strength-baselines", label: "Strength Baselines", icon: BaselinesIcon }
     ]
   },
   {
     title: "Intelligence",
     items: [
-      { to: "/recovery", label: "Recovery", icon: HeartPulse },
-      { to: "/training-load", label: "Training Load", icon: Flame },
-      { to: "/overload", label: "Smart Overload", icon: Zap },
-      { to: "/deload", label: "Deload", icon: ShieldAlert },
-      { to: "/weak-points", label: "Weak Points", icon: AlertTriangle },
-      { to: "/training-balance", label: "Training Balance", icon: Scale }
+      { to: "/recovery", label: "Recovery", icon: RecoveryIcon },
+      { to: "/training-load", label: "Training Load", icon: TrainingLoadIcon },
+      { to: "/overload", label: "Smart Overload", icon: OverloadIcon },
+      { to: "/deload", label: "Deload", icon: DeloadIcon },
+      { to: "/weak-points", label: "Weak Points", icon: WeakPointsIcon },
+      { to: "/training-balance", label: "Training Balance", icon: BalanceIcon }
     ]
   },
   {
     title: "Social",
     items: [
-      { to: "/friends", label: "Friends", icon: Users },
-      { to: "/chat", label: "Chat", icon: MessageCircle }
+      { to: "/friends", label: "Friends", icon: FriendsIcon },
+      { to: "/chat", label: "Chat", icon: ChatIcon }
     ]
   },
   {
     title: "Progress",
     items: [
-      { to: "/ranks", label: "Ranks", icon: Shield },
-      { to: "/missions", label: "Missions", icon: ListChecks },
-      { to: "/progress/prs", label: "PR Timeline", icon: Medal },
-      { to: "/analytics/advanced", label: "Analytics", icon: AreaChart },
-      { to: "/reports/monthly", label: "Monthly Reports", icon: FileText }
+      { to: "/ranks", label: "Ranks", icon: RanksIcon },
+      { to: "/missions", label: "Missions", icon: MissionsIcon },
+      { to: "/progress/prs", label: "PR Timeline", icon: PrTimelineIcon },
+      { to: "/analytics/advanced", label: "Analytics", icon: AnalyticsIcon },
+      { to: "/reports/monthly", label: "Monthly Reports", icon: ReportsIcon }
     ]
   },
   {
     title: "Account",
     items: [
-      { to: "/assessment", label: "Assessment", icon: ClipboardCheck },
-      { to: "/profile", label: "Profile", icon: UserCircle },
-      { to: "/data-management", label: "Data Management", icon: Database }
+      { to: "/assessment", label: "Assessment", icon: AssessmentIcon },
+      { to: "/profile", label: "Profile", icon: ProfileIcon },
+      { to: "/data-management", label: "Data Management", icon: DataIcon }
     ]
   }
 ];

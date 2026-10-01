@@ -1,7 +1,7 @@
 import Button from "../Button.jsx";
 
 const ErrorState = ({ title = "Something went wrong", message, onRetry, backAction }) => (
-  <div className="rounded-lg border border-red-400/20 bg-red-500/10 p-5 text-sm text-red-100">
+  <div className="mb-5 rounded-2xl border border-red-400/20 bg-red-500/10 p-5 text-sm text-red-100" role="alert">
     <p className="font-bold text-white">{title}</p>
     <p className="mt-2 leading-6">{message || "We could not load this section. Please try again."}</p>
     {onRetry || backAction ? (

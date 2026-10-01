@@ -1,6 +1,12 @@
 @tailwind base;
 
 @layer base {
+  /* Search fields use their own clear button. */
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   /* Grid items default to min-width: auto, so one long word or chart can push a column past the screen. */
   .grid > * {
     min-width: 0;

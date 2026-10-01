@@ -28,6 +28,7 @@ import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
 import { getMuscleImage } from "../utils/muscleImages.js";
 import { FlameIcon, MedalIcon } from "../components/icons/featureIcons.jsx";
 import { AssessmentIcon, DeloadIcon, GymModeIcon, MissionsIcon, OverloadIcon, RecoveryIcon } from "../components/icons/navIcons.jsx";
+import { gymDraftInProgress } from "../utils/gymHandoff.js";
 
 const EASE = [0.16, 1, 0.3, 1];
 const formatDate = (date) => new Intl.DateTimeFormat("en", { weekday: "short", day: "numeric", month: "short" }).format(new Date(date));
@@ -246,14 +247,7 @@ const DashboardPage = () => {
   } = state;
 
   const firstName = user?.name?.split(" ")[0] || "lifter";
-  const gymDraftActive = (() => {
-    try {
-      const draft = JSON.parse(localStorage.getItem("forgeliftGymModeDraft") || "null");
-      return Boolean((draft?.workout || draft)?.exercises?.length);
-    } catch (_error) {
-      return false;
-    }
-  })();
+  const gymDraftActive = gymDraftInProgress();
   const rank = rankData?.overallRank || user?.currentOverallRank || "Copper";
   const progress = rankData?.overallProgress || {};
   const nextRank = progress.nextRank?.name;

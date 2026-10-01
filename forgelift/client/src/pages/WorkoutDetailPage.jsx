@@ -1,32 +1,74 @@
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
+import { formatNumber, recordLabels, recordUnit } from "../components/gym/gymUtils.js";
+import { FirstPlaceIcon, RepeatIcon } from "../components/icons/featureIcons.jsx";
+import { BalanceIcon } from "../components/icons/navIcons.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import RowMenu from "../components/ui/RowMenu.jsx";
+import ExerciseBreakdown from "../components/workoutDetail/ExerciseBreakdown.jsx";
+import MuscleLoadChart from "../components/workoutDetail/MuscleLoadChart.jsx";
 import { workoutService } from "../services/workoutService.js";
-import { BarChartIcon } from "../components/icons/featureIcons.jsx";
+import { gymDraftInProgress, startInGymMode, templateFromWorkout } from "../utils/gymHandoff.js";
 
-const formatDate = (date) =>
-  new Intl.DateTimeFormat("en", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  }).format(new Date(date));
-const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
+const EASE = [0.16, 1, 0.3, 1];
+
+const formatWhen = (date) => {
+  const value = new Date(date);
+  return `${value.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} · ${value.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+};
+
+const Panel = ({ title, icon: Icon, children, className = "" }) => (
+  <section className={`rounded-3xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5 ${className}`}>
+    <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
+      {Icon ? <Icon className="h-4 w-4 text-orange-300" /> : null}
+      {title}
+    </h2>
+    {children}
+  </section>
+);
+
+// A 1 to 10 rating as a meter on its own track.
+const FeelMeter = ({ label, value }) => (
+  <div>
+    <div className="flex items-baseline justify-between text-sm">
+      <span className="text-zinc-300">{label}</span>
+      <span className="tabular-nums text-zinc-500">
+        <span className="font-bold text-white">{value}</span>/10
+      </span>
+    </div>
+    <div aria-label={`${label}: ${value} out of 10`} aria-valuemax={10} aria-valuemin={1} aria-valuenow={value} className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#f97316]/15" role="meter">
+      <div className="h-full rounded-full bg-[#f97316]" style={{ width: `${value * 10}%` }} />
+    </div>
+  </div>
+);
+
+const recordText = (record) =>
+  record.recordType === "best_reps_at_weight"
+    ? `${record.value} reps at ${formatNumber(record.weight)}kg`
+    : `${formatNumber(record.value)}${recordUnit(record.recordType)}`;
 
 const WorkoutDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const [workout, setWorkout] = useState(null);
   const [personalRecords, setPersonalRecords] = useState([]);
   const [overloadRecommendations, setOverloadRecommendations] = useState([]);
   const [deloadRecommendations, setDeloadRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmRepeat, setConfirmRepeat] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const loadWorkout = async () => {
       setLoading(true);
       setError("");
-
       try {
         const data = await workoutService.getWorkout(id);
         setWorkout(data.workout);
@@ -39,291 +81,201 @@ const WorkoutDetailPage = () => {
         setLoading(false);
       }
     };
-
     loadWorkout();
   }, [id]);
 
+  const repeat = (force = false) => {
+    if (!force && gymDraftInProgress()) {
+      setConfirmRepeat(true);
+      return;
+    }
+    startInGymMode(templateFromWorkout(workout), navigate);
+  };
+
+  const deleteWorkout = async () => {
+    setDeleting(true);
+    try {
+      await workoutService.deleteWorkout(id);
+      navigate("/workouts");
+    } catch (err) {
+      setError(err.message);
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const deloadFor = (exercise) => {
+    const muscles = [...(exercise.primaryMuscles || []), ...(exercise.secondaryMuscles || []), ...(exercise.stabiliserMuscles || [])];
+    return deloadRecommendations.find((item) => item.exerciseName === exercise.exerciseName || (item.muscleGroup && muscles.includes(item.muscleGroup)));
+  };
+
+  const feel = workout
+    ? [
+        ["Session effort", workout.sessionRPE],
+        ["Soreness", workout.soreness],
+        ["Sleep", workout.sleepQuality],
+        ["Energy", workout.energyLevel]
+      ].filter(([, value]) => Number(value) > 0)
+    : [];
+
+  const rise = (delay = 0) => (reduce ? {} : { initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay, ease: EASE } });
+
   return (
     <Layout>
-      <Link className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-forge-ember" to="/workouts">
-        <ArrowLeft className="h-4 w-4" />
-        Back to history
-      </Link>
-
-      {loading ? <p className="text-forge-steel">Loading workout...</p> : null}
-      {error ? <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
-
-      {workout ? (
-        <>
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
-                {formatDate(workout.date)}
-              </p>
-              <h1 className="mt-2 text-3xl font-black text-white">{workout.title}</h1>
-            </div>
-            <Link
-              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
-              to={`/workouts/${workout._id}/edit`}
-            >
-              <Pencil className="h-4 w-4" />
-              Edit workout
-            </Link>
-          </div>
-
-          <section className="mb-6 grid gap-4 md:grid-cols-4">
-            {[
-              ["Total volume", `${workout.totalVolume} kg`],
-              ["Total sets", workout.totalSets],
-              ["Total reps", workout.totalReps],
-              ["Average RPE", workout.averageRPE || "-"],
-              ["Heaviest weight", `${workout.heaviestWeight || 0} kg`],
-              ["Best estimated 1RM", `${workout.bestEstimated1RM || 0} kg`],
-              ["Completed sets", workout.completedSetCount || 0],
-              ["Failed sets", workout.failedSetCount || 0]
-            ].map(([label, value]) => (
-              <div className="metal-panel rounded-lg p-5" key={label}>
-                <p className="text-sm text-forge-steel">{label}</p>
-                <p className="mt-2 text-2xl font-black text-white">{value}</p>
-              </div>
-            ))}
-          </section>
-
-          <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-            <section className="space-y-4">
-              {workout.exercises.map((exercise, exerciseIndex) => (
-                <article className="metal-panel rounded-lg p-5" key={`${exercise.exerciseName}-${exerciseIndex}`}>
-                  <h2 className="text-xl font-black text-white">{exercise.exerciseName}</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Primary: {exercise.primaryMuscles.join(", ") || "Not listed"}
-                  </p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-md bg-black/25 p-3">
-                      <p className="text-xs text-slate-400">Exercise volume</p>
-                      <p className="mt-1 font-bold text-white">{formatNumber(exercise.exerciseTotalVolume)} kg</p>
-                    </div>
-                    <div className="rounded-md bg-black/25 p-3">
-                      <p className="text-xs text-slate-400">Best estimated 1RM</p>
-                      <p className="mt-1 font-bold text-white">{formatNumber(exercise.exerciseBestEstimated1RM)} kg</p>
-                    </div>
-                    <div className="rounded-md bg-black/25 p-3">
-                      <p className="text-xs text-slate-400">Average RPE</p>
-                      <p className="mt-1 font-bold text-white">{exercise.exerciseAverageRPE || "-"}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 overflow-x-auto">
-                    <table className="w-full min-w-[52rem] text-left text-sm">
-                      <thead className="text-slate-400">
-                        <tr className="border-b border-white/10">
-                          <th className="py-3">Set</th>
-                          <th className="py-3">Weight</th>
-                          <th className="py-3">Reps</th>
-                          <th className="py-3">Volume</th>
-                          <th className="py-3">Est. 1RM</th>
-                          <th className="py-3">RPE</th>
-                          <th className="py-3">Done</th>
-                          <th className="py-3">Notes</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {exercise.sets.map((set, setIndex) => (
-                          <tr className="border-b border-white/5 text-slate-200" key={setIndex}>
-                            <td className="py-3">{setIndex + 1}</td>
-                            <td className="py-3">{set.weight}</td>
-                            <td className="py-3">{set.reps}</td>
-                            <td className="py-3">{formatNumber(set.setVolume)}</td>
-                            <td className="py-3">{formatNumber(set.estimated1RM)}</td>
-                            <td className="py-3">{set.rpe || "-"}</td>
-                            <td className="py-3">{set.completed ? "Yes" : "No"}</td>
-                            <td className="py-3 text-slate-400">{set.notes || "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {overloadRecommendations.find(
-                    (recommendation) => recommendation.exerciseName === exercise.exerciseName
-                  ) ? (
-                    <div className="mt-5 rounded-md border border-forge-copper/30 bg-forge-ember/10 p-4">
-                      {(() => {
-                        const recommendation = overloadRecommendations.find(
-                          (item) => item.exerciseName === exercise.exerciseName
-                        );
-
-                        return (
-                          <>
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <h3 className="font-bold text-white">Latest overload target</h3>
-                              <span className="rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-orange-200">
-                                {recommendation.recommendationType.replaceAll("_", " ")}
-                              </span>
-                            </div>
-                            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                              <div className="rounded-md bg-black/25 p-3">
-                                <p className="text-xs text-slate-400">Next weight</p>
-                                <p className="mt-1 font-bold text-white">
-                                  {formatNumber(recommendation.recommendedWeight)} kg
-                                </p>
-                              </div>
-                              <div className="rounded-md bg-black/25 p-3">
-                                <p className="text-xs text-slate-400">Rep target</p>
-                                <p className="mt-1 font-bold text-white">{recommendation.recommendedRepTarget}</p>
-                              </div>
-                              <div className="rounded-md bg-black/25 p-3">
-                                <p className="text-xs text-slate-400">Confidence</p>
-                                <p className="mt-1 font-bold text-white">{recommendation.confidence}</p>
-                              </div>
-                            </div>
-                            <p className="mt-3 text-sm text-slate-300">{recommendation.reason}</p>
-                            {recommendation.warnings?.length ? (
-                              <ul className="mt-3 space-y-1 text-sm text-orange-200">
-                                {recommendation.warnings.map((warning) => (
-                                  <li key={warning}>{warning}</li>
-                                ))}
-                              </ul>
-                            ) : null}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  ) : null}
-
-                  {deloadRecommendations.find(
-                    (recommendation) =>
-                      recommendation.exerciseName === exercise.exerciseName ||
-                      (recommendation.muscleGroup &&
-                        [
-                          ...(exercise.primaryMuscles || []),
-                          ...(exercise.secondaryMuscles || []),
-                          ...(exercise.stabiliserMuscles || [])
-                        ].includes(recommendation.muscleGroup))
-                  ) ? (
-                    <div className="mt-5 rounded-md border border-orange-400/20 bg-orange-500/10 p-4">
-                      {(() => {
-                        const recommendation = deloadRecommendations.find(
-                          (item) =>
-                            item.exerciseName === exercise.exerciseName ||
-                            (item.muscleGroup &&
-                              [
-                                ...(exercise.primaryMuscles || []),
-                                ...(exercise.secondaryMuscles || []),
-                                ...(exercise.stabiliserMuscles || [])
-                              ].includes(item.muscleGroup))
-                        );
-
-                        return (
-                          <>
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <h3 className="font-bold text-white">Deload warning</h3>
-                              <span className="rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-orange-200">
-                                {recommendation.severity} {recommendation.recommendationType.replaceAll("_", " ")}
-                              </span>
-                            </div>
-                            <p className="mt-3 text-sm text-orange-100">{recommendation.reason}</p>
-                            {recommendation.reductionPercentage ? (
-                              <p className="mt-2 text-sm text-slate-400">
-                                Recommended reduction: {formatNumber(recommendation.reductionPercentage)}%.
-                              </p>
-                            ) : null}
-                            {recommendation.plan?.nextSessionTarget ? (
-                              <p className="mt-2 text-sm text-slate-400">{recommendation.plan.nextSessionTarget}</p>
-                            ) : null}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-            </section>
-
-            <aside className="space-y-4">
-              <section className="metal-panel rounded-lg p-5">
-                <div className="mb-4 flex items-center gap-2">
-                  <BarChartIcon className="h-5 w-5 text-forge-ember" />
-                  <h2 className="text-xl font-bold text-white">Muscle load</h2>
-                </div>
-                <div className="space-y-3">
-                  {Object.entries(workout.muscleLoadSummary || {}).map(([muscle, load]) => (
-                    <div className="rounded-md border border-white/10 bg-black/20 p-4" key={muscle}>
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-bold text-white">{muscle}</h3>
-                        <span className="rounded-full bg-white/10 px-2 py-1 text-xs font-bold text-slate-200">
-                          {load.loadLevel}
-                        </span>
-                      </div>
-                      <dl className="mt-3 space-y-2 text-sm">
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-slate-400">Direct</dt>
-                          <dd className="text-white">{formatNumber(load.directLoad)}</dd>
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-slate-400">Indirect</dt>
-                          <dd className="text-white">{formatNumber(load.indirectLoad)}</dd>
-                        </div>
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-slate-400">Stabiliser</dt>
-                          <dd className="text-white">{formatNumber(load.stabiliserLoad)}</dd>
-                        </div>
-                        <div className="flex justify-between gap-3 border-t border-white/10 pt-2">
-                          <dt className="text-slate-300">Total</dt>
-                          <dd className="font-bold text-white">{formatNumber(load.totalLoad)}</dd>
-                        </div>
-                      </dl>
-                      <p className="mt-3 text-xs leading-5 text-slate-400">
-                        {load.directLoad > 0
-                          ? `${muscle} was directly trained in this workout.`
-                          : load.indirectLoad > 0
-                            ? `${muscle} was indirectly loaded by related movements. This may affect tomorrow's heavy work.`
-                            : `${muscle} acted as a stabiliser during this workout.`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="metal-panel rounded-lg p-5">
-                <h2 className="text-xl font-bold text-white">PRs achieved</h2>
-                {personalRecords.length ? (
-                  <div className="mt-4 space-y-3">
-                    {personalRecords.map((record) => (
-                      <div className="rounded-md bg-forge-ember/10 p-3 text-sm" key={record._id}>
-                        <p className="font-bold text-white">{record.exerciseName}</p>
-                        <p className="mt-1 text-orange-200">
-                          {record.recordType.replaceAll("_", " ")}: {formatNumber(record.value)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-400">No personal records were detected for this workout.</p>
-                )}
-              </section>
-
-              <section className="metal-panel rounded-lg p-5">
-                <h2 className="text-xl font-bold text-white">Session notes</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-400">{workout.notes || "No notes added."}</p>
-                <dl className="mt-5 space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Soreness</dt>
-                    <dd className="text-white">{workout.soreness || "-"}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Sleep quality</dt>
-                    <dd className="text-white">{workout.sleepQuality || "-"}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-slate-400">Energy level</dt>
-                    <dd className="text-white">{workout.energyLevel || "-"}</dd>
-                  </div>
-                </dl>
-              </section>
-            </aside>
-          </div>
-        </>
+      {confirmDelete ? (
+        <ConfirmModal
+          confirmLabel="Delete workout"
+          description="Its PRs will be removed and your ranks and recovery recalculated. This can't be undone."
+          loading={deleting}
+          title="Delete this workout?"
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={deleteWorkout}
+        />
       ) : null}
+      {confirmRepeat ? (
+        <ConfirmModal
+          cancelLabel="Keep my workout"
+          confirmLabel="Repeat this one"
+          description="You have a Gym Mode workout in progress. Repeating this session replaces it."
+          title="Replace your workout in progress?"
+          tone="primary"
+          onCancel={() => setConfirmRepeat(false)}
+          onConfirm={() => repeat(true)}
+        />
+      ) : null}
+
+      <div className="mx-auto max-w-5xl">
+        <Link className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full pr-3 text-sm font-semibold text-zinc-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200" to="/workouts">
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          History
+        </Link>
+
+        {error ? <ErrorState message={error} /> : null}
+
+        {loading ? (
+          <div aria-busy="true" aria-label="Loading workout" className="space-y-3">
+            <div className="h-10 w-2/3 animate-pulse rounded-xl bg-white/[0.05]" />
+            <div className="h-28 animate-pulse rounded-3xl bg-white/[0.04]" />
+            <div className="h-72 animate-pulse rounded-3xl bg-white/[0.03]" />
+          </div>
+        ) : null}
+
+        {workout ? (
+          <>
+            <motion.header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between" {...rise(0)}>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-orange-300">{formatWhen(workout.date)}</p>
+                <h1 className="font-display mt-1 break-words text-[2.1rem] leading-[1.05] text-white sm:text-5xl">{workout.title || "Workout"}</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-5 text-sm font-bold text-[#160a02] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_10px_30px_-12px_rgba(249,115,22,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 active:scale-[0.98] lg:flex-none"
+                  aria-label="Repeat in Gym Mode"
+                  type="button"
+                  onClick={() => repeat()}
+                >
+                  <RepeatIcon className="h-4 w-4" />
+                  <span className="min-[400px]:hidden">Repeat</span>
+                  <span className="hidden min-[400px]:inline">Repeat in Gym Mode</span>
+                </button>
+                <Link
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white transition-colors hover:border-white/25 hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                  to={`/workouts/${workout._id}/edit`}
+                >
+                  <Pencil aria-hidden="true" className="h-4 w-4" />
+                  Edit
+                </Link>
+                <RowMenu items={[{ label: "Delete workout", icon: Trash2, tone: "danger", onClick: () => setConfirmDelete(true) }]} label="More options" />
+              </div>
+            </motion.header>
+
+            <motion.dl className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4" {...rise(0.06)}>
+              {[
+                ["Volume", `${formatNumber(workout.totalVolume, 0)}kg`],
+                ["Sets", workout.totalSets || 0],
+                ["Reps", workout.totalReps || 0],
+                ["Avg RPE", workout.averageRPE ? formatNumber(workout.averageRPE) : "–"]
+              ].map(([label, value]) => (
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4" key={label}>
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{label}</dt>
+                  <dd className="font-display mt-1 text-2xl tabular-nums text-white sm:text-3xl">{value}</dd>
+                </div>
+              ))}
+            </motion.dl>
+            <motion.p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 px-1 text-sm text-zinc-500" {...rise(0.1)}>
+              <span>
+                Heaviest <span className="font-bold tabular-nums text-zinc-200">{formatNumber(workout.heaviestWeight)}kg</span>
+              </span>
+              <span>
+                Best e1RM <span className="font-bold tabular-nums text-zinc-200">{formatNumber(workout.bestEstimated1RM)}kg</span>
+              </span>
+              {workout.failedSetCount ? (
+                <span>
+                  Failed sets <span className="font-bold tabular-nums text-red-300">{workout.failedSetCount}</span>
+                </span>
+              ) : null}
+            </motion.p>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+              <motion.section aria-labelledby="exercises-heading" className="space-y-3" {...rise(0.14)}>
+                <h2 className="font-display text-2xl text-white" id="exercises-heading">
+                  Exercises <span className="font-sans text-base font-semibold text-zinc-500">{workout.exercises.length}</span>
+                </h2>
+                {workout.exercises.map((exercise, exerciseIndex) => (
+                  <ExerciseBreakdown
+                    deload={deloadFor(exercise)}
+                    exercise={exercise}
+                    index={exerciseIndex}
+                    key={`${exercise.exerciseName}-${exerciseIndex}`}
+                    overload={overloadRecommendations.find((item) => item.exerciseName === exercise.exerciseName)}
+                    recordCount={personalRecords.filter((record) => record.exerciseName === exercise.exerciseName).length}
+                  />
+                ))}
+              </motion.section>
+
+              <motion.aside className="space-y-4 lg:sticky lg:top-24" {...rise(0.2)}>
+                {personalRecords.length ? (
+                  <section className="rounded-3xl border border-forge-ember/25 bg-gradient-to-br from-forge-ember/[0.12] to-transparent p-4 sm:p-5">
+                    <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-orange-200">
+                      <FirstPlaceIcon className="h-4 w-4" />
+                      Personal records · {personalRecords.length}
+                    </h2>
+                    <ul className="space-y-2.5">
+                      {personalRecords.map((record) => (
+                        <li className="flex items-baseline justify-between gap-3 text-sm" key={record._id || `${record.exerciseName}-${record.recordType}-${record.value}`}>
+                          <span className="min-w-0">
+                            <span className="block truncate font-bold text-white">{record.exerciseName}</span>
+                            <span className="block text-xs text-zinc-400">{recordLabels[record.recordType] || "Record"}</span>
+                          </span>
+                          <span className="shrink-0 font-bold tabular-nums text-orange-200">{recordText(record)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+
+                <Panel icon={BalanceIcon} title="Muscle load">
+                  <MuscleLoadChart summary={workout.muscleLoadSummary} />
+                </Panel>
+
+                {feel.length || workout.notes ? (
+                  <Panel title="How it felt">
+                    {feel.length ? (
+                      <div className="space-y-3">
+                        {feel.map(([label, value]) => (
+                          <FeelMeter key={label} label={label} value={Number(value)} />
+                        ))}
+                      </div>
+                    ) : null}
+                    {workout.notes ? <p className={`whitespace-pre-line text-sm leading-6 text-zinc-300 ${feel.length ? "mt-4 border-t border-white/[0.06] pt-4" : ""}`}>{workout.notes}</p> : null}
+                  </Panel>
+                ) : null}
+              </motion.aside>
+            </div>
+          </>
+        ) : null}
+      </div>
     </Layout>
   );
 };

@@ -17,6 +17,7 @@ import { exerciseService } from "../services/exerciseService.js";
 import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
+import { gymDraftInProgress, startInGymMode } from "../utils/gymHandoff.js";
 import { DumbbellIcon } from "../components/icons/navIcons.jsx";
 
 const emptyTemplate = { name: "", description: "", exercises: [] };
@@ -35,6 +36,7 @@ const WorkoutTemplatesPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState("");
+  const [pendingStart, setPendingStart] = useState(null);
   const [visibilityBusyId, setVisibilityBusyId] = useState("");
   const [sendPickerId, setSendPickerId] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState("");
@@ -160,8 +162,11 @@ const WorkoutTemplatesPage = () => {
   };
 
   const startTemplate = (template) => {
-    localStorage.setItem("forgeliftGymModeTemplate", JSON.stringify(template));
-    navigate("/gym-mode");
+    if (gymDraftInProgress()) {
+      setPendingStart(template);
+      return;
+    }
+    startInGymMode(template, navigate);
   };
 
   const toggleVisibility = async (template) => {
@@ -219,6 +224,17 @@ const WorkoutTemplatesPage = () => {
         onClose={() => setPickerOpen(false)}
         onSelect={addExerciseFromPicker}
       />
+      {pendingStart ? (
+        <ConfirmModal
+          cancelLabel="Keep my workout"
+          confirmLabel="Start this one"
+          description="You have a Gym Mode workout in progress. Starting this template replaces it."
+          title="Replace your workout in progress?"
+          tone="primary"
+          onCancel={() => setPendingStart(null)}
+          onConfirm={() => startInGymMode(pendingStart, navigate)}
+        />
+      ) : null}
       {pendingDeleteId ? (
         <ConfirmModal
           title="Delete this workout template?"

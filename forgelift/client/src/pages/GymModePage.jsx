@@ -86,10 +86,10 @@ const loadInitialDraft = () => {
 };
 
 const getTemplateWorkout = (bodyweight) => {
+  // Read only; the page clears the key after mounting so a second render still sees it.
   const template = readStorage(TEMPLATE_KEY);
   if (!template) return null;
 
-  writeStorage(TEMPLATE_KEY, null);
   try {
     const parsed = JSON.parse(template);
     return {
@@ -100,9 +100,10 @@ const getTemplateWorkout = (bodyweight) => {
         exerciseId: exercise.exerciseId,
         exerciseName: exercise.exerciseName,
         exerciseType: exercise.exerciseType || "",
-        primaryMuscles: [],
-        secondaryMuscles: [],
-        stabiliserMuscles: [],
+        primaryMuscles: exercise.primaryMuscles || [],
+        secondaryMuscles: exercise.secondaryMuscles || [],
+        stabiliserMuscles: exercise.stabiliserMuscles || [],
+        mainMuscleGroups: exercise.mainMuscleGroups || [],
         impactProfile: {},
         sets: Array.from({ length: Math.max(1, exercise.targetSets || 3) }, () => newSet(exercise.exerciseType, bodyweight))
       }))
@@ -121,7 +122,12 @@ const GymModePage = () => {
   const { user } = useAuth();
   const reduce = useReducedMotion();
   const bodyweight = Number(user?.bodyweight) || 0;
-  const initialDraft = useMemo(loadInitialDraft, []);
+  // A workout handed over from elsewhere (template, repeat) wins over an old draft.
+  const initialDraft = useMemo(() => {
+    const template = getTemplateWorkout(user?.bodyweight);
+    return template ? { workout: template, activeExerciseIndex: 0, restored: false } : loadInitialDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [exercises, setExercises] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [recentExercises, setRecentExercises] = useState([]);
@@ -145,8 +151,12 @@ const GymModePage = () => {
   const [invalidSet, setInvalidSet] = useState(null);
   const [rpeSet, setRpeSet] = useState(null);
   const [tourToken, setTourToken] = useState(0);
-  const [workout, setWorkout] = useState(() => initialDraft.workout || getTemplateWorkout(user?.bodyweight) || emptyWorkout());
+  const [workout, setWorkout] = useState(() => initialDraft.workout || emptyWorkout());
   const skipDraftSaveRef = useRef(false);
+
+  useEffect(() => {
+    writeStorage(TEMPLATE_KEY, null);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {

@@ -13,6 +13,10 @@ export default {
           ember: "#f97316"
         }
       },
+      // 12% sits between the default 10 and 15 steps and is used for hairline borders and tints.
+      opacity: {
+        12: "0.12"
+      },
       boxShadow: {
         metal: "0 20px 50px rgba(0, 0, 0, 0.35)"
       }

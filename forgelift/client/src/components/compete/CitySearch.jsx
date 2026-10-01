@@ -6,10 +6,10 @@ const formatPopulation = (population) =>
   population >= 1000000 ? `${(population / 1000000).toFixed(1)}M people` : `${Math.round(population / 1000)}k people`;
 
 const defaultClasses = {
-  label: "mb-2 block text-sm font-medium text-slate-200",
+  label: "mb-2 block text-sm font-semibold text-zinc-200",
   input:
-    "min-h-11 w-full rounded-md border border-white/10 bg-black/30 py-3 pl-9 pr-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-forge-ember focus:ring-2 focus:ring-forge-ember/20 sm:text-sm",
-  list: "absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-[#0b0d11] py-1 shadow-2xl"
+    "min-h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] py-3 pl-9 pr-3 text-base text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-forge-ember/60",
+  list: "absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-white/10 bg-[#0e1014] py-1 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)]"
 };
 
 // `search` lets pages without a login (sign-up) use the public city lookup.
@@ -85,7 +85,7 @@ const CitySearch = ({
       <label className="block">
         <span className={classes.label}>{label}</span>
         <div className="relative">
-          <CityIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <CityIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           <input
             aria-autocomplete="list"
             aria-controls={listId}
@@ -118,7 +118,7 @@ const CitySearch = ({
             <li
               aria-selected={index === activeIndex}
               className={`flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-sm ${
-                index === activeIndex ? "bg-forge-ember/20 text-white" : "text-slate-200 hover:bg-white/5"
+                index === activeIndex ? "bg-forge-ember/20 text-white" : "text-zinc-200 hover:bg-white/5"
               }`}
               key={city.cityId}
               role="option"
@@ -131,13 +131,13 @@ const CitySearch = ({
               <span>
                 <span className="font-semibold">{city.name}</span>, {city.countryName}
               </span>
-              <span className="shrink-0 text-xs text-slate-500">{formatPopulation(city.population)}</span>
+              <span className="shrink-0 text-xs text-zinc-500">{formatPopulation(city.population)}</span>
             </li>
           ))}
         </ul>
       ) : null}
       {!value && query.trim().length >= 2 && !results.length ? (
-        <p className="mt-2 text-xs text-slate-500">No match yet. Try the city's English name, or the nearest bigger city.</p>
+        <p className="mt-2 text-xs text-zinc-500">No match yet. Try the city's English name, or the nearest bigger city.</p>
       ) : null}
     </div>
   );

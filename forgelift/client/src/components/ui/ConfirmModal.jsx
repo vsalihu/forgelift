@@ -15,10 +15,13 @@ const ConfirmModal = ({ title, description, confirmLabel = "Confirm", cancelLabe
   useEffect(() => {
     cancelRef.current?.focus();
     const onKey = (event) => {
-      if (event.key === "Escape") onCancel?.();
+      if (event.key !== "Escape") return;
+      // Capture phase + stopPropagation so a sheet underneath stays open.
+      event.stopPropagation();
+      onCancel?.();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onCancel]);
 
   return (

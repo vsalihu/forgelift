@@ -59,9 +59,9 @@ const StandingChangeModal = () => {
               {movedUp ? `You moved up ${places} place${places === 1 ? "" : "s"}!` : `You dropped ${places} place${places === 1 ? "" : "s"}`}
             </h2>
             <p className="mt-3 text-5xl font-black text-white">#{place}</p>
-            <p className="mt-1 text-sm text-slate-400">was #{previousPlace}</p>
-            <p className="mt-3 text-sm leading-6 text-slate-300">{describeBoard(standing.board)}</p>
-            {!movedUp ? <p className="mt-2 text-sm text-slate-400">Log a session to climb back up.</p> : null}
+            <p className="mt-1 text-sm text-zinc-400">was #{previousPlace}</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-300">{describeBoard(standing.board)}</p>
+            {!movedUp ? <p className="mt-2 text-sm text-zinc-400">Log a session to climb back up.</p> : null}
             <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
               <Button className="flex-1" type="button" onClick={() => close(true)}>
                 See leaderboard

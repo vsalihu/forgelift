@@ -1,79 +1,100 @@
-import { ExternalLink, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import Button from "../Button.jsx";
-import AnimatedProgressBar from "../visuals/AnimatedProgressBar.jsx";
-import { FlameIcon, GoalIcon } from "../icons/featureIcons.jsx";
-import { DumbbellIcon } from "../icons/navIcons.jsx";
+import BottomSheet from "../ui/BottomSheet.jsx";
+import { FlameIcon, SuccessIcon } from "../icons/featureIcons.jsx";
+import { ExerciseLibraryIcon, GymModeIcon } from "../icons/navIcons.jsx";
+import { formatShortDate, missionMeta, priorityStyles, progressText } from "./missionMeta.js";
 
 const MissionDetailModal = ({ mission, onClose, onComplete }) => {
-  if (!mission) return null;
+  const meta = missionMeta(mission?.missionType);
+  const progress = Math.min(100, mission?.progressPercentage || 0);
+  const Icon = meta.icon;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 p-3">
-      <div className="mx-auto flex h-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-forge-panel shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-forge-copper">Mission Detail</p>
-            <h2 className="mt-1 text-2xl font-black text-white">{mission.title}</h2>
-          </div>
-          <button className="rounded-lg p-2 text-slate-300 hover:bg-white/10" type="button" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
-          <p className="text-sm leading-6 text-slate-300">{mission.description}</p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg bg-black/25 p-4">
-              <p className="text-sm text-slate-400">Progress</p>
-              <p className="mt-1 text-xl font-black text-white">{mission.currentValue || 0}/{mission.targetValue || 1}</p>
-            </div>
-            <div className="rounded-lg bg-black/25 p-4">
-              <p className="text-sm text-slate-400">Reward</p>
-              <p className="mt-1 flex items-center gap-2 text-xl font-black text-forge-copper"><FlameIcon className="h-5 w-5" />{mission.xpReward || 0} XP</p>
-            </div>
-            <div className="rounded-lg bg-black/25 p-4">
-              <p className="text-sm text-slate-400">Priority</p>
-              <p className="mt-1 text-xl font-black text-white">{mission.priority || "Normal"}</p>
+    <BottomSheet open={Boolean(mission)} title="Mission" onClose={onClose}>
+      {mission ? (
+        <div className="space-y-5">
+          <div className="flex items-start gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-forge-ember/15 text-orange-200">
+              <Icon className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-zinc-500">
+                {meta.label}
+                {mission.startDate ? ` · ${formatShortDate(mission.startDate)} – ${formatShortDate(mission.endDate)}` : ""}
+              </p>
+              <h3 className="font-display mt-1 text-2xl leading-tight text-white">{mission.title}</h3>
             </div>
           </div>
-          <AnimatedProgressBar value={mission.progressPercentage || 0} variant="rank" />
-          <section className="rounded-lg bg-black/25 p-4">
-            <h3 className="font-bold text-white">Why ForgeLift generated this</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              {mission.reason || mission.recommendation || "This mission is based on your recent training data, goal path, recovery, weak points, and weekly target."}
+
+          {mission.description ? <p className="text-sm leading-6 text-zinc-300">{mission.description}</p> : null}
+
+          <dl className="grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-black/25 p-3">
+              <dt className="text-xs text-zinc-500">Progress</dt>
+              <dd className="mt-0.5 font-bold tabular-nums text-white">{progressText(mission)}</dd>
+            </div>
+            <div className="rounded-2xl bg-black/25 p-3">
+              <dt className="text-xs text-zinc-500">Reward</dt>
+              <dd className="mt-0.5 flex items-center gap-1 font-bold tabular-nums text-orange-200">
+                <FlameIcon aria-hidden="true" className="h-4 w-4" />
+                {mission.xpReward || 0} XP
+              </dd>
+            </div>
+            <div className="rounded-2xl bg-black/25 p-3">
+              <dt className="text-xs text-zinc-500">Priority</dt>
+              <dd className="mt-0.5">
+                <span className={`rounded-full px-2 py-0.5 text-sm font-bold ${priorityStyles[mission.priority] || priorityStyles.Medium}`}>{mission.priority || "Medium"}</span>
+              </dd>
+            </div>
+          </dl>
+          <div aria-label={`${progress}% complete`} aria-valuemax={100} aria-valuemin={0} aria-valuenow={progress} className="h-2 overflow-hidden rounded-full bg-white/[0.08]" role="progressbar">
+            <div className="h-full rounded-full bg-gradient-to-r from-forge-copper to-orange-300" style={{ width: `${progress}%` }} />
+          </div>
+
+          <section className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+            <h4 className="text-sm font-bold text-white">Why this mission</h4>
+            <p className="mt-1.5 text-sm leading-6 text-zinc-400">
+              {mission.reason || mission.recommendation || "Built from your recent training, recovery, weak points and goal for this week."}
             </p>
           </section>
-          {mission.targetMuscleGroups?.length ? (
+
+          {mission.targetMuscleGroups?.length || mission.targetExerciseName ? (
             <section>
-              <h3 className="mb-2 font-bold text-white">Target muscles</h3>
-              <div className="flex flex-wrap gap-2">
-                {mission.targetMuscleGroups.map((muscle) => (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-slate-200" key={muscle}>{muscle}</span>
+              <h4 className="mb-2 text-sm font-bold text-white">Targets</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {mission.targetExerciseName ? <span className="rounded-full border border-white/10 px-3 py-1 text-sm font-semibold text-zinc-200">{mission.targetExerciseName}</span> : null}
+                {(mission.targetMuscleGroups || []).map((muscle) => (
+                  <span className="rounded-full bg-white/[0.06] px-3 py-1 text-sm font-semibold text-zinc-300" key={muscle}>
+                    {muscle}
+                  </span>
                 ))}
               </div>
             </section>
           ) : null}
-          <section className="grid gap-3 sm:grid-cols-2">
-            <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02]" to="/gym-mode">
-              <DumbbellIcon className="h-4 w-4" />
-              Start Related Workout
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Link className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember text-sm font-bold text-[#160a02]" to="/gym-mode">
+              <GymModeIcon className="h-4 w-4" />
+              Train for it in Gym Mode
             </Link>
-            <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white" to="/exercises">
-              <ExternalLink className="h-4 w-4" />
-              View Exercise Library
+            <Link className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.05] text-sm font-bold text-white" to="/exercises">
+              <ExerciseLibraryIcon className="h-4 w-4" />
+              Exercise library
             </Link>
-          </section>
-        </div>
-        <div className="border-t border-white/10 p-4">
+          </div>
           {mission.status === "active" ? (
-            <Button className="w-full" type="button" onClick={() => onComplete?.(mission._id)}>
-              <GoalIcon className="h-4 w-4" />
-              Mark Mission Complete
-            </Button>
+            <button
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/10 text-sm font-bold text-emerald-100 hover:bg-emerald-500/20"
+              type="button"
+              onClick={() => onComplete?.(mission._id)}
+            >
+              <SuccessIcon className="h-4 w-4" />
+              Mark mission done
+            </button>
           ) : null}
         </div>
-      </div>
-    </div>
+      ) : null}
+    </BottomSheet>
   );
 };
 

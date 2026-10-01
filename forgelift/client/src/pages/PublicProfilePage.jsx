@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
-import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
-import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
+import MuscleRankTile from "../components/ranks/MuscleRankTile.jsx";
+import RankHero from "../components/ranks/RankHero.jsx";
 import PublicTrainingCalendar from "../components/calendar/PublicTrainingCalendar.jsx";
 import NewChallengeModal from "../components/chat/NewChallengeModal.jsx";
 import SafetyActions from "../components/compete/SafetyActions.jsx";
@@ -20,7 +20,7 @@ import { AddFriendIcon, BlockIcon, ChallengeIcon, CityIcon, FriendAddedIcon, Pri
 import { ChatIcon, HistoryIcon } from "../components/icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
-const formatDate = (date) => new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(date));
+const formatDate = (date) => (date && !Number.isNaN(new Date(date).getTime()) ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(date)) : "");
 
 const PublicProfilePage = () => {
   const { username } = useParams();
@@ -263,7 +263,7 @@ const PublicProfilePage = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <RankProgressCard
+          <RankHero
             overallRank={profile.currentOverallRank}
             overallScore={profile.overallRankScore}
             overallProgress={profile.overallProgress}
@@ -282,10 +282,13 @@ const PublicProfilePage = () => {
           {data.muscleRanks?.length ? (
             <section>
               <h2 className="mb-3 text-lg font-bold text-white">Muscle ranks</h2>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {data.muscleRanks.map((muscleRank) => (
-                  <MuscleRankCard key={muscleRank.muscleGroup} muscleRank={muscleRank} />
-                ))}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {[...data.muscleRanks]
+                  .filter((muscleRank) => muscleRank.workoutCount > 0)
+                  .sort((a, b) => (b.score || 0) - (a.score || 0))
+                  .map((muscleRank, index) => (
+                    <MuscleRankTile index={index} key={muscleRank.muscleGroup} muscleRank={muscleRank} />
+                  ))}
               </div>
             </section>
           ) : null}

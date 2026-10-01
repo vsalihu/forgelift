@@ -41,6 +41,18 @@ const validateWorkoutPayload = (payload) => {
     validateRating(payload[field], field, errors);
   });
 
+  if (payload.date !== undefined && payload.date !== null && payload.date !== "") {
+    const date = new Date(payload.date);
+    // A day of slack covers time zones ahead of the server.
+    if (Number.isNaN(date.getTime())) {
+      errors.push("Workout date is not a valid date.");
+    } else if (date.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+      errors.push("Workout date can't be in the future.");
+    } else if (date.getFullYear() < 2000) {
+      errors.push("Workout date is too far in the past.");
+    }
+  }
+
   if (!Array.isArray(payload.exercises) || payload.exercises.length === 0) {
     errors.push("Workout must include at least one exercise.");
     return errors;
@@ -365,7 +377,8 @@ export const updateWorkout = async (req, res) => {
     }
 
     const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
-    const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
+    // Editing without a date keeps the original date instead of moving the workout to today.
+    const workoutData = await buildWorkoutData({ ...req.body, date: req.body.date || workout.date }, oneRepMaxLookup);
     const eligibility = await getLeaderboardEligibility({ user: req.user, workoutData, excludeWorkoutId: workout._id });
     Object.assign(workout, workoutData, eligibility);
     await workout.save();

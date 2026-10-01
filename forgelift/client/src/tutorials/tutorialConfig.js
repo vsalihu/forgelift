@@ -41,7 +41,7 @@ export const tutorialConfig = {
     {
       target: "logger-workout-details",
       title: "Workout details",
-      content: "Start with the workout name and optional session notes, then add exercises below.",
+      content: "Name the session and pick the day you trained. The how-it-felt ratings are optional but sharpen recovery advice.",
       placement: "bottom"
     },
     {
@@ -52,9 +52,10 @@ export const tutorialConfig = {
     },
     {
       target: "logger-set-entry",
-      title: "Set entry",
-      content: "Log weight, reps, optional RPE, and bodyweight settings. Add Set unlocks only when required values are present.",
-      placement: "top"
+      title: "Sets",
+      content: "Type the weight and reps for each set. Add Set copies the last one. Tap a set number for RPE, a failed set, or a note.",
+      placement: "top",
+      fallbackContent: "Add an exercise first, then its sets appear here."
     },
     {
       target: "logger-save-workout",

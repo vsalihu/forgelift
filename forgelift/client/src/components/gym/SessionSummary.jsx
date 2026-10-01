@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { FirstPlaceIcon, SuccessIcon } from "../icons/featureIcons.jsx";
-import { DeloadIcon, MissionsIcon, OverloadIcon } from "../icons/navIcons.jsx";
+import { DeloadIcon, MissionsIcon, OverloadIcon, RecoveryIcon } from "../icons/navIcons.jsx";
 import { formatClock, formatNumber, recordLabels, recordUnit } from "./gymUtils.js";
 
 const EASE = [0.16, 1, 0.3, 1];
@@ -91,7 +91,7 @@ const recordText = (record) =>
     ? `${record.value} reps at ${formatNumber(record.weight)}kg`
     : `${formatNumber(record.value)}${recordUnit(record.recordType)}`;
 
-const SessionSummary = ({ analysis, title, durationSeconds, onStartAnother }) => {
+const SessionSummary = ({ analysis, title, durationSeconds, detailsHref, startLabel = "Start another", onStartAnother }) => {
   const reduce = useReducedMotion();
   useBodyScrollLock(true);
 
@@ -102,6 +102,8 @@ const SessionSummary = ({ analysis, title, durationSeconds, onStartAnother }) =>
   const missions = analysis?.newlyCompletedMissions || [];
   const nextUp = (analysis?.overloadRecommendations || []).slice(0, 2);
   const deload = analysis?.deloadSummary?.[0];
+  const muscles = analysis?.mainMusclesWorked || [];
+  const recovery = (analysis?.recoverySummary || []).filter((item) => item.score !== null && item.score !== undefined).slice(0, 4);
 
   const stats = [
     { label: "Volume", value: analysis?.totalVolume, suffix: "kg" },
@@ -220,6 +222,36 @@ const SessionSummary = ({ analysis, title, durationSeconds, onStartAnother }) =>
             </Panel>
           ) : null}
 
+          {muscles.length || recovery.length ? (
+            <Panel delay={0.62} icon={RecoveryIcon} title="Muscles worked">
+              {muscles.length ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {muscles.map((muscle) => (
+                    <span className="rounded-full bg-forge-ember/15 px-3 py-1 text-sm font-semibold text-orange-100" key={muscle}>
+                      {muscle}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {recovery.length ? (
+                <ul className={`grid gap-2 sm:grid-cols-2 ${muscles.length ? "mt-4" : ""}`}>
+                  {recovery.map((item) => (
+                    <li className="rounded-2xl bg-black/20 p-3" key={item.muscleGroup}>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="truncate font-bold text-white">{item.muscleGroup}</span>
+                        <span className="shrink-0 font-bold tabular-nums text-zinc-300">{Math.round(item.score)}%</span>
+                      </div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+                        <div className={`h-full rounded-full ${item.score >= 75 ? "bg-emerald-400" : item.score >= 50 ? "bg-amber-300" : "bg-red-400"}`} style={{ width: `${Math.min(100, Math.max(0, item.score))}%` }} />
+                      </div>
+                      {item.restRecommendationHours ? <p className="mt-1.5 text-xs text-zinc-500">Ready for heavy work in about {item.restRecommendationHours}h</p> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </Panel>
+          ) : null}
+
           {nextUp.length ? (
             <Panel delay={0.65} icon={OverloadIcon} title="Next time">
               <ul className="space-y-3">
@@ -251,7 +283,7 @@ const SessionSummary = ({ analysis, title, durationSeconds, onStartAnother }) =>
             type="button"
             onClick={onStartAnother}
           >
-            Start another
+            {startLabel}
           </button>
           <Link
             className="flex min-h-12 items-center justify-center rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-4 text-sm font-bold text-[#160a02] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_12px_34px_-12px_rgba(249,115,22,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
@@ -261,8 +293,8 @@ const SessionSummary = ({ analysis, title, durationSeconds, onStartAnother }) =>
           </Link>
         </div>
         <p className="mx-auto mt-2 max-w-xl text-center text-xs text-zinc-500">
-          <Link className="font-semibold text-zinc-400 underline-offset-2 hover:text-white hover:underline" to="/workouts">
-            View in workout history
+          <Link className="font-semibold text-zinc-400 underline-offset-2 hover:text-white hover:underline" to={detailsHref || "/workouts"}>
+            {detailsHref ? "View full workout analysis" : "View in workout history"}
           </Link>
         </p>
       </div>

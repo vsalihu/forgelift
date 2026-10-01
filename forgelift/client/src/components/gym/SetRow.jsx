@@ -23,9 +23,13 @@ const SetRow = ({
   onChange,
   onToggleDone,
   onToggleRpe,
-  onRpe
+  onRpe,
+  trailing,
+  detailExtra,
+  detailLabel = "Rate effort"
 }) => {
   const done = Boolean(set.done);
+  const failed = set.completed === false;
   const number = index + 1;
   const weighted = isBodyweight && set.bodyweightOnly === false;
 
@@ -38,15 +42,19 @@ const SetRow = ({
       >
         <button
           aria-expanded={rpeOpen}
-          aria-label={`Set ${number}${set.rpe ? `, effort RPE ${set.rpe}` : ""}. Rate effort`}
+          aria-label={`Set ${number}${set.rpe ? `, effort RPE ${set.rpe}` : ""}${failed ? ", failed" : ""}. ${detailLabel}`}
           className={`flex h-11 flex-col items-center justify-center rounded-xl text-sm font-black tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
-            done ? "text-emerald-300 hover:bg-emerald-400/10" : "text-zinc-400 hover:bg-white/[0.06]"
-          }`}
+            failed ? "text-red-300 hover:bg-red-400/10" : done ? "text-emerald-300 hover:bg-emerald-400/10" : "text-zinc-400 hover:bg-white/[0.06]"
+          } ${rpeOpen ? "bg-white/[0.06]" : ""}`}
           type="button"
           onClick={onToggleRpe}
         >
           {number}
-          {set.rpe ? <span className="text-[0.65rem] font-bold leading-none text-orange-300">@{set.rpe}</span> : null}
+          {failed ? (
+            <span className="text-[0.6rem] font-bold uppercase leading-none tracking-wide text-red-300">Fail</span>
+          ) : set.rpe ? (
+            <span className="text-[0.65rem] font-bold leading-none text-orange-300">@{set.rpe}</span>
+          ) : null}
         </button>
 
         {isBodyweight && !weighted ? (
@@ -85,6 +93,7 @@ const SetRow = ({
           onChange={(event) => onChange("reps", cleanInteger(event.target.value))}
         />
 
+        {trailing || (
         <motion.button
           aria-label={done ? `Set ${number} done. Undo` : `Mark set ${number} done`}
           aria-pressed={done}
@@ -101,6 +110,7 @@ const SetRow = ({
             <Check aria-hidden="true" className="h-5 w-5" strokeWidth={3} />
           </motion.span>
         </motion.button>
+        )}
       </motion.div>
 
       <AnimatePresence initial={false}>
@@ -131,6 +141,7 @@ const SetRow = ({
                 );
               })}
             </div>
+            {detailExtra}
           </motion.div>
         ) : null}
       </AnimatePresence>

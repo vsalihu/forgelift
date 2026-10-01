@@ -820,6 +820,7 @@ const GymModePage = () => {
       {savedResult ? (
         <SessionSummary
           analysis={savedResult.analysis}
+          detailsHref={savedResult.workout?._id ? `/workouts/${savedResult.workout._id}` : undefined}
           durationSeconds={Math.round((savedResult.finishedAt - new Date(savedResult.startedAt).getTime()) / 1000)}
           title={savedResult.title}
           onStartAnother={resetWorkout}

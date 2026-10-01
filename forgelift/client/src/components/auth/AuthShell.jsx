@@ -33,7 +33,7 @@ const AuthVisual = ({ rank, caption }) => (
   </div>
 );
 
-const AuthShell = ({ title, subtitle, rank, caption, children, footer }) => {
+const AuthShell = ({ title, subtitle, rank, caption, children, footer, headerAction, wide = false }) => {
   const reduce = useReducedMotion();
   return (
     <div className="landing relative min-h-[100dvh] overflow-x-clip text-white">
@@ -46,19 +46,21 @@ const AuthShell = ({ title, subtitle, rank, caption, children, footer }) => {
             <Link aria-label="ForgeLift home" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200" to="/">
               <img alt="ForgeLift" className="h-7 w-auto" height="362" src="/logo-full.png" width="1357" />
             </Link>
-            <Link
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
-              to="/"
-            >
-              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-              Home
-            </Link>
+            {headerAction || (
+              <Link
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-zinc-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                to="/"
+              >
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                Home
+              </Link>
+            )}
           </header>
 
           <main className="flex flex-1 items-center py-10 sm:py-14">
             <motion.div
               animate={{ opacity: 1, y: 0 }}
-              className="mx-auto w-full max-w-md"
+              className={`mx-auto w-full ${wide ? "max-w-xl" : "max-w-md"}`}
               initial={reduce ? false : { opacity: 0, y: 24 }}
               transition={{ duration: 0.8, ease: EASE }}
             >

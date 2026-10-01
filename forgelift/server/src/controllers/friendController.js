@@ -1,5 +1,6 @@
 import Friendship from "../models/Friendship.js";
 import User from "../models/User.js";
+import { getBlockedUserIds, isBlockedBetween } from "../utils/blocks.js";
 
 const publicFields = "name username currentOverallRank overallRankScore xp lifetimeVolume lifetimeReps lifetimeSets";
 
@@ -20,9 +21,10 @@ export const searchUsers = async (req, res) => {
       return res.json({ users: [] });
     }
 
+    const blockedIds = await getBlockedUserIds(req.user._id);
     const users = await User.find({
       username: { $regex: username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
-      _id: { $ne: req.user._id }
+      _id: { $ne: req.user._id, $nin: blockedIds }
     })
       .select("name username currentOverallRank")
       .limit(10);
@@ -49,6 +51,10 @@ export const sendFriendRequest = async (req, res) => {
 
     if (recipient._id.equals(req.user._id)) {
       return res.status(400).json({ message: "You cannot add yourself as a friend." });
+    }
+
+    if (await isBlockedBetween(req.user._id, recipient._id)) {
+      return res.status(403).json({ message: "You can't send a friend request to this user." });
     }
 
     const existing = await Friendship.findOne({

@@ -17,6 +17,9 @@ on:
       start_date:
         description: History start date (YYYY-MM-DD). Leave empty for July 1 of this year.
         default: ""
+      city:
+        description: City the account competes in (for leaderboards)
+        default: London
 
 jobs:
   seed:
@@ -42,6 +45,7 @@ jobs:
           SEED_PASSWORD: ${{ inputs.password }}
           SEED_USERNAME: ${{ inputs.username }}
           SEED_START_DATE: ${{ inputs.start_date }}
+          SEED_CITY: ${{ inputs.city }}
         run: |
           if [ -z "$MONGO_URI" ]; then
             echo "The MONGO_URI repository secret is missing. Add it under Settings -> Secrets and variables -> Actions."

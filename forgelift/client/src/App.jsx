@@ -19,6 +19,7 @@ import WorkoutLoggerPage from "./pages/WorkoutLoggerPage.jsx";
 
 const AdvancedAnalyticsPage = lazy(() => import("./pages/AdvancedAnalyticsPage.jsx"));
 const AssessmentPage = lazy(() => import("./pages/AssessmentPage.jsx"));
+const CompetePage = lazy(() => import("./pages/CompetePage.jsx"));
 const CalendarPage = lazy(() => import("./pages/CalendarPage.jsx"));
 const ChatListPage = lazy(() => import("./pages/ChatListPage.jsx"));
 const ChatThreadPage = lazy(() => import("./pages/ChatThreadPage.jsx"));
@@ -72,6 +73,7 @@ const App = () => {
           <Route path="/ranks" element={withTransition(<RanksPage />)} />
           <Route path="/recovery" element={withTransition(<RecoveryPage />)} />
           <Route path="/missions" element={withTransition(<MissionsPage />)} />
+          <Route path="/compete" element={withTransition(<CompetePage />)} />
           <Route path="/gym-mode" element={withTransition(<GymModePage />)} />
           <Route path="/overload" element={withTransition(<SmartOverloadPage />)} />
           <Route path="/strength-baselines" element={withTransition(<StrengthBaselinesPage />)} />

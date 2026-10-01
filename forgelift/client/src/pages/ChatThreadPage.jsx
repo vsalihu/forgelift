@@ -165,10 +165,12 @@ const ChatThreadPage = () => {
               <Trophy className="h-4 w-4" />
               Challenge
             </Button>
-            <Button className="flex-1 sm:flex-none" loading={sendingInvite} type="button" variant="secondary" onClick={sendWorkoutInvite}>
-              <Dumbbell className="h-4 w-4" />
-              Train Together
-            </Button>
+            {conversation.canMessage !== false ? (
+              <Button className="flex-1 sm:flex-none" loading={sendingInvite} type="button" variant="secondary" onClick={sendWorkoutInvite}>
+                <Dumbbell className="h-4 w-4" />
+                Train Together
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -218,6 +220,15 @@ const ChatThreadPage = () => {
           <div ref={bottomRef} />
         </div>
 
+        {conversation.canMessage === false ? (
+          <div className="shrink-0 border-t border-white/10 p-4 text-center text-sm text-slate-300">
+            You can see challenges with @{conversation.otherUser.username} here. To chat,{" "}
+            <Link className="font-semibold text-forge-ember hover:text-orange-300" to={`/u/${conversation.otherUser.username}`}>
+              add each other as friends
+            </Link>
+            .
+          </div>
+        ) : (
         <form className="flex shrink-0 gap-2 border-t border-white/10 p-3" onSubmit={handleSend}>
           <input
             className="min-h-11 flex-1 rounded-md border border-white/10 bg-black/30 px-3 text-white outline-none transition placeholder:text-slate-500 focus:border-forge-ember focus:ring-2 focus:ring-forge-ember/20"
@@ -229,6 +240,7 @@ const ChatThreadPage = () => {
             <Send className="h-4 w-4" />
           </Button>
         </form>
+        )}
       </div>
     </Layout>
   );

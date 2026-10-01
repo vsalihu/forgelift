@@ -2,9 +2,10 @@ import { LogOut, Menu, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import Button from "./Button.jsx";
+import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
 
-const Navbar = ({ onMenuClick, unreadMessages = 0 }) => {
+const Navbar = ({ onMenuClick, unreadMessages = 0, competePlace = null }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -53,10 +54,11 @@ const Navbar = ({ onMenuClick, unreadMessages = 0 }) => {
                 Recovery
               </Link>
               <Link
-                className="rounded-md px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-white/10"
-                to="/missions"
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-white/10"
+                to="/compete"
               >
-                Missions
+                Compete
+                <PlaceBadge place={competePlace} />
               </Link>
             </nav>
             <Link className="relative rounded-md p-2 text-slate-300 hover:bg-white/10" to="/chat" aria-label="Chat">

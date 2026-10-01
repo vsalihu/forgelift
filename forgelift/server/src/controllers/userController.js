@@ -7,6 +7,7 @@ import {
 } from "../utils/validation.js";
 import ActivityFeedItem from "../models/ActivityFeedItem.js";
 import Assessment from "../models/Assessment.js";
+import Block from "../models/Block.js";
 import BodyweightEntry from "../models/BodyweightEntry.js";
 import Friendship from "../models/Friendship.js";
 import MuscleRank from "../models/MuscleRank.js";
@@ -158,6 +159,17 @@ export const getPublicProfile = async (req, res) => {
     }
 
     const isSelf = profileUser._id.equals(req.user._id);
+    const [blockedByMe, blockedMe] = isSelf
+      ? [false, false]
+      : await Promise.all([
+          Block.exists({ blockerId: req.user._id, blockedId: profileUser._id }),
+          Block.exists({ blockerId: profileUser._id, blockedId: req.user._id })
+        ]);
+
+    if (blockedMe) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
     let isFriend = false;
     let friendRequestStatus = "none";
     let friendship = null;
@@ -179,12 +191,20 @@ export const getPublicProfile = async (req, res) => {
       }
     }
 
+    const competitor = Boolean(profileUser.competition?.enabled);
     const baseProfile = {
       _id: profileUser._id,
       name: profileUser.name,
       username: profileUser.username,
       currentOverallRank: profileUser.currentOverallRank,
-      createdAt: profileUser.createdAt
+      createdAt: profileUser.createdAt,
+      competition: competitor
+        ? { cityName: profileUser.competition.cityName, countryName: profileUser.competition.countryName }
+        : null
+    };
+    const interaction = {
+      isBlockedByMe: Boolean(blockedByMe),
+      canChallenge: !isSelf && !blockedByMe && (isFriend || (competitor && Boolean(req.user.competition?.enabled)))
     };
 
     if (!isSelf && !isFriend) {
@@ -193,7 +213,8 @@ export const getPublicProfile = async (req, res) => {
         isSelf,
         isFriend,
         friendRequestStatus,
-        friendRequestId: friendship?._id || null
+        friendRequestId: friendship?._id || null,
+        interaction
       });
     }
 
@@ -220,7 +241,8 @@ export const getPublicProfile = async (req, res) => {
       isSelf,
       isFriend,
       friendRequestStatus,
-      friendRequestId: friendship?._id || null
+      friendRequestId: friendship?._id || null,
+      interaction
     });
   } catch (error) {
     return res.status(500).json({ message: "Unable to load profile.", error: error.message });

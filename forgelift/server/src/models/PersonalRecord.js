@@ -38,6 +38,10 @@ const personalRecordSchema = new mongoose.Schema(
     achievedAt: {
       type: Date,
       default: Date.now
+    },
+    leaderboardEligible: {
+      type: Boolean,
+      default: true
     }
   },
   { timestamps: true }

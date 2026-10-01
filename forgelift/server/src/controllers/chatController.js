@@ -1,6 +1,7 @@
 import Conversation, { buildPairKey } from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import { isBlockedBetween } from "../utils/blocks.js";
 import { getFriendIds } from "./friendController.js";
 
 const participantFields = "name username currentOverallRank";
@@ -8,6 +9,15 @@ const participantFields = "name username currentOverallRank";
 export const isFriend = async (userId, otherUserId) => {
   const friendIds = await getFriendIds(userId);
   return friendIds.some((id) => id.equals(otherUserId));
+};
+
+// Strangers who both opted into competitions can challenge each other; chatting needs friendship.
+export const getInteractionRights = async (userId, otherUserId) => {
+  if (await isBlockedBetween(userId, otherUserId)) return { blocked: true, canMessage: false, canChallenge: false };
+  const friends = await isFriend(userId, otherUserId);
+  if (friends) return { blocked: false, canMessage: true, canChallenge: true };
+  const competitors = await User.countDocuments({ _id: { $in: [userId, otherUserId] }, "competition.enabled": true });
+  return { blocked: false, canMessage: false, canChallenge: competitors === 2 };
 };
 
 export const getOrCreateConversation = async (userIdA, userIdB) => {
@@ -123,12 +133,19 @@ export const getConversationWithFriend = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    if (!(await isFriend(req.user._id, friend._id))) {
+    const rights = await getInteractionRights(req.user._id, friend._id);
+    if (rights.blocked) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (!rights.canMessage && !rights.canChallenge) {
       return res.status(400).json({ message: "You can only message your friends." });
     }
 
     const conversation = await getOrCreateConversation(req.user._id, friend._id);
-    return res.json({ conversation: decorateConversation(conversation, req.user._id, friend) });
+    return res.json({
+      conversation: { ...decorateConversation(conversation, req.user._id, friend), canMessage: rights.canMessage }
+    });
   } catch (error) {
     return res.status(500).json({ message: "Unable to open conversation.", error: error.message });
   }
@@ -196,6 +213,14 @@ export const sendMessage = async (req, res) => {
 
     assertParticipant(conversation, req.user._id);
 
+    const recipient = conversation.participants.find((participant) => !participant.userId.equals(req.user._id));
+    if (recipient) {
+      const rights = await getInteractionRights(req.user._id, recipient.userId);
+      if (!rights.canMessage) {
+        return res.status(403).json({ message: "Add each other as friends to chat." });
+      }
+    }
+
     const message = await Message.create({
       conversationId: conversation._id,
       senderId: req.user._id,
@@ -203,7 +228,6 @@ export const sendMessage = async (req, res) => {
       text
     });
 
-    const recipient = conversation.participants.find((participant) => !participant.userId.equals(req.user._id));
     if (recipient) {
       await touchConversation(conversation, { senderId: req.user._id, recipientId: recipient.userId, text, type: "text" });
     }

@@ -30,6 +30,7 @@ import { detectPersonalRecords } from "./detectPersonalRecords.js";
 import { generateMonthlyReport } from "./generateMonthlyReport.js";
 import { generateNewPlan, getTrainingReadiness } from "./generateTrainingPlan.js";
 import { recalculateUserTrainingState } from "./recalculateUserTrainingState.js";
+import { getCityById, searchCities } from "./cities.js";
 import { seedExercises } from "./seedExercises.js";
 
 dotenv.config();
@@ -253,8 +254,10 @@ export const seedTestAccount = async ({
   password = "Test123",
   username = "testuser",
   name = "Test Athlete",
-  startDate = defaultStartDate()
+  startDate = defaultStartDate(),
+  cityName = "London"
 } = {}) => {
+  const city = searchCities(cityName, 1)[0] || getCityById("2643743");
   const normalizedEmail = email.toLowerCase();
   const endDate = startOfUTCDay(new Date());
   const passwordHash = await bcrypt.hash(password, 12);
@@ -305,6 +308,17 @@ export const seedTestAccount = async ({
     lifetimeSets: 0,
     lifetimeWorkoutCount: 0,
     beginnerTipsEnabled: false,
+    competition: {
+      enabled: true,
+      cityId: city.cityId,
+      cityName: city.name,
+      countryCode: city.countryCode,
+      countryName: city.countryName,
+      birthYear: 1999,
+      weightGoal: "none",
+      featured: { type: "volume", scope: "city", period: "month" },
+      joinedAt: startDate
+    },
     strengthBaselines: [
       { exerciseName: "Bench Press", estimatedOneRepMax: 95, workingWeight: 75, reps: 8, source: "user_entered", confidence: "High" },
       { exerciseName: "Squat", estimatedOneRepMax: 125, workingWeight: 100, reps: 7, source: "user_entered", confidence: "High" },
@@ -415,11 +429,13 @@ if (isDirectRun) {
       email: process.env.SEED_EMAIL || undefined,
       password: process.env.SEED_PASSWORD || undefined,
       username: process.env.SEED_USERNAME || undefined,
+      cityName: process.env.SEED_CITY || undefined,
       startDate
     });
     console.log("Test account ready.");
     console.log(`  Login:    ${result.user.email}`);
     console.log(`  Username: @${result.user.username}`);
+    console.log(`  Competes in: ${result.user.competition.cityName}, ${result.user.competition.countryName}`);
     console.log(`  Workouts: ${result.workoutCount}`);
     console.log(`  Calendar rest/treatment days: ${result.calendarEntryCount}`);
     console.log(`  Upcoming plan: ${result.planSummary}`);

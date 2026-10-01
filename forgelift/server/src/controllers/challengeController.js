@@ -1,7 +1,9 @@
+import mongoose from "mongoose";
 import Challenge from "../models/Challenge.js";
 import User from "../models/User.js";
 import Workout from "../models/Workout.js";
-import { getOrCreateConversation, isFriend, postSystemMessage, touchConversation } from "./chatController.js";
+import { getInteractionRights, getOrCreateConversation, postSystemMessage, touchConversation } from "./chatController.js";
+import { isBlockedBetween } from "../utils/blocks.js";
 import Message from "../models/Message.js";
 
 const participantFields = "name username currentOverallRank";
@@ -83,8 +85,13 @@ export const createChallenge = async (req, res) => {
       return res.status(400).json({ message: "Duration must be between 1 and 90 days." });
     }
 
-    if (!(await isFriend(req.user._id, friendUserId))) {
-      return res.status(400).json({ message: "You can only challenge your friends." });
+    if (!mongoose.Types.ObjectId.isValid(friendUserId) || req.user._id.equals(friendUserId)) {
+      return res.status(400).json({ message: "Choose someone to challenge." });
+    }
+
+    const rights = await getInteractionRights(req.user._id, friendUserId);
+    if (!rights.canChallenge) {
+      return res.status(400).json({ message: "You can challenge friends, or other people who joined competitions." });
     }
 
     const conversation = await getOrCreateConversation(req.user._id, friendUserId);
@@ -125,6 +132,10 @@ export const respondToChallenge = async (req, res) => {
 
     if (!challenge) {
       return res.status(404).json({ message: "Challenge not found." });
+    }
+
+    if (accept && (await isBlockedBetween(challenge.creatorId, challenge.opponentId))) {
+      return res.status(403).json({ message: "This challenge is no longer available." });
     }
 
     const conversation = await getOrCreateConversation(challenge.creatorId, challenge.opponentId);

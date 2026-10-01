@@ -1,19 +1,20 @@
-import { CalendarDays, Dumbbell, Gauge, Menu, PlusCircle } from "lucide-react";
+import { CalendarDays, Dumbbell, Gauge, Menu, Trophy } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
+import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: Gauge },
   { to: "/gym-mode", label: "Gym", icon: Dumbbell },
-  { to: "/workouts/new", label: "Log", icon: PlusCircle },
+  { to: "/compete", label: "Compete", icon: Trophy },
   { to: "/calendar", label: "Calendar", icon: CalendarDays }
 ];
 
 const morePaths = moreMenuGroups.flatMap((group) => group.items.map((item) => item.to));
 
-const MobileNav = ({ unreadMessages = 0 }) => {
+const MobileNav = ({ unreadMessages = 0, competePlace = null }) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const { pathname } = useLocation();
   const isMoreActive = morePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -25,7 +26,7 @@ const MobileNav = ({ unreadMessages = 0 }) => {
           {items.map((item) => (
             <NavLink
               className={({ isActive }) =>
-                `flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
+                `relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-bold transition ${
                   isActive ? "bg-forge-ember text-white shadow-lg shadow-orange-900/30" : "text-slate-300"
                 }`
               }
@@ -34,6 +35,7 @@ const MobileNav = ({ unreadMessages = 0 }) => {
             >
               <item.icon className="h-5 w-5" />
               {item.label}
+              {item.to === "/compete" ? <PlaceBadge className="absolute right-2 top-1" place={competePlace} /> : null}
             </NavLink>
           ))}
           <button

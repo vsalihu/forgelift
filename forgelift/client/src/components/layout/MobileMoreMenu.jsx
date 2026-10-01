@@ -13,6 +13,7 @@ import {
   ListChecks,
   Medal,
   MessageCircle,
+  PlusCircle,
   Scale,
   Shield,
   ShieldAlert,
@@ -28,6 +29,7 @@ export const moreMenuGroups = [
   {
     title: "Training",
     items: [
+      { to: "/workouts/new", label: "Log Workout", icon: PlusCircle },
       { to: "/calendar", label: "Calendar", icon: CalendarDays },
       { to: "/workouts", label: "Workout History", icon: ClipboardList },
       { to: "/workout-templates", label: "Design a Workout", icon: ClipboardList },

@@ -32,7 +32,8 @@ const createRecord = async ({ userId, workout, exercise, recordType, value, set,
     volume,
     estimated1RM: set?.estimated1RM,
     workoutId: workout._id,
-    achievedAt: workout.date
+    achievedAt: workout.date,
+    leaderboardEligible: workout.leaderboardEligible !== false
   });
 };
 

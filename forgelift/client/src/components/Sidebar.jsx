@@ -20,12 +20,14 @@ import {
   ShieldAlert,
   Shield,
   TrendingUp,
+  Trophy,
   UserCircle,
   Users,
   X,
   Zap
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
 
 const navItems = [
@@ -35,7 +37,8 @@ const navItems = [
     items: [
       { to: "/dashboard", label: "Dashboard", icon: Gauge },
       { to: "/gym-mode", label: "Gym Mode", icon: Dumbbell },
-      { to: "/workouts/new", label: "Log Workout", icon: PlusCircle }
+      { to: "/workouts/new", label: "Log Workout", icon: PlusCircle },
+      { to: "/compete", label: "Compete", icon: Trophy }
     ]
   },
   {
@@ -92,7 +95,7 @@ const navItems = [
   }
 ];
 
-const Sidebar = ({ open, onClose, unreadMessages = 0 }) => {
+const Sidebar = ({ open, onClose, unreadMessages = 0, competePlace = null }) => {
   return (
     <>
       <div
@@ -133,6 +136,7 @@ const Sidebar = ({ open, onClose, unreadMessages = 0 }) => {
                     <item.icon className="h-5 w-5 shrink-0" />
                     <span className="truncate">{item.label}</span>
                     {item.to === "/chat" ? <UnreadBadge className="ml-auto" count={unreadMessages} /> : null}
+                    {item.to === "/compete" ? <PlaceBadge className="ml-auto" place={competePlace} /> : null}
                   </NavLink>
                 ))}
               </div>

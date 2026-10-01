@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Lock, MessageCircle, Trophy, UserCheck, UserMinus, UserPlus } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Ban, Lock, MapPin, MessageCircle, Swords, Trophy, UserCheck, UserMinus, UserPlus } from "lucide-react";
 import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import RankProgressCard from "../components/ranks/RankProgressCard.jsx";
 import MuscleRankCard from "../components/ranks/MuscleRankCard.jsx";
 import PublicTrainingCalendar from "../components/calendar/PublicTrainingCalendar.jsx";
+import NewChallengeModal from "../components/chat/NewChallengeModal.jsx";
+import SafetyActions from "../components/compete/SafetyActions.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import MetricCard from "../components/ui/MetricCard.jsx";
+import { challengeService } from "../services/challengeService.js";
 import { friendService } from "../services/friendService.js";
 import { profileService } from "../services/profileService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
@@ -26,6 +29,9 @@ const PublicProfilePage = () => {
   const [actionBusy, setActionBusy] = useState(false);
   const [savedTemplateIds, setSavedTemplateIds] = useState([]);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  const [challengeBusy, setChallengeBusy] = useState(false);
+  const navigate = useNavigate();
 
   const loadProfile = async () => {
     setLoading(true);
@@ -96,6 +102,19 @@ const PublicProfilePage = () => {
     }
   };
 
+  const sendChallenge = async ({ metric, durationDays }) => {
+    setChallengeBusy(true);
+    try {
+      await challengeService.createChallenge({ friendUserId: data.profile._id, metric, durationDays });
+      setChallengeOpen(false);
+      navigate(`/chat/${username}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setChallengeBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -115,6 +134,8 @@ const PublicProfilePage = () => {
   if (!data) return null;
 
   const { profile, isSelf, isFriend, friendRequestStatus } = data;
+  const interaction = data.interaction || {};
+  const isBlocked = Boolean(interaction.isBlockedByMe);
 
   const friendActionButton = () => {
     if (isSelf) return null;
@@ -163,14 +184,42 @@ const PublicProfilePage = () => {
           <p className="mt-1 text-sm text-slate-400">
             @{profile.username} · Joined {formatDate(profile.createdAt)}
           </p>
+          {profile.competition ? (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-300">
+              <MapPin className="h-4 w-4 text-forge-copper" />
+              {profile.competition.cityName}, {profile.competition.countryName} · competes on leaderboards
+            </p>
+          ) : null}
+          {!isSelf ? (
+            <div className="mt-3">
+              <SafetyActions
+                isBlocked={isBlocked}
+                username={profile.username}
+                onBlockedChange={(blocked) =>
+                  setData((current) => ({
+                    ...current,
+                    isFriend: blocked ? false : current.isFriend,
+                    friendRequestStatus: blocked ? "none" : current.friendRequestStatus,
+                    interaction: { ...current.interaction, isBlockedByMe: blocked, canChallenge: blocked ? false : current.interaction?.canChallenge }
+                  }))
+                }
+              />
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           {isSelf ? (
             <Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15" to="/profile">
               Edit Profile Settings
             </Link>
-          ) : (
+          ) : isBlocked ? null : (
             <>
+              {interaction.canChallenge ? (
+                <Button type="button" variant="secondary" onClick={() => setChallengeOpen(true)}>
+                  <Swords className="h-4 w-4" />
+                  Challenge
+                </Button>
+              ) : null}
               {isFriend ? (
                 <Link
                   className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
@@ -186,12 +235,29 @@ const PublicProfilePage = () => {
         </div>
       </div>
 
-      {!isSelf && !isFriend ? (
+      <NewChallengeModal
+        open={challengeOpen}
+        opponentName={profile.name}
+        submitting={challengeBusy}
+        onClose={() => setChallengeOpen(false)}
+        onSubmit={sendChallenge}
+      />
+
+      {isBlocked ? (
+        <div className="metal-panel rounded-xl p-8 text-center">
+          <Ban className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+          <p className="text-lg font-bold text-white">You blocked @{profile.username}</p>
+          <p className="mt-2 text-sm text-slate-400">
+            You won&apos;t see each other on leaderboards, and they can&apos;t message, challenge or friend you. Unblock above to undo.
+          </p>
+        </div>
+      ) : !isSelf && !isFriend ? (
         <div className="metal-panel rounded-xl p-8 text-center">
           <Lock className="mx-auto mb-3 h-8 w-8 text-forge-copper" />
           <p className="text-lg font-bold text-white">This profile is private</p>
           <p className="mt-2 text-sm text-slate-400">
             {profile.currentOverallRank} rank. Add @{profile.username} as a friend to see their full stats, ranks, and public workouts.
+            {interaction.canChallenge ? " You can still challenge them, since you both compete." : ""}
           </p>
         </div>
       ) : (

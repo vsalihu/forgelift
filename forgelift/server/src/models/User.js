@@ -92,6 +92,43 @@ const strengthGoalSchema = new mongoose.Schema(
   { _id: false, timestamps: true }
 );
 
+const competitionSchema = new mongoose.Schema(
+  {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    cityId: String,
+    cityName: String,
+    countryCode: String,
+    countryName: String,
+    birthYear: Number,
+    weightGoal: {
+      type: String,
+      enum: ["gain", "lose", "none"],
+      default: "none"
+    },
+    featured: {
+      type: {
+        type: String,
+        default: "volume"
+      },
+      scope: {
+        type: String,
+        default: "city"
+      },
+      period: {
+        type: String,
+        default: "month"
+      }
+    },
+    lastSeenPlace: Number,
+    lastSeenBoardKey: String,
+    joinedAt: Date
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -216,6 +253,10 @@ const userSchema = new mongoose.Schema(
       type: [strengthGoalSchema],
       default: []
     },
+    competition: {
+      type: competitionSchema,
+      default: () => ({})
+    },
     beginnerTipsEnabled: {
       type: Boolean,
       default: true
@@ -271,6 +312,9 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.index({ "competition.enabled": 1, "competition.cityId": 1 });
+userSchema.index({ "competition.enabled": 1, "competition.countryCode": 1 });
 
 userSchema.set("toJSON", {
   transform: (_doc, ret) => {

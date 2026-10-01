@@ -118,6 +118,14 @@ const workoutExerciseSchema = new mongoose.Schema(
 
 const workoutSchema = new mongoose.Schema(
   {
+    leaderboardEligible: {
+      type: Boolean,
+      default: true
+    },
+    leaderboardFlags: {
+      type: [String],
+      default: []
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

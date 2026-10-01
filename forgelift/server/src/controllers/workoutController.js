@@ -8,6 +8,7 @@ import { calculateXP } from "../utils/calculateXP.js";
 import { recalculateUserRanks } from "../utils/calculateRanks.js";
 import { buildOneRepMaxLookup } from "../utils/buildOneRepMaxLookup.js";
 import { calculateWorkoutStats } from "../utils/calculateWorkoutStats.js";
+import { detectImplausibleLifts } from "../utils/detectImplausibleLifts.js";
 import { detectPersonalRecords } from "../utils/detectPersonalRecords.js";
 import { generateWorkoutAnalysis } from "../utils/generateWorkoutAnalysis.js";
 import { recalculateRecoveryFromWorkouts } from "../utils/recalculateRecoveryFromWorkouts.js";
@@ -159,6 +160,31 @@ const buildWorkoutData = async (payload, oneRepMaxLookup) => {
   };
 };
 
+// Implausible sessions are still saved; they just don't count on public leaderboards.
+const getLeaderboardEligibility = async ({ user, workoutData, excludeWorkoutId }) => {
+  const query = {
+    userId: user._id,
+    recordType: "best_estimated_1rm",
+    exerciseName: { $in: workoutData.exercises.map((exercise) => exercise.exerciseName) },
+    leaderboardEligible: { $ne: false }
+  };
+  if (excludeWorkoutId) query.workoutId = { $ne: excludeWorkoutId };
+
+  const records = await PersonalRecord.find(query).select("exerciseName value");
+  const previousBestByExercise = new Map();
+  records.forEach((record) => {
+    previousBestByExercise.set(record.exerciseName, Math.max(previousBestByExercise.get(record.exerciseName) || 0, record.value));
+  });
+
+  const leaderboardFlags = detectImplausibleLifts({
+    exercises: workoutData.exercises,
+    previousBestByExercise,
+    user,
+    totalVolume: workoutData.totalVolume
+  });
+  return { leaderboardEligible: leaderboardFlags.length === 0, leaderboardFlags };
+};
+
 const getRecentWorkouts = (userId) => {
   const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
   return Workout.find({ userId, date: { $gte: since } }).sort({ date: -1, createdAt: -1 });
@@ -174,9 +200,11 @@ export const createWorkout = async (req, res) => {
 
     const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
     const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
+    const eligibility = await getLeaderboardEligibility({ user: req.user, workoutData });
     const workout = await Workout.create({
       userId: req.user._id,
-      ...workoutData
+      ...workoutData,
+      ...eligibility
     });
     const newPersonalRecords = await detectPersonalRecords({ userId: req.user._id, workout });
     const xpEarned = calculateXP({ workout, newPersonalRecords });
@@ -338,7 +366,8 @@ export const updateWorkout = async (req, res) => {
 
     const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
     const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
-    Object.assign(workout, workoutData);
+    const eligibility = await getLeaderboardEligibility({ user: req.user, workoutData, excludeWorkoutId: workout._id });
+    Object.assign(workout, workoutData, eligibility);
     await workout.save();
     await PersonalRecord.deleteMany({ userId: req.user._id, workoutId: workout._id });
     const newPersonalRecords = await detectPersonalRecords({ userId: req.user._id, workout });

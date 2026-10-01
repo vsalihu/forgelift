@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AuthShell from "../components/auth/AuthShell.jsx";
 import { AuthBack, AuthField, AuthSubmit, FormAlert } from "../components/auth/AuthFields.jsx";
 import { ChipSelect, ChoiceGrid, Segmented } from "../components/auth/Choices.jsx";
+import { cleanDecimal } from "../components/gym/gymUtils.js";
 import { SuccessIcon } from "../components/icons/featureIcons.jsx";
 import { EASE } from "../components/landing/shared.jsx";
 import { useAuth } from "../hooks/useAuth.js";
@@ -398,7 +399,7 @@ const OnboardingPage = () => {
                     placeholder={imperial ? "70" : "178"}
                     value={body.height}
                     onChange={(event) => {
-                      setBody({ ...body, height: event.target.value });
+                      setBody({ ...body, height: cleanDecimal(event.target.value) });
                       clear("height");
                     }}
                   />
@@ -407,10 +408,10 @@ const OnboardingPage = () => {
                     id="setup-bodyweight"
                     inputMode="decimal"
                     label={`Bodyweight (${weightUnit})`}
-                    placeholder={imperial ? "180" : "80"}
+                    placeholder={imperial ? "180.5" : "80.4"}
                     value={body.bodyweight}
                     onChange={(event) => {
-                      setBody({ ...body, bodyweight: event.target.value });
+                      setBody({ ...body, bodyweight: cleanDecimal(event.target.value) });
                       clear("bodyweight");
                     }}
                   />

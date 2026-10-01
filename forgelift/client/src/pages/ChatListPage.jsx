@@ -1,31 +1,31 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
-import EmptyState from "../components/ui/EmptyState.jsx";
-import ErrorState from "../components/ui/ErrorState.jsx";
-import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
-import PageHeader from "../components/ui/PageHeader.jsx";
-import { chatService } from "../services/chatService.js";
+import EmptyPanel from "../components/advice/EmptyPanel.jsx";
+import Avatar from "../components/social/Avatar.jsx";
+import { timeAgo } from "../components/social/timeAgo.js";
 import { ChallengeIcon } from "../components/icons/featureIcons.jsx";
 import { ChatIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import { chatService } from "../services/chatService.js";
 
-const formatRelativeTime = (date) => {
-  if (!date) return "";
-  const diffMs = Date.now() - new Date(date).getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(date));
-};
-
-const previewFor = (conversation) => {
-  if (conversation.lastMessageType === "challenge") return "🏆 Challenge";
-  if (conversation.lastMessageType === "workout_session") return "💪 Workout together";
-  return conversation.lastMessageText || "Say hello";
+const Preview = ({ conversation }) => {
+  if (conversation.lastMessageType === "challenge") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-orange-200">
+        <ChallengeIcon aria-hidden="true" className="h-3.5 w-3.5" /> Challenge
+      </span>
+    );
+  }
+  if (conversation.lastMessageType === "workout_session") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sky-200">
+        <DumbbellIcon aria-hidden="true" className="h-3.5 w-3.5" /> Workout together
+      </span>
+    );
+  }
+  return conversation.lastMessageText || <span className="text-zinc-600">Say hello</span>;
 };
 
 const ChatListPage = () => {
@@ -53,61 +53,67 @@ const ChatListPage = () => {
 
   return (
     <Layout>
-      <PageHeader
-        eyebrow="Social"
-        title="Chat"
-        description="Message friends, send challenges, and train together in real time."
-        actions={
-          <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-            to="/friends"
-          >
-            Find friends
-          </Link>
-        }
-      />
-
-      {error ? <ErrorState message={error} onRetry={load} /> : null}
-      {loading ? <LoadingSkeleton rows={4} /> : null}
-
-      {!loading && !conversations.length ? (
-        <EmptyState
-          icon={ChatIcon}
-          title="No conversations yet"
-          description="Message a friend from the Friends page to start a chat, send a challenge, or train together."
+      <div className="mx-auto max-w-3xl">
+        <PageHeader
+          actions={
+            <Link className="inline-flex min-h-11 items-center rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white hover:bg-white/[0.09]" to="/friends">
+              Find friends
+            </Link>
+          }
+          description="Message friends, send challenges and train together live."
+          eyebrow="Chat"
+          title="Messages"
         />
-      ) : null}
 
-      <div className="space-y-2">
-        {conversations.map((conversation) => (
-          <Link
-            className="metal-panel flex items-center justify-between gap-3 rounded-lg p-4 transition hover:bg-white/5"
-            key={conversation._id}
-            to={`/chat/${conversation.otherUser.username}`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forge-ember/15 text-forge-ember">
-                {conversation.lastMessageType === "challenge" ? (
-                  <ChallengeIcon className="h-5 w-5" />
-                ) : conversation.lastMessageType === "workout_session" ? (
-                  <DumbbellIcon className="h-5 w-5" />
-                ) : (
-                  <ChatIcon className="h-5 w-5" />
-                )}
-              </span>
-              <div>
-                <p className="font-bold text-white">{conversation.otherUser.name}</p>
-                <p className="mt-0.5 line-clamp-1 text-sm text-slate-400">{previewFor(conversation)}</p>
-              </div>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="text-xs text-slate-500">{formatRelativeTime(conversation.lastMessageAt)}</span>
-              {conversation.unreadCount ? (
-                <span className="rounded-full bg-forge-ember px-2 py-0.5 text-xs font-bold text-[#160a02]">{conversation.unreadCount}</span>
-              ) : null}
-            </div>
-          </Link>
-        ))}
+        {error ? <ErrorState message={error} onRetry={load} /> : null}
+        {loading ? (
+          <div aria-busy="true" className="space-y-2">
+            {[0, 1, 2, 3].map((item) => (
+              <div className="h-[4.75rem] animate-pulse rounded-2xl bg-white/[0.03]" key={item} />
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && !error && !conversations.length ? (
+          <EmptyPanel action={false} icon={ChatIcon} title="No conversations yet.">
+            Open a friend from the Friends page to message them, send a challenge, or start a workout together.
+          </EmptyPanel>
+        ) : null}
+
+        <ul className="space-y-2">
+          {conversations.map((conversation) => {
+            const unread = conversation.unreadCount > 0;
+            return (
+              <li key={conversation._id}>
+                <Link
+                  className={`flex items-center gap-3 rounded-2xl border p-3 transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+                    unread ? "border-forge-ember/30 bg-forge-ember/[0.05]" : "border-white/[0.07] bg-white/[0.025]"
+                  }`}
+                  to={`/chat/${conversation.otherUser.username}`}
+                >
+                  <Avatar name={conversation.otherUser.name} rank={conversation.otherUser.currentOverallRank} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className={`truncate ${unread ? "font-bold text-white" : "font-semibold text-zinc-100"}`}>{conversation.otherUser.name}</span>
+                      <span className={`shrink-0 text-xs tabular-nums ${unread ? "text-orange-300" : "text-zinc-500"}`}>{timeAgo(conversation.lastMessageAt)}</span>
+                    </span>
+                    <span className="mt-0.5 flex items-center justify-between gap-3">
+                      <span className={`min-w-0 truncate text-sm ${unread ? "text-zinc-200" : "text-zinc-500"}`}>
+                        <Preview conversation={conversation} />
+                      </span>
+                      {unread ? (
+                        <span className="shrink-0 rounded-full bg-forge-ember px-2 py-0.5 text-xs font-black text-[#160a02]">
+                          {conversation.unreadCount}
+                          <span className="sr-only"> unread</span>
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Layout>
   );

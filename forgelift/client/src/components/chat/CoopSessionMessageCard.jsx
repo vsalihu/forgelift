@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Button from "../Button.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 import { coopSessionService } from "../../services/coopSessionService.js";
 import { DumbbellIcon } from "../icons/navIcons.jsx";
@@ -44,49 +43,49 @@ const CoopSessionMessageCard = ({ session: initialSession, onChanged }) => {
     }
   };
 
+  const btn = "inline-flex min-h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-bold disabled:opacity-50";
+
   return (
-    <div className="w-full max-w-sm rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-4">
-      <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-cyan-200">
-        <DumbbellIcon className="h-4 w-4" />
-        Workout together
+    <div className="w-full max-w-sm rounded-3xl border border-sky-400/25 bg-gradient-to-br from-sky-500/[0.1] to-transparent p-4">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-300">
+        <DumbbellIcon aria-hidden="true" className="h-4 w-4" />
+        Train together
       </div>
-      <p className="text-sm text-slate-200">{session.title}</p>
+      <p className="font-display mt-1.5 text-lg leading-tight text-white">{session.title}</p>
 
       {session.status === "pending" ? (
         isGuest ? (
           <div className="mt-3 flex gap-2">
-            <Button loading={busy} type="button" onClick={() => respond(true)}>Join</Button>
-            <Button disabled={busy} type="button" variant="ghost" onClick={() => respond(false)}>Decline</Button>
+            <button className={`${btn} text-zinc-300 hover:bg-white/[0.06]`} disabled={busy} type="button" onClick={() => respond(false)}>
+              Decline
+            </button>
+            <button className={`${btn} bg-sky-400 text-[#04121c]`} disabled={busy} type="button" onClick={() => respond(true)}>
+              Join
+            </button>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">Waiting for them to join.</p>
+          <p className="mt-2 text-sm text-zinc-400">Waiting for them to join.</p>
         )
       ) : null}
 
-      {session.status === "declined" ? <p className="mt-3 text-sm text-slate-400">Declined.</p> : null}
+      {session.status === "declined" ? <p className="mt-2 text-sm text-zinc-500">Declined.</p> : null}
 
-      {session.status === "active" ? (
-        <div className="mt-3 space-y-2">
+      {session.status === "active" || session.status === "completed" ? (
+        <ul className="mt-3 space-y-1.5">
           {session.participants?.map((participant) => (
-            <div className="flex items-center justify-between rounded-md bg-black/25 p-2 text-sm" key={participant.userId}>
-              <span className="font-semibold text-white">{participant.user?.name || "Training"}</span>
-              <span className="text-slate-300">{formatNumber(participant.totalVolume)}kg · {participant.completedSets || 0} sets</span>
-            </div>
+            <li className="flex items-center justify-between gap-3 rounded-xl bg-black/25 px-3 py-2 text-sm" key={participant.userId}>
+              <span className="truncate font-semibold text-white">{participant.userId === user?._id ? "You" : participant.user?.name || "Friend"}</span>
+              <span className="shrink-0 tabular-nums text-zinc-300">
+                {formatNumber(participant.totalVolume)}kg · {participant.completedSets || 0} sets
+              </span>
+            </li>
           ))}
-          <Link className="mt-2 inline-flex min-h-10 items-center rounded-full bg-forge-ember px-3 text-sm font-semibold text-[#160a02]" to="/gym-mode">
-            Go to Gym Mode
-          </Link>
-        </div>
+        </ul>
       ) : null}
-
-      {session.status === "completed" ? (
-        <div className="mt-3 space-y-1">
-          {session.participants?.map((participant) => (
-            <p className="text-sm text-slate-300" key={participant.userId}>
-              {participant.user?.name || "Friend"}: {formatNumber(participant.totalVolume)}kg
-            </p>
-          ))}
-        </div>
+      {session.status === "active" ? (
+        <Link className="mt-3 flex min-h-10 items-center justify-center rounded-full bg-gradient-to-b from-orange-400 to-forge-ember text-sm font-bold text-[#160a02]" to="/gym-mode">
+          Open Gym Mode
+        </Link>
       ) : null}
     </div>
   );

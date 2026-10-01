@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import Button from "../Button.jsx";
 import { useAuth } from "../../hooks/useAuth.js";
 import { challengeService } from "../../services/challengeService.js";
 import { ChallengeIcon } from "../icons/featureIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
-const metricLabel = (metric) => (metric === "workout_count" ? "most workouts" : "most volume");
+const metricLabel = (metric) => (metric === "workout_count" ? "Most workouts" : "Most volume");
 
 const daysLeft = (endDate) => {
   if (!endDate) return 0;
@@ -54,46 +53,57 @@ const ChallengeMessageCard = ({ challenge: initialChallenge, onChanged }) => {
   const total = (challenge.creatorProgress || 0) + (challenge.opponentProgress || 0);
   const creatorPercent = total ? Math.round(((challenge.creatorProgress || 0) / total) * 100) : 50;
 
+  const mineIsCreator = !isOpponent;
+  const leftName = mineIsCreator ? "You" : creatorName;
+  const rightName = mineIsCreator ? opponentName : "You";
+  const btn = "inline-flex min-h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-bold disabled:opacity-50";
+
   return (
-    <div className="w-full max-w-sm rounded-xl border border-forge-copper/30 bg-forge-copper/10 p-4">
-      <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em] text-forge-copper">
-        <ChallengeIcon className="h-4 w-4" />
+    <div className="w-full max-w-sm rounded-3xl border border-forge-ember/25 bg-gradient-to-br from-forge-ember/[0.12] to-transparent p-4">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-orange-300">
+        <ChallengeIcon aria-hidden="true" className="h-4 w-4" />
         Challenge
       </div>
-      <p className="text-sm text-slate-200">
-        {metricLabel(challenge.metric)} over {challenge.durationDays} days
+      <p className="font-display mt-1.5 text-lg leading-tight text-white">
+        {metricLabel(challenge.metric)} in {challenge.durationDays} days
       </p>
 
       {challenge.status === "pending" ? (
         isOpponent ? (
           <div className="mt-3 flex gap-2">
-            <Button loading={busy} type="button" onClick={() => respond(true)}>Accept</Button>
-            <Button disabled={busy} type="button" variant="ghost" onClick={() => respond(false)}>Decline</Button>
+            <button className={`${btn} text-zinc-300 hover:bg-white/[0.06]`} disabled={busy} type="button" onClick={() => respond(false)}>
+              Decline
+            </button>
+            <button className={`${btn} bg-gradient-to-b from-orange-400 to-forge-ember text-[#160a02]`} disabled={busy} type="button" onClick={() => respond(true)}>
+              Accept
+            </button>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">Waiting for them to accept.</p>
+          <p className="mt-2 text-sm text-zinc-400">Waiting for them to accept.</p>
         )
       ) : null}
 
-      {challenge.status === "declined" ? <p className="mt-3 text-sm text-slate-400">Declined.</p> : null}
-      {challenge.status === "cancelled" ? <p className="mt-3 text-sm text-slate-400">Cancelled.</p> : null}
+      {challenge.status === "declined" ? <p className="mt-2 text-sm text-zinc-500">Declined.</p> : null}
+      {challenge.status === "cancelled" ? <p className="mt-2 text-sm text-zinc-500">Cancelled.</p> : null}
 
       {challenge.status === "active" || challenge.status === "completed" ? (
         <div className="mt-3">
-          <div className="mb-1 flex justify-between text-xs font-bold text-slate-300">
-            <span>{creatorName}: {formatNumber(challenge.creatorProgress)}</span>
-            <span>{opponentName}: {formatNumber(challenge.opponentProgress)}</span>
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate">
+              <span className="text-zinc-400">{leftName}</span> <span className="font-bold tabular-nums text-white">{formatNumber(challenge.creatorProgress)}</span>
+            </span>
+            <span className="min-w-0 truncate text-right">
+              <span className="font-bold tabular-nums text-white">{formatNumber(challenge.opponentProgress)}</span> <span className="text-zinc-400">{rightName}</span>
+            </span>
           </div>
-          <div className="flex h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-forge-ember" style={{ width: `${creatorPercent}%` }} />
-            <div className="h-full bg-cyan-400" style={{ width: `${100 - creatorPercent}%` }} />
+          <div aria-hidden="true" className="mt-1.5 flex h-2 gap-[2px] overflow-hidden rounded-full">
+            <div className="h-full rounded-l-full bg-forge-ember" style={{ width: `${creatorPercent}%` }} />
+            <div className="h-full flex-1 rounded-r-full bg-sky-400" />
           </div>
           {challenge.status === "active" ? (
-            <p className="mt-2 text-xs text-slate-400">{daysLeft(challenge.endDate)} days left</p>
+            <p className="mt-2 text-xs text-zinc-500">{daysLeft(challenge.endDate)} days left</p>
           ) : (
-            <p className="mt-2 text-xs font-bold text-orange-200">
-              {challenge.isTie ? "Ended in a tie" : `${challenge.winnerId?.name || "Winner"} won`}
-            </p>
+            <p className="mt-2 text-sm font-bold text-orange-200">{challenge.isTie ? "Ended in a tie" : `${challenge.winnerId?._id === user?._id ? "You" : challenge.winnerId?.name || "Winner"} won`}</p>
           )}
         </div>
       ) : null}

@@ -3,6 +3,18 @@ import { api } from "../services/api.js";
 
 export const AuthContext = createContext(null);
 
+// Accounts created before sign-up asked for a time zone pick it up quietly from the device.
+const backfillTimezone = (currentUser) => {
+  if (!currentUser || currentUser.timezone) return;
+  let timezone = "";
+  try {
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch (_error) {
+    return;
+  }
+  if (timezone) api.updateProfile({ timezone }).catch(() => {});
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("forgeliftToken"));
@@ -31,6 +43,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const data = await api.getMe();
         setUser(data.user);
+        backfillTimezone(data.user);
       } catch (_error) {
         localStorage.removeItem("forgeliftToken");
         setToken(null);

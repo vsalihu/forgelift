@@ -5,7 +5,25 @@ import { CityIcon } from "../icons/featureIcons.jsx";
 const formatPopulation = (population) =>
   population >= 1000000 ? `${(population / 1000000).toFixed(1)}M people` : `${Math.round(population / 1000)}k people`;
 
-const CitySearch = ({ value, onChange }) => {
+const defaultClasses = {
+  label: "mb-2 block text-sm font-medium text-slate-200",
+  input:
+    "min-h-11 w-full rounded-md border border-white/10 bg-black/30 py-3 pl-9 pr-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-forge-ember focus:ring-2 focus:ring-forge-ember/20 sm:text-sm",
+  list: "absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-[#0b0d11] py-1 shadow-2xl"
+};
+
+// `search` lets pages without a login (sign-up) use the public city lookup.
+const CitySearch = ({
+  value,
+  onChange,
+  search = competitionService.searchCities,
+  label = "Your city",
+  placeholder = "Start typing, e.g. London or Prishtina",
+  classes = defaultClasses,
+  inputId,
+  invalid = false,
+  describedBy
+}) => {
   const [query, setQuery] = useState(value ? `${value.name}, ${value.countryName}` : "");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
@@ -22,7 +40,7 @@ const CitySearch = ({ value, onChange }) => {
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
-        const data = await competitionService.searchCities(term);
+        const data = await search(term);
         if (!cancelled) {
           setResults(data.cities || []);
           setActiveIndex(0);
@@ -37,7 +55,7 @@ const CitySearch = ({ value, onChange }) => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query, value]);
+  }, [query, value, search]);
 
   const choose = (city) => {
     onChange(city);
@@ -65,16 +83,19 @@ const CitySearch = ({ value, onChange }) => {
   return (
     <div className="relative">
       <label className="block">
-        <span className="mb-2 block text-sm font-medium text-slate-200">Your city</span>
+        <span className={classes.label}>{label}</span>
         <div className="relative">
           <CityIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             aria-autocomplete="list"
             aria-controls={listId}
+            aria-describedby={describedBy}
             aria-expanded={open && results.length > 0}
+            aria-invalid={invalid || undefined}
             autoComplete="off"
-            className="min-h-11 w-full rounded-md border border-white/10 bg-black/30 py-3 pl-9 pr-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-forge-ember focus:ring-2 focus:ring-forge-ember/20 sm:text-sm"
-            placeholder="Start typing, e.g. London or Prishtina"
+            className={classes.input}
+            id={inputId}
+            placeholder={placeholder}
             role="combobox"
             value={query}
             onBlur={() => window.setTimeout(() => setOpen(false), 150)}
@@ -89,7 +110,7 @@ const CitySearch = ({ value, onChange }) => {
       </label>
       {open && results.length ? (
         <ul
-          className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-[#0b0d11] py-1 shadow-2xl"
+          className={classes.list}
           id={listId}
           role="listbox"
         >

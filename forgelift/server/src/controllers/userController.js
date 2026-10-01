@@ -1,5 +1,9 @@
+import { getCityById } from "../utils/cities.js";
 import {
+  getAgeFromDate,
   getDefaultStrengthStandard,
+  isValidTimezone,
+  parseDateOfBirth,
   validateOnboardingInput,
   validGoalPaths,
   validStrengthStandards,
@@ -32,6 +36,14 @@ const sanitizeMeasurements = (measurements = {}) => {
 };
 
 export const getMe = async (req, res) => {
+  // Keep the stored age current for users who gave a date of birth.
+  if (req.user.dateOfBirth) {
+    const age = getAgeFromDate(req.user.dateOfBirth);
+    if (age !== null && age !== req.user.age) {
+      req.user.age = age;
+      await req.user.save();
+    }
+  }
   return res.json({ user: req.user.toJSON() });
 };
 
@@ -63,8 +75,32 @@ export const updateProfile = async (req, res) => {
       bodyweight,
       bodyweightCheckInReminderEnabled,
       bodyweightCheckInDay,
-      bodyMeasurements
+      bodyMeasurements,
+      dateOfBirth,
+      cityId,
+      timezone
     } = req.body;
+
+    if (dateOfBirth !== undefined) {
+      const birth = parseDateOfBirth(dateOfBirth);
+      if (birth.error) {
+        return res.status(400).json({ message: birth.error, field: "dateOfBirth" });
+      }
+      req.user.dateOfBirth = birth.date;
+      req.user.age = birth.age;
+    }
+
+    if (cityId !== undefined) {
+      const city = getCityById(cityId);
+      if (!city) {
+        return res.status(400).json({ message: "Choose your city from the list.", field: "cityId" });
+      }
+      req.user.location = { cityId: city.cityId, cityName: city.name, countryCode: city.countryCode, countryName: city.countryName };
+    }
+
+    if (timezone !== undefined && isValidTimezone(timezone)) {
+      req.user.timezone = timezone;
+    }
 
     if (name !== undefined) {
       if (!name.trim()) {
@@ -253,6 +289,8 @@ export const completeOnboarding = async (req, res) => {
   try {
     const payload = {
       ...req.body,
+      // Users who gave a date of birth at sign-up aren't asked for their age again.
+      age: req.user.dateOfBirth ? getAgeFromDate(req.user.dateOfBirth) : req.body.age,
       selectedStrengthStandard:
         req.body.selectedStrengthStandard || getDefaultStrengthStandard(req.body.gender)
     };

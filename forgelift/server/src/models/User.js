@@ -129,6 +129,16 @@ const competitionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const locationSchema = new mongoose.Schema(
+  {
+    cityId: String,
+    cityName: String,
+    countryCode: String,
+    countryName: String
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -173,6 +183,18 @@ const userSchema = new mongoose.Schema(
       default: ""
     },
     age: Number,
+    // Private. Used for age divisions and to keep age current; never shown on public profiles.
+    dateOfBirth: Date,
+    // Where the user lives. Private; competitions keep their own city choice.
+    location: {
+      type: locationSchema,
+      default: () => ({})
+    },
+    // IANA time zone from the browser at sign-up, e.g. "Europe/Belgrade".
+    timezone: {
+      type: String,
+      default: ""
+    },
     height: Number,
     bodyweight: Number,
     lastBodyweightCheckInAt: Date,

@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import Button from "../components/Button.jsx";
-import FormInput from "../components/FormInput.jsx";
-import Footer from "../components/layout/Footer.jsx";
-import Navbar from "../components/Navbar.jsx";
-import LoadingOverlay from "../components/ui/LoadingOverlay.jsx";
+import AuthShell from "../components/auth/AuthShell.jsx";
+import { AuthField, AuthSubmit, FormAlert, PasswordField, RememberMe } from "../components/auth/AuthFields.jsx";
+import { RANK_ORDER } from "../components/landing/shared.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 
 const LoginPage = () => {
@@ -14,6 +12,13 @@ const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "", rememberMe: true });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [rankIndex, setRankIndex] = useState(5);
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const timer = window.setInterval(() => setRankIndex((index) => (index + 1) % RANK_ORDER.length), 2800);
+    return () => window.clearInterval(timer);
+  }, []);
 
   if (!loading && user) {
     return <Navigate to={user.onboardingCompleted ? "/dashboard" : "/onboarding"} replace />;
@@ -21,6 +26,10 @@ const LoginPage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.email.trim() || !form.password) {
+      setError("Enter your email and password.");
+      return;
+    }
     setError("");
     setSubmitting(true);
 
@@ -30,58 +39,54 @@ const LoginPage = () => {
       navigate(location.state?.from?.pathname || fallback, { replace: true });
     } catch (err) {
       setError(err.message);
-    } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen">
-      <LoadingOverlay open={submitting} text="Logging in..." />
-      <Navbar />
-      <main className="mx-auto flex max-w-md flex-col justify-center px-4 py-12">
-        <div className="metal-panel rounded-lg p-6 shadow-metal">
-          <h1 className="text-3xl font-black text-white">Welcome back</h1>
-          <p className="mt-2 text-sm text-slate-400">Login to continue your progression setup.</p>
-          {error ? <div className="mt-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            <FormInput
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
-              required
-            />
-            <FormInput
-              label="Password"
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
-              required
-            />
-            <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-slate-300">
-              <input
-                checked={form.rememberMe}
-                className="h-4 w-4 accent-forge-ember"
-                type="checkbox"
-                onChange={(event) => setForm({ ...form, rememberMe: event.target.checked })}
-              />
-              Remember me on this device
-            </label>
-            <Button className="w-full" loading={submitting} type="submit">
-              Login
-            </Button>
-          </form>
-          <p className="mt-5 text-center text-sm text-slate-400">
-            Need an account?{" "}
-            <Link className="font-semibold text-forge-ember hover:text-orange-300" to="/register">
-              Register
-            </Link>
-          </p>
-        </div>
-      </main>
-      <Footer />
-    </div>
+    <AuthShell
+      caption={{ title: "Right where you left off.", body: "Your ranks, plans and PRs are waiting for you." }}
+      footer={
+        <>
+          New to ForgeLift?{" "}
+          <Link className="font-bold text-orange-300 underline-offset-4 hover:text-orange-200 hover:underline" to="/register">
+            Create an account
+          </Link>
+        </>
+      }
+      rank={RANK_ORDER[rankIndex]}
+      subtitle="Log in to pick up where you left off."
+      title="Welcome back."
+    >
+      <FormAlert>{error}</FormAlert>
+      <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+        <AuthField
+          autoComplete="email"
+          id="login-email"
+          inputMode="email"
+          label="Email"
+          name="email"
+          placeholder="you@example.com"
+          required
+          spellCheck={false}
+          type="email"
+          value={form.email}
+          onChange={(event) => setForm({ ...form, email: event.target.value })}
+        />
+        <PasswordField
+          autoComplete="current-password"
+          id="login-password"
+          name="password"
+          required
+          value={form.password}
+          onChange={(event) => setForm({ ...form, password: event.target.value })}
+        />
+        <RememberMe checked={form.rememberMe} onChange={(rememberMe) => setForm({ ...form, rememberMe })} />
+        <AuthSubmit busy={submitting} busyLabel="Logging in…" type="submit">
+          Log in
+        </AuthSubmit>
+      </form>
+    </AuthShell>
   );
 };
 

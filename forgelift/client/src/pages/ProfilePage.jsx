@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import CitySearch from "../components/compete/CitySearch.jsx";
 import Button from "../components/Button.jsx";
 import BodyweightCheckInCard from "../components/bodyweight/BodyweightCheckInCard.jsx";
 import BodyweightHistoryChart from "../components/bodyweight/BodyweightHistoryChart.jsx";
@@ -32,8 +33,12 @@ const ProfilePage = () => {
     overloadMode: user?.overloadMode || "Balanced",
     bodyweight: user?.bodyweight || "",
     bodyweightCheckInReminderEnabled: user?.bodyweightCheckInReminderEnabled !== false,
-    beginnerTipsEnabled: user?.beginnerTipsEnabled !== false
+    beginnerTipsEnabled: user?.beginnerTipsEnabled !== false,
+    dateOfBirth: user?.dateOfBirth ? String(user.dateOfBirth).slice(0, 10) : ""
   });
+  const [city, setCity] = useState(
+    user?.location?.cityId ? { cityId: user.location.cityId, name: user.location.cityName, countryName: user.location.countryName } : null
+  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,7 +67,11 @@ const ProfilePage = () => {
     setSaving(true);
 
     try {
-      await updateProfile(form);
+      const { dateOfBirth, ...rest } = form;
+      const payload = { ...rest };
+      if (dateOfBirth) payload.dateOfBirth = dateOfBirth;
+      if (city?.cityId && city.cityId !== user?.location?.cityId) payload.cityId = city.cityId;
+      await updateProfile(payload);
       setMessage("Profile updated.");
     } catch (err) {
       setError(err.message);
@@ -113,6 +122,17 @@ const ProfilePage = () => {
               onChange={(event) => setForm({ ...form, name: event.target.value })}
               required
             />
+            <FormInput
+              label="Date of birth"
+              max={new Date().toISOString().slice(0, 10)}
+              type="date"
+              value={form.dateOfBirth}
+              onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
+            />
+            <CitySearch label="City you live in" value={city} onChange={setCity} />
+            <p className="text-sm leading-6 text-slate-400 md:col-span-2">
+              Your date of birth and city are private. They keep your age current and set sensible defaults; competitions use their own city setting.
+            </p>
             <SelectInput
               label="Preferred units"
               options={[
@@ -216,6 +236,16 @@ const ProfilePage = () => {
             <div className="flex justify-between gap-4">
               <dt className="text-slate-400">Email</dt>
               <dd className="text-right text-white">{user?.email}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-400">Lives in</dt>
+              <dd className="text-right text-white">
+                {user?.location?.cityName ? `${user.location.cityName}, ${user.location.countryName}` : "Not set"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-400">Time zone</dt>
+              <dd className="text-right text-white">{user?.timezone ? user.timezone.replace(/_/g, " ") : "Not set"}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-slate-400">Goal path</dt>

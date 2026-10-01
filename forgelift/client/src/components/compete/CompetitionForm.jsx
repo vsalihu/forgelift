@@ -2,13 +2,22 @@ import { useState } from "react";
 import Button from "../Button.jsx";
 import FormInput from "../FormInput.jsx";
 import CitySearch from "./CitySearch.jsx";
+import { useAuth } from "../../hooks/useAuth.js";
 import { WEIGHT_GOAL_OPTIONS } from "./boards.js";
 
 const CompetitionForm = ({ initial, submitLabel, submitting, error, onSubmit }) => {
+  const { user } = useAuth();
+  // First-time joiners start from the city and birth year they gave at sign-up.
+  const home = user?.location?.cityId ? user.location : null;
   const [city, setCity] = useState(
-    initial?.cityId ? { cityId: initial.cityId, name: initial.cityName, countryName: initial.countryName } : null
+    initial?.cityId
+      ? { cityId: initial.cityId, name: initial.cityName, countryName: initial.countryName }
+      : home
+        ? { cityId: home.cityId, name: home.cityName, countryName: home.countryName }
+        : null
   );
-  const [birthYear, setBirthYear] = useState(initial?.birthYear ? String(initial.birthYear) : "");
+  const signupBirthYear = user?.dateOfBirth ? new Date(user.dateOfBirth).getUTCFullYear() : "";
+  const [birthYear, setBirthYear] = useState(initial?.birthYear ? String(initial.birthYear) : String(signupBirthYear));
   const [weightGoal, setWeightGoal] = useState(initial?.weightGoal || "none");
   const [confirmAdult, setConfirmAdult] = useState(Boolean(initial?.enabled));
   const currentYear = new Date().getFullYear();

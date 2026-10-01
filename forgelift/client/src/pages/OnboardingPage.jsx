@@ -14,7 +14,9 @@ import {
 } from "../utils/onboarding.js";
 
 const OnboardingPage = () => {
-  const { completeOnboarding } = useAuth();
+  const { completeOnboarding, user } = useAuth();
+  // Age comes from the date of birth given at sign-up; older accounts are still asked.
+  const askAge = !user?.dateOfBirth;
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +27,7 @@ const OnboardingPage = () => {
     age: "",
     height: "",
     bodyweight: "",
-    preferredUnits: "metric",
+    preferredUnits: user?.preferredUnits || "metric",
     trainingExperience: "",
     goalPath: "",
     bodyMeasurements: {}
@@ -124,14 +126,16 @@ const OnboardingPage = () => {
           <section className="metal-panel rounded-lg p-5">
             <h2 className="mb-5 text-xl font-bold text-white">Training profile</h2>
             <div className="grid gap-4 md:grid-cols-3">
-              <FormInput
-                label="Age"
-                type="number"
-                min="1"
-                value={form.age}
-                onChange={(event) => setForm({ ...form, age: event.target.value })}
-                required
-              />
+              {askAge ? (
+                <FormInput
+                  label="Age"
+                  type="number"
+                  min="13"
+                  value={form.age}
+                  onChange={(event) => setForm({ ...form, age: event.target.value })}
+                  required
+                />
+              ) : null}
               <FormInput
                 label={form.preferredUnits === "imperial" ? "Height (in)" : "Height (cm)"}
                 type="number"

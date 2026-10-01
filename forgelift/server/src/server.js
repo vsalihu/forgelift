@@ -15,6 +15,7 @@ import advancedAnalyticsRoutes from "./routes/advancedAnalyticsRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import assessmentRoutes from "./routes/assessmentRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import bodyweightRoutes from "./routes/bodyweightRoutes.js";
 import calendarRoutes from "./routes/calendarRoutes.js";
 import competitionRoutes from "./routes/competitionRoutes.js";
@@ -83,6 +84,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/public", publicRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/advanced-analytics", advancedAnalyticsRoutes);
 app.use("/api/analytics", analyticsRoutes);

@@ -26,13 +26,18 @@ export const request = async (endpoint, options = {}) => {
       window.dispatchEvent(new Event("forgelift:auth-expired"));
     }
 
-    throw new Error(data.message || "Something went wrong.");
+    const error = new Error(data.message || "Something went wrong.");
+    error.status = response.status;
+    error.field = data.field || null;
+    throw error;
   }
 
   return data;
 };
 
 export const api = {
+  checkUsername: (username) => request(`/public/username-available?username=${encodeURIComponent(username)}`),
+  searchPublicCities: (q) => request(`/public/cities?q=${encodeURIComponent(q)}`),
   register: (payload) =>
     request("/auth/register", {
       method: "POST",

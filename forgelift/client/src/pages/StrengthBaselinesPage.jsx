@@ -1,110 +1,129 @@
-import { useEffect, useState } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Minus, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import Button from "../components/Button.jsx";
-import FormInput from "../components/FormInput.jsx";
+import { motion, useReducedMotion } from "framer-motion";
 import Layout from "../components/Layout.jsx";
-import StrengthExerciseSelector from "../components/strength/StrengthExerciseSelector.jsx";
-import BeginnerTip from "../components/ui/BeginnerTip.jsx";
-import HelpTooltip from "../components/ui/HelpTooltip.jsx";
-import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
+import LiftPicker from "../components/strength/LiftPicker.jsx";
+import { CONFIDENCE_TONES, SOURCE_LABELS, estimateOneRepMax, formatWeight } from "../components/strength/baselineMeta.js";
+import { cleanDecimal } from "../components/gym/gymUtils.js";
+import { AssessmentIcon, BaselinesIcon } from "../components/icons/navIcons.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
-import { helpText } from "../utils/helpText.js";
-import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
-import { BaselinesIcon } from "../components/icons/navIcons.jsx";
 
-const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value || 0);
-const estimatedOneRepMax = (weight, reps) => {
-  const numericWeight = Number(weight) || 0;
-  const numericReps = Number(reps) || 0;
-  if (numericWeight <= 0 || numericReps <= 0) return 0;
-  if (numericReps === 1) return numericWeight;
-  return Math.round(numericWeight * (1 + numericReps / 30) * 10) / 10;
-};
+const iconButton =
+  "flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-25";
 
-const SourceBadge = ({ source }) => {
-  const label = source === "user_entered" ? "User Entered" : source === "workout_history" ? "Workout History" : "Estimated";
-  const className =
-    source === "user_entered"
-      ? "bg-emerald-500/15 text-emerald-200"
-      : source === "workout_history"
-        ? "bg-sky-500/15 text-sky-200"
-        : "bg-white/10 text-slate-200";
-  return <span className={`rounded-full px-2 py-1 text-xs font-bold ${className}`}>{label}</span>;
-};
+const Chip = ({ className, children }) => <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${className}`}>{children}</span>;
 
-const ConfidenceBadge = ({ confidence }) => {
-  const className =
-    confidence === "High"
-      ? "bg-emerald-500/15 text-emerald-200"
-      : confidence === "Medium"
-        ? "bg-amber-500/15 text-amber-200"
-        : "bg-red-500/15 text-red-200";
-  return <span className={`rounded-full px-2 py-1 text-xs font-bold ${className}`}>{confidence} Confidence</span>;
-};
-
-const BaselineCard = ({ baseline, onDelete }) => (
-  <article className="rounded-lg border border-white/10 bg-black/20 p-4">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <h3 className="text-lg font-black text-white">{baseline.exerciseName}</h3>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <SourceBadge source={baseline.source} />
-          <ConfidenceBadge confidence={baseline.confidence} />
+const YourLiftCard = ({ baseline, unit, estimateCount, index, onUpdate, onDelete }) => {
+  const reduce = useReducedMotion();
+  return (
+    <motion.article
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-5"
+      initial={reduce ? false : { opacity: 0, y: 12 }}
+      transition={{ duration: 0.35, delay: Math.min(index, 6) * 0.05, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="font-display text-lg leading-snug text-white">{baseline.exerciseName}</h3>
+          <p className="mt-1 flex flex-wrap gap-1.5">
+            <Chip className={baseline.source === "workout_history" ? "bg-sky-400/10 text-sky-200" : "bg-forge-ember/10 text-orange-200"}>{SOURCE_LABELS[baseline.source] || "Entered"}</Chip>
+          </p>
         </div>
+        <button aria-label={`Delete ${baseline.exerciseName}`} className={`${iconButton} hover:text-red-200`} type="button" onClick={() => onDelete(baseline)}>
+          <Trash2 aria-hidden="true" className="h-4 w-4" />
+        </button>
       </div>
-      <button
-        className="rounded-md p-2 text-slate-400 transition hover:bg-white/10 hover:text-red-200"
-        type="button"
-        onClick={() => onDelete(baseline._id)}
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
-    </div>
-    <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-      <div>
-        <dt className="text-slate-500">Estimated 1RM <HelpTooltip {...helpText.estimated1RM} size="xs" /></dt>
-        <dd className="mt-1 font-bold text-white">{formatNumber(baseline.estimatedOneRepMax)}kg</dd>
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <p>
+          <span className="font-display text-4xl leading-none tabular-nums text-white">{formatWeight(baseline.estimatedOneRepMax)}</span>
+          <span className="ml-1 text-sm font-semibold text-zinc-400">{unit}</span>
+          <span className="mt-1 block text-xs text-zinc-500">Estimated 1-rep max</span>
+        </p>
+        <p className="text-right text-sm text-zinc-300">
+          <span className="font-bold tabular-nums text-white">
+            {formatWeight(baseline.workingWeight || baseline.suggestedWorkingWeight)} {unit} × {baseline.reps}
+          </span>
+          <span className="block text-xs text-zinc-500">what you lifted</span>
+        </p>
       </div>
-      <div>
-        <dt className="text-slate-500">Suggested weight <HelpTooltip title="Suggested Working Weight" content="A conservative starting weight for normal working sets." example="If the estimate says 75kg, use it as a starting point and adjust by feel." size="xs" /></dt>
-        <dd className="mt-1 font-bold text-white">{formatNumber(baseline.suggestedWorkingWeight || baseline.workingWeight)}kg</dd>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+        <p className="text-xs text-zinc-500">{estimateCount ? `${estimateCount} related lift${estimateCount === 1 ? "" : "s"} estimated from it` : "No related lifts yet"}</p>
+        <button className="min-h-10 rounded-full px-3 text-sm font-bold text-orange-300 hover:bg-white/[0.05] hover:text-orange-200" type="button" onClick={() => onUpdate(baseline)}>
+          Update
+        </button>
       </div>
-      <div>
-        <dt className="text-slate-500">Rep range</dt>
-        <dd className="mt-1 font-bold text-white">{baseline.suggestedRepRange || `${baseline.reps} reps`}</dd>
-      </div>
-    </dl>
-    {baseline.sourceExerciseName ? (
-      <p className="mt-3 text-sm text-slate-400">Based on: {baseline.sourceExerciseName}</p>
-    ) : null}
-    {baseline.note ? <p className="mt-2 text-sm text-slate-500">{baseline.note}</p> : null}
-  </article>
+    </motion.article>
+  );
+};
+
+const EstimateGroup = ({ title, items, unit, onDelete }) => (
+  <section className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5">
+    <h3 className="text-sm font-semibold text-zinc-400">
+      From <span className="text-white">{title}</span>
+    </h3>
+    <ul className="mt-3 divide-y divide-white/[0.06]">
+      {items.map((baseline) => (
+        <li className="flex items-center gap-3 py-2.5" key={baseline._id || baseline.exerciseName}>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold text-white">{baseline.exerciseName}</p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+              <span>
+                Start at <span className="font-bold tabular-nums text-zinc-200">{formatWeight(baseline.suggestedWorkingWeight || baseline.workingWeight)} {unit}</span>
+                {baseline.suggestedRepRange ? ` for ${baseline.suggestedRepRange}` : ""}
+              </span>
+              {baseline.confidence ? <Chip className={CONFIDENCE_TONES[baseline.confidence] || CONFIDENCE_TONES.Low}>{baseline.confidence} confidence</Chip> : null}
+            </p>
+          </div>
+          <p className="shrink-0 text-right">
+            <span className="block font-bold tabular-nums text-white">
+              {formatWeight(baseline.estimatedOneRepMax)} {unit}
+            </span>
+            <span className="text-[0.7rem] text-zinc-500">est. 1RM</span>
+          </p>
+          <button aria-label={`Delete estimate for ${baseline.exerciseName}`} className={`${iconButton} -mr-2 hover:text-red-200`} type="button" onClick={() => onDelete(baseline)}>
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  </section>
 );
 
 const StrengthBaselinesPage = () => {
   const { user } = useAuth();
+  const unit = user?.preferredUnits === "imperial" ? "lb" : "kg";
+  const formRef = useRef(null);
   const [exercises, setExercises] = useState([]);
   const [baselines, setBaselines] = useState([]);
-  const [form, setForm] = useState({ exerciseName: "Bench Press", weight: "", reps: "1" });
+  const [form, setForm] = useState({ exerciseName: "Bench Press", weight: "", reps: "5" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
     setError("");
-
     try {
-      const [exerciseData, baselineData] = await Promise.all([
-        exerciseService.getExercises(),
-        strengthBaselineService.getStrengthBaselines()
-      ]);
+      const [exerciseData, baselineData] = await Promise.all([exerciseService.getExercises(), strengthBaselineService.getStrengthBaselines()]);
+      const loaded = baselineData.baselines || [];
       setExercises(exerciseData.exercises || []);
-      setBaselines(baselineData.baselines || []);
+      setBaselines(loaded);
+      // Show the saved numbers for the lift that's selected when the page opens.
+      setForm((current) => {
+        if (current.weight) return current;
+        const saved = loaded.find((item) => item.exerciseName === current.exerciseName && item.source !== "estimated_from_baseline");
+        return saved ? { ...current, weight: String(saved.workingWeight || ""), reps: String(saved.reps || current.reps) } : current;
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -116,180 +135,264 @@ const StrengthBaselinesPage = () => {
     loadData();
   }, []);
 
-  const userEnteredBaselines = baselines.filter((baseline) => baseline.source === "user_entered" || baseline.source === "workout_history");
-  const estimatedBaselines = baselines.filter((baseline) => baseline.source === "estimated_from_baseline");
-  const oneRepMaxPreview = estimatedOneRepMax(form.weight, form.reps);
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  const yourLifts = baselines.filter((baseline) => baseline.source === "user_entered" || baseline.source === "workout_history");
+  const estimates = baselines.filter((baseline) => baseline.source === "estimated_from_baseline");
+  const estimateGroups = useMemo(() => {
+    const groups = new Map();
+    estimates.forEach((baseline) => {
+      const key = baseline.sourceExerciseName || "your other lifts";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(baseline);
+    });
+    return [...groups.entries()];
+  }, [baselines]);
+  const existing = yourLifts.find((baseline) => baseline.exerciseName === form.exerciseName);
+  const preview = estimateOneRepMax(form.weight, form.reps);
+  const reps = Number(form.reps) || 1;
+
+  const selectLift = (exercise) => {
+    const known = yourLifts.find((baseline) => baseline.exerciseName === exercise.name);
+    setForm({ exerciseName: exercise.name, weight: known ? String(known.workingWeight || "") : "", reps: known ? String(known.reps || 5) : form.reps });
+    setFormError("");
+    if (window.matchMedia?.("(max-width: 1023px)").matches) formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError("");
-    setMessage("");
+    setFormError("");
+    if (!(Number(form.weight) > 0)) return setFormError("Enter the weight you lifted.");
+    if (!(reps >= 1 && reps <= 30)) return setFormError("Reps need to be between 1 and 30.");
     setSaving(true);
-
     try {
-      const data = await strengthBaselineService.saveStrengthBaseline(form);
+      const data = await strengthBaselineService.saveStrengthBaseline({ exerciseName: form.exerciseName, weight: Number(form.weight), reps });
       setBaselines(data.baselines || []);
-      setMessage("Strength baseline saved and related estimates updated.");
+      setNotice(`Saved ${form.exerciseName}. Related estimates are updated.`);
     } catch (err) {
-      setError(err.message);
+      setFormError(err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
+  const confirmDelete = async () => {
+    const target = pendingDelete;
+    setPendingDelete(null);
+    setError("");
     try {
-      const data = await strengthBaselineService.deleteStrengthBaseline(id);
+      const data = await strengthBaselineService.deleteStrengthBaseline(target._id);
       setBaselines(data.baselines || []);
+      setNotice(`Removed ${target.exerciseName}.`);
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const handleRecalculate = async () => {
-    setSaving(true);
+  const recalculate = async () => {
+    setRecalculating(true);
     setError("");
-    setMessage("");
-
     try {
       const data = await strengthBaselineService.recalculateStrengthBaselines();
       setBaselines(data.baselines || []);
-      setMessage("Strength estimates recalculated.");
+      setNotice("Estimates recalculated from your latest numbers.");
     } catch (err) {
       setError(err.message);
     } finally {
-      setSaving(false);
+      setRecalculating(false);
     }
   };
 
   return (
     <Layout>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Strength Baselines</p>
-          <h1 className="mt-2 flex items-center gap-2 text-3xl font-black text-white">
-            Strength Baseline Estimator <HelpTooltip {...helpText.strengthBaseline} />
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            Enter known strength numbers for main lifts. ForgeLift estimates conservative starting points for
-            related exercises.
-          </p>
-        </div>
-        <Button loading={saving} type="button" variant="secondary" onClick={handleRecalculate}>
-          <RefreshCw className="h-4 w-4" />
-          Recalculate estimates
-        </Button>
-        <TutorialLauncher pageKey="strength_baselines" steps={getTutorialSteps("strength_baselines")} />
-      </div>
-
-      <div className="mb-6 rounded-lg border border-forge-copper/30 bg-forge-copper/10 p-4 text-sm text-orange-100">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            These are estimated starting points based on your entered strength baseline. Adjust them based on your
-            real performance. Want ForgeLift to estimate your starting numbers automatically? Complete the ForgeLift
-            Assessment.
-          </p>
-          <Link
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02] transition hover:bg-orange-400"
-            to="/assessment"
-          >
-            Start Assessment
-          </Link>
-        </div>
-      </div>
-      {user?.assessmentCompleted ? (
-        <div className="mb-6 rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-          Baselines from your latest assessment are included below when they match your entered lifts.
-        </div>
-      ) : null}
-      {user?.beginnerTipsEnabled !== false ? (
-        <div className="mb-6">
-          <BeginnerTip title="Strength baseline reminder">
-            Estimated related lifts are starting points only. Real workout history always beats estimates, and these
-            estimates do not strongly inflate your ranks.
-          </BeginnerTip>
-        </div>
+      {pendingDelete ? (
+        <ConfirmModal
+          confirmLabel="Delete"
+          description={
+            pendingDelete.source === "estimated_from_baseline"
+              ? "Recalculating later can bring this estimate back."
+              : "Estimates worked out from this lift will be recalculated without it."
+          }
+          title={`Delete ${pendingDelete.exerciseName}?`}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={confirmDelete}
+        />
       ) : null}
 
-      {error ? <div className="mb-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
-      {message ? <div className="mb-5 rounded-md bg-green-500/10 p-3 text-sm text-green-200">{message}</div> : null}
+      <PageHeader
+        actions={
+          baselines.length ? (
+            <button
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white transition-colors hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50"
+              disabled={recalculating}
+              type="button"
+              onClick={recalculate}
+            >
+              <RefreshCw aria-hidden="true" className={`h-4 w-4 ${recalculating ? "animate-spin motion-reduce:animate-none" : ""}`} />
+              {recalculating ? "Recalculating..." : "Recalculate"}
+            </button>
+          ) : null
+        }
+        description="Tell ForgeLift what you can lift on a few main exercises. It works out sensible starting weights for related ones, so your first sessions aren't guesswork."
+        eyebrow="Strength baselines"
+        title="Your starting numbers"
+        tutorialPageKey="strength_baselines"
+      />
 
-      <section className="metal-panel mb-6 rounded-lg p-5">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="rounded-md bg-forge-ember/15 p-2 text-forge-ember">
-            <BaselinesIcon className="h-5 w-5" />
+      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-white/[0.08] bg-white/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
+          <BaselinesIcon aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-orange-300" />
+          <span>
+            Estimates are starting points. Once you log real sets, your workout history takes over.
+            {user?.assessmentCompleted ? " Lifts from your assessment are included." : ""}
           </span>
-          <h2 className="text-xl font-bold text-white">Add or update baseline</h2>
-        </div>
-        <form className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]" onSubmit={handleSubmit}>
-          <div data-tour-id="baseline-search">
-          <StrengthExerciseSelector
-            exercises={exercises}
-            selectedName={form.exerciseName}
-            onSelect={(exerciseName) => setForm({ ...form, exerciseName })}
-          />
-          </div>
-          <div data-tour-id="baseline-add-form" className="space-y-4 rounded-lg border border-white/10 bg-black/20 p-4">
-            <div>
-              <p className="text-sm font-bold text-slate-300">Selected exercise</p>
-              <p className="mt-1 text-xl font-black text-white">{form.exerciseName || "Choose an exercise"}</p>
-            </div>
-            <FormInput
-              label="Weight lifted"
-              min="0"
-              type="number"
-              value={form.weight}
-              onChange={(event) => setForm({ ...form, weight: event.target.value })}
-              required
-            />
-            <FormInput
-              label="Reps"
-              max="30"
-              min="1"
-              type="number"
-              value={form.reps}
-              onChange={(event) => setForm({ ...form, reps: event.target.value })}
-              required
-            />
-            <p className="text-sm text-slate-400">
-              Estimated 1RM preview <HelpTooltip {...helpText.estimated1RM} size="xs" />: {formatNumber(oneRepMaxPreview)}kg
-            </p>
-            <Button className="w-full" disabled={!form.exerciseName} loading={saving} type="submit">
-              Save baseline
-            </Button>
-          </div>
-        </form>
-      </section>
+        </p>
+        {!user?.assessmentCompleted ? (
+          <Link className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 text-sm font-bold text-white hover:bg-white/[0.09]" to="/assessment">
+            <AssessmentIcon aria-hidden="true" className="h-4 w-4 text-orange-300" />
+            Let the assessment estimate them
+          </Link>
+        ) : null}
+      </div>
 
-      {loading ? <p className="text-forge-steel">Loading strength baselines...</p> : null}
+      {notice ? (
+        <p className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3 text-sm font-semibold text-emerald-200" role="status">
+          {notice}
+        </p>
+      ) : null}
+      {error ? <ErrorState message={error} onRetry={loadData} /> : null}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <section aria-labelledby="pick-lift" className="min-w-0">
+          <h2 className="font-display mb-3 text-xl text-white" id="pick-lift">
+            1. Pick a lift
+          </h2>
+          {loading ? <div aria-busy="true" className="h-96 animate-pulse rounded-3xl bg-white/[0.03]" /> : (
+            <LiftPicker enteredNames={yourLifts.map((baseline) => baseline.exerciseName)} exercises={exercises} selectedName={form.exerciseName} onSelect={selectLift} />
+          )}
+        </section>
+
+        <form
+          className="scroll-mt-24 rounded-3xl border border-forge-ember/25 bg-gradient-to-b from-forge-ember/[0.08] to-transparent p-4 sm:p-5 lg:sticky lg:top-24 lg:self-start"
+          data-tour-id="baseline-add-form"
+          noValidate
+          ref={formRef}
+          onSubmit={handleSubmit}
+        >
+          <h2 className="font-display text-xl text-white">2. What did you lift?</h2>
+          <p className="mt-3 text-sm text-zinc-400">Lift</p>
+          <p className="font-display text-2xl leading-tight text-white">{form.exerciseName || "Pick one on the left"}</p>
+          {existing ? (
+            <p className="mt-1 text-xs text-zinc-500">
+              Saved before: {formatWeight(existing.workingWeight)} {unit} × {existing.reps}. Saving replaces it.
+            </p>
+          ) : null}
+
+          <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold text-zinc-200">Weight</span>
+              <span className="relative block">
+                <input
+                  autoComplete="off"
+                  className="min-h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] pl-4 pr-11 text-lg font-bold tabular-nums text-white outline-none placeholder:font-normal placeholder:text-zinc-600 focus:border-forge-ember/60"
+                  inputMode="decimal"
+                  placeholder={unit === "lb" ? "185" : "80"}
+                  value={form.weight}
+                  onChange={(event) => {
+                    setForm({ ...form, weight: cleanDecimal(event.target.value) });
+                    setFormError("");
+                  }}
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-semibold text-zinc-500">{unit}</span>
+              </span>
+            </label>
+            <div>
+              <p className="mb-1.5 text-sm font-semibold text-zinc-200" id="baseline-reps">
+                Reps
+              </p>
+              <div aria-labelledby="baseline-reps" className="flex min-h-12 items-center rounded-2xl border border-white/10 bg-white/[0.04]" role="group">
+                <button aria-label="One rep fewer" className={iconButton} disabled={reps <= 1} type="button" onClick={() => setForm({ ...form, reps: String(reps - 1) })}>
+                  <Minus aria-hidden="true" className="h-4 w-4" />
+                </button>
+                <span aria-live="polite" className="w-7 text-center text-lg font-bold tabular-nums text-white">
+                  {reps}
+                </span>
+                <button aria-label="One rep more" className={iconButton} disabled={reps >= 30} type="button" onClick={() => setForm({ ...form, reps: String(reps + 1) })}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl bg-black/25 p-4" data-testid="one-rep-preview">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-orange-300">Estimated 1-rep max</p>
+            <p className="mt-1">
+              <span className="font-display text-4xl tabular-nums text-white">{preview ? formatWeight(preview) : "–"}</span>
+              {preview ? <span className="ml-1 text-sm font-semibold text-zinc-400">{unit}</span> : null}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">
+              {preview && reps > 1
+                ? `${formatWeight(form.weight)} ${unit} for ${reps} reps is about ${formatWeight(preview)} ${unit} for one.`
+                : "The most you could lift once. Enter a set you did recently."}
+            </p>
+          </div>
+
+          {formError ? (
+            <p className="mt-3 text-sm text-red-300" role="alert">
+              {formError}
+            </p>
+          ) : null}
+          <button
+            className="mt-4 min-h-12 w-full rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-6 text-sm font-black text-[#160a02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-40"
+            disabled={!form.exerciseName || saving}
+            type="submit"
+          >
+            {saving ? "Saving..." : existing ? `Update ${form.exerciseName}` : `Save ${form.exerciseName}`}
+          </button>
+        </form>
+      </div>
 
       {!loading ? (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <section data-tour-id="baseline-estimates">
-            <h2 className="mb-3 text-xl font-bold text-white">User-entered baselines</h2>
-            <div className="space-y-4">
-              {userEnteredBaselines.length ? (
-                userEnteredBaselines.map((baseline) => <BaselineCard baseline={baseline} key={baseline._id} onDelete={handleDelete} />)
-              ) : (
-                <div className="rounded-lg border border-dashed border-white/15 p-6 text-center text-slate-400">
-                  Add Bench Press, Squat, Deadlift, or another main lift to generate estimates.
-                </div>
-              )}
-            </div>
+        <div className="mt-10 space-y-10" data-tour-id="baseline-estimates">
+          <section>
+            <h2 className="font-display text-2xl text-white">Your lifts</h2>
+            <p className="mt-1 text-sm text-zinc-400">The numbers everything else is worked out from.</p>
+            {yourLifts.length ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {yourLifts.map((baseline, index) => (
+                  <YourLiftCard
+                    baseline={baseline}
+                    estimateCount={estimates.filter((item) => item.sourceExerciseName === baseline.exerciseName).length}
+                    index={index}
+                    key={baseline._id || baseline.exerciseName}
+                    unit={unit}
+                    onDelete={setPendingDelete}
+                    onUpdate={(item) => selectLift({ name: item.exerciseName })}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-3xl border border-dashed border-white/12 p-6 text-center text-zinc-400">
+                Nothing yet. Start with Bench Press, Squat or Deadlift above.
+              </p>
+            )}
           </section>
 
-          <section>
-            <h2 className="mb-3 text-xl font-bold text-white">Estimated related exercises</h2>
-            <div className="space-y-4">
-              {estimatedBaselines.length ? (
-                estimatedBaselines.map((baseline) => <BaselineCard baseline={baseline} key={baseline._id} onDelete={handleDelete} />)
-              ) : (
-                <div className="rounded-lg border border-dashed border-white/15 p-6 text-center text-slate-400">
-                  Related exercise estimates will appear after you save a baseline.
-                </div>
-              )}
-            </div>
-          </section>
+          {estimateGroups.length ? (
+            <section>
+              <h2 className="font-display text-2xl text-white">Estimated for related lifts</h2>
+              <p className="mt-1 text-sm text-zinc-400">Conservative starting weights. Adjust by feel on the day.</p>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                {estimateGroups.map(([source, items]) => (
+                  <EstimateGroup items={items} key={source} title={source} unit={unit} onDelete={setPendingDelete} />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       ) : null}
     </Layout>

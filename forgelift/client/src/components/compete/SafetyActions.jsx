@@ -75,7 +75,7 @@ const SafetyActions = ({ username, isBlocked, onBlockedChange }) => {
           <fieldset className="space-y-2">
             <legend className="mb-2 text-sm font-medium text-zinc-200">What's wrong?</legend>
             {REASONS.map((option) => (
-              <label className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-zinc-200" key={option.value}>
+              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-zinc-200" key={option.value}>
                 <input
                   checked={reason === option.value}
                   className="accent-orange-500"
@@ -91,7 +91,7 @@ const SafetyActions = ({ username, isBlocked, onBlockedChange }) => {
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-zinc-200">Details (optional)</span>
             <textarea
-              className="min-h-24 w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-white outline-none focus:border-forge-ember"
+              className="min-h-24 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none focus:border-forge-ember"
               maxLength={1000}
               value={details}
               onChange={(event) => setDetails(event.target.value)}
@@ -105,17 +105,17 @@ const SafetyActions = ({ username, isBlocked, onBlockedChange }) => {
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {isBlocked ? (
-          <button className="inline-flex items-center gap-1.5 font-semibold text-forge-ember hover:text-orange-300" disabled={busy} type="button" onClick={unblock}>
+          <button className="inline-flex min-h-10 items-center gap-1.5 font-semibold text-forge-ember hover:text-orange-300" disabled={busy} type="button" onClick={unblock}>
             <BlockIcon className="h-4 w-4" />
             Unblock
           </button>
         ) : (
-          <button className="inline-flex items-center gap-1.5 font-semibold text-zinc-400 hover:text-white" type="button" onClick={() => setConfirmBlock(true)}>
+          <button className="inline-flex min-h-10 items-center gap-1.5 font-semibold text-zinc-400 hover:text-white" type="button" onClick={() => setConfirmBlock(true)}>
             <BlockIcon className="h-4 w-4" />
             Block
           </button>
         )}
-        <button className="inline-flex items-center gap-1.5 font-semibold text-zinc-400 hover:text-white" type="button" onClick={() => setReportOpen(true)}>
+        <button className="inline-flex min-h-10 items-center gap-1.5 font-semibold text-zinc-400 hover:text-white" type="button" onClick={() => setReportOpen(true)}>
           <ReportIcon className="h-4 w-4" />
           Report
         </button>

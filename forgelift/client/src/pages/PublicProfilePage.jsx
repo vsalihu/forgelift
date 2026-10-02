@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Button from "../components/Button.jsx";
 import Layout from "../components/Layout.jsx";
 import MuscleRankTile from "../components/ranks/MuscleRankTile.jsx";
 import RankHero from "../components/ranks/RankHero.jsx";
@@ -8,10 +7,10 @@ import PublicTrainingCalendar from "../components/calendar/PublicTrainingCalenda
 import NewChallengeModal from "../components/chat/NewChallengeModal.jsx";
 import SafetyActions from "../components/compete/SafetyActions.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
-import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
-import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
-import MetricCard from "../components/ui/MetricCard.jsx";
+import StatTile from "../components/analytics/StatTile.jsx";
+import Avatar from "../components/social/Avatar.jsx";
+import { timeAgo } from "../components/social/timeAgo.js";
 import { challengeService } from "../services/challengeService.js";
 import { friendService } from "../services/friendService.js";
 import { profileService } from "../services/profileService.js";
@@ -20,6 +19,7 @@ import { AddFriendIcon, BlockIcon, ChallengeIcon, CityIcon, FriendAddedIcon, Pri
 import { ChatIcon, HistoryIcon } from "../components/icons/navIcons.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value || 0);
+const compact = (value) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value || 0);
 const formatDate = (date) => (date && !Number.isNaN(new Date(date).getTime()) ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(date)) : "");
 
 const PublicProfilePage = () => {
@@ -27,6 +27,7 @@ const PublicProfilePage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [actionBusy, setActionBusy] = useState(false);
   const [savedTemplateIds, setSavedTemplateIds] = useState([]);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -57,7 +58,7 @@ const PublicProfilePage = () => {
       await friendService.sendRequest(username);
       await loadProfile();
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionBusy(false);
     }
@@ -70,19 +71,19 @@ const PublicProfilePage = () => {
       else await friendService.declineRequest(data.friendRequestId);
       await loadProfile();
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionBusy(false);
     }
   };
 
   const confirmRemoveFriend = () => {
-    setError("");
+    setActionError("");
     setShowRemoveConfirm(false);
     setData((current) => ({ ...current, isFriend: false, friendRequestStatus: "none" }));
 
     friendService.removeFriend(data.profile._id).catch((err) => {
-      setError(err.message);
+      setActionError(err.message);
       loadProfile();
     });
   };
@@ -97,7 +98,7 @@ const PublicProfilePage = () => {
       });
       setSavedTemplateIds((ids) => [...ids, template._id]);
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setActionBusy(false);
     }
@@ -110,7 +111,7 @@ const PublicProfilePage = () => {
       setChallengeOpen(false);
       navigate(`/chat/${username}`);
     } catch (err) {
-      setError(err.message);
+      setActionError(err.message);
     } finally {
       setChallengeBusy(false);
     }
@@ -119,7 +120,10 @@ const PublicProfilePage = () => {
   if (loading) {
     return (
       <Layout>
-        <LoadingSkeleton rows={5} />
+        <div aria-busy="true" className="space-y-4">
+          <div className="h-40 animate-pulse rounded-[2rem] bg-white/[0.03]" />
+          <div className="h-64 animate-pulse rounded-3xl bg-white/[0.03]" />
+        </div>
       </Layout>
     );
   }
@@ -138,150 +142,165 @@ const PublicProfilePage = () => {
   const interaction = data.interaction || {};
   const isBlocked = Boolean(interaction.isBlockedByMe);
 
+  const pill =
+    "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 text-sm font-bold text-white transition-colors hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50";
+  const primary =
+    "inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-5 text-sm font-black text-[#160a02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50";
+
   const friendActionButton = () => {
     if (isSelf) return null;
     if (isFriend) {
       return (
-        <Button loading={actionBusy} type="button" variant="ghost" onClick={() => setShowRemoveConfirm(true)}>
-          <RemoveFriendIcon className="h-4 w-4" />
-          Remove Friend
-        </Button>
+        <button className={`${pill} text-zinc-300`} disabled={actionBusy} type="button" onClick={() => setShowRemoveConfirm(true)}>
+          <RemoveFriendIcon aria-hidden="true" className="h-4 w-4" />
+          Remove friend
+        </button>
       );
     }
     if (friendRequestStatus === "sent") {
-      return <Button disabled type="button" variant="secondary"><FriendAddedIcon className="h-4 w-4" />Request Sent</Button>;
+      return (
+        <button className={pill} disabled type="button">
+          <FriendAddedIcon aria-hidden="true" className="h-4 w-4" />
+          Request sent
+        </button>
+      );
     }
     if (friendRequestStatus === "received") {
       return (
-        <div className="flex gap-2">
-          <Button loading={actionBusy} type="button" onClick={() => respondToRequest(true)}>Accept</Button>
-          <Button type="button" variant="ghost" onClick={() => respondToRequest(false)}>Decline</Button>
-        </div>
+        <>
+          <button className={primary} disabled={actionBusy} type="button" onClick={() => respondToRequest(true)}>
+            <FriendAddedIcon aria-hidden="true" className="h-4 w-4" />
+            Accept request
+          </button>
+          <button className={pill} disabled={actionBusy} type="button" onClick={() => respondToRequest(false)}>
+            Decline
+          </button>
+        </>
       );
     }
     return (
-      <Button loading={actionBusy} type="button" onClick={sendRequest}>
-        <AddFriendIcon className="h-4 w-4" />
-        Add Friend
-      </Button>
+      <button className={primary} disabled={actionBusy} type="button" onClick={sendRequest}>
+        <AddFriendIcon aria-hidden="true" className="h-4 w-4" />
+        Add friend
+      </button>
     );
   };
+
+  const card = "rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01]";
+  const lockedNote = (Icon, title, text) => (
+    <div className={`${card} px-6 py-12 text-center`}>
+      <Icon aria-hidden="true" className="mx-auto h-10 w-10 text-orange-300" />
+      <p className="font-display mt-3 text-2xl text-white">{title}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-400">{text}</p>
+    </div>
+  );
 
   return (
     <Layout>
       {showRemoveConfirm ? (
         <ConfirmModal
-          title="Remove this friend?"
-          description={`Remove @${username} as a friend?`}
           confirmLabel="Remove"
+          description={`You'll stop seeing each other's workouts and won't be able to message. You can add @${username} again later.`}
+          title={`Remove ${profile.name}?`}
           onCancel={() => setShowRemoveConfirm(false)}
           onConfirm={confirmRemoveFriend}
         />
       ) : null}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Profile</p>
-          <h1 className="mt-2 text-3xl font-black text-white">{profile.name}</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            @{profile.username} · Joined {formatDate(profile.createdAt)}
-          </p>
-          {profile.competition ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-300">
-              <CityIcon className="h-4 w-4 text-forge-copper" />
-              {profile.competition.cityName}, {profile.competition.countryName} · competes on leaderboards
-            </p>
-          ) : null}
-          {!isSelf ? (
-            <div className="mt-3">
-              <SafetyActions
-                isBlocked={isBlocked}
-                username={profile.username}
-                onBlockedChange={(blocked) =>
-                  setData((current) => ({
-                    ...current,
-                    isFriend: blocked ? false : current.isFriend,
-                    friendRequestStatus: blocked ? "none" : current.friendRequestStatus,
-                    interaction: { ...current.interaction, isBlockedByMe: blocked, canChallenge: blocked ? false : current.interaction?.canChallenge }
-                  }))
-                }
-              />
-            </div>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {isSelf ? (
-            <Link className="inline-flex min-h-11 items-center rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15" to="/profile">
-              Edit Profile Settings
-            </Link>
-          ) : isBlocked ? null : (
-            <>
-              {interaction.canChallenge ? (
-                <Button type="button" variant="secondary" onClick={() => setChallengeOpen(true)}>
-                  <ChallengeIcon className="h-4 w-4" />
-                  Challenge
-                </Button>
-              ) : null}
-              {isFriend ? (
-                <Link
-                  className="inline-flex min-h-11 items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15"
-                  to={`/chat/${username}`}
-                >
-                  <ChatIcon className="h-4 w-4" />
-                  Message
-                </Link>
-              ) : null}
-              {friendActionButton()}
-            </>
-          )}
-        </div>
-      </div>
+      <NewChallengeModal open={challengeOpen} opponentName={profile.name} submitting={challengeBusy} onClose={() => setChallengeOpen(false)} onSubmit={sendChallenge} />
 
-      <NewChallengeModal
-        open={challengeOpen}
-        opponentName={profile.name}
-        submitting={challengeBusy}
-        onClose={() => setChallengeOpen(false)}
-        onSubmit={sendChallenge}
-      />
+      <section className="relative mb-6 overflow-clip rounded-[2rem] border border-white/[0.08] bg-gradient-to-br from-forge-ember/[0.1] via-white/[0.02] to-transparent p-5 sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Avatar name={profile.name} rank={profile.currentOverallRank} size="lg" />
+            <div className="min-w-0">
+              <h1 className="font-display truncate text-3xl leading-tight text-white sm:text-4xl">{profile.name}</h1>
+              <p className="mt-0.5 truncate text-sm text-zinc-400">
+                @{profile.username}
+                {profile.currentOverallRank ? ` · ${profile.currentOverallRank}` : ""}
+                {formatDate(profile.createdAt) ? ` · Joined ${formatDate(profile.createdAt)}` : ""}
+              </p>
+              {profile.competition ? (
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-300">
+                  <CityIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-orange-300" />
+                  <span className="truncate">
+                    {profile.competition.cityName}, {profile.competition.countryName} · on the leaderboards
+                  </span>
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {isSelf ? (
+              <Link className={pill} to="/profile">
+                Edit your profile
+              </Link>
+            ) : isBlocked ? null : (
+              <>
+                {friendActionButton()}
+                {isFriend ? (
+                  <Link className={pill} to={`/chat/${username}`}>
+                    <ChatIcon aria-hidden="true" className="h-4 w-4" />
+                    Message
+                  </Link>
+                ) : null}
+                {interaction.canChallenge ? (
+                  <button className={pill} type="button" onClick={() => setChallengeOpen(true)}>
+                    <ChallengeIcon aria-hidden="true" className="h-4 w-4 text-orange-300" />
+                    Challenge
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
+        {!isSelf ? (
+          <div className="mt-4 border-t border-white/[0.06] pt-2">
+            <SafetyActions
+              isBlocked={isBlocked}
+              username={profile.username}
+              onBlockedChange={(blocked) =>
+                setData((current) => ({
+                  ...current,
+                  isFriend: blocked ? false : current.isFriend,
+                  friendRequestStatus: blocked ? "none" : current.friendRequestStatus,
+                  interaction: { ...current.interaction, isBlockedByMe: blocked, canChallenge: blocked ? false : current.interaction?.canChallenge }
+                }))
+              }
+            />
+          </div>
+        ) : null}
+      </section>
+
+      {actionError ? (
+        <p className="mb-4 rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          {actionError}
+        </p>
+      ) : null}
 
       {isBlocked ? (
-        <div className="metal-panel rounded-xl p-8 text-center">
-          <BlockIcon className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-          <p className="text-lg font-bold text-white">You blocked @{profile.username}</p>
-          <p className="mt-2 text-sm text-slate-400">
-            You won&apos;t see each other on leaderboards, and they can&apos;t message, challenge or friend you. Unblock above to undo.
-          </p>
-        </div>
+        lockedNote(BlockIcon, `You blocked @${profile.username}`, "You won't see each other on leaderboards, and they can't message, challenge or friend you. Unblock above to undo.")
       ) : !isSelf && !isFriend ? (
-        <div className="metal-panel rounded-xl p-8 text-center">
-          <PrivateIcon className="mx-auto mb-3 h-8 w-8 text-forge-copper" />
-          <p className="text-lg font-bold text-white">This profile is private</p>
-          <p className="mt-2 text-sm text-slate-400">
-            {profile.currentOverallRank} rank. Add @{profile.username} as a friend to see their full stats, ranks, and public workouts.
-            {interaction.canChallenge ? " You can still challenge them, since you both compete." : ""}
-          </p>
-        </div>
+        lockedNote(
+          PrivateIcon,
+          "Only friends see the details",
+          `Add @${profile.username} as a friend to see their ranks, stats and public workouts.${interaction.canChallenge ? " You can still challenge them, since you both compete." : ""}`
+        )
       ) : (
-        <div className="space-y-6">
-          <RankHero
-            overallRank={profile.currentOverallRank}
-            overallScore={profile.overallRankScore}
-            overallProgress={profile.overallProgress}
-            xp={profile.xp}
-          />
+        <div className="space-y-8">
+          <RankHero overallProgress={profile.overallProgress} overallRank={profile.currentOverallRank} overallScore={profile.overallRankScore} xp={profile.xp} />
 
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard label="Lifetime volume" value={`${formatNumber(profile.lifetimeVolume)}kg`} />
-            <MetricCard label="Lifetime reps" value={formatNumber(profile.lifetimeReps)} />
-            <MetricCard label="Lifetime sets" value={formatNumber(profile.lifetimeSets)} />
-            <MetricCard label="Workouts logged" value={formatNumber(profile.lifetimeWorkoutCount)} />
-          </section>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile label="Workouts" tone="accent" value={formatNumber(profile.lifetimeWorkoutCount)} />
+            <StatTile label="Volume lifted" sub="Weight × reps, all time" value={compact(profile.lifetimeVolume)} />
+            <StatTile label="Sets" value={formatNumber(profile.lifetimeSets)} />
+            <StatTile label="Reps" value={formatNumber(profile.lifetimeReps)} />
+          </div>
 
           <PublicTrainingCalendar username={username} />
 
-          {data.muscleRanks?.length ? (
+          {data.muscleRanks?.some((muscleRank) => muscleRank.workoutCount > 0) ? (
             <section>
-              <h2 className="mb-3 text-lg font-bold text-white">Muscle ranks</h2>
+              <h2 className="font-display mb-3 text-2xl text-white">Muscle ranks</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {[...data.muscleRanks]
                   .filter((muscleRank) => muscleRank.workoutCount > 0)
@@ -294,53 +313,54 @@ const PublicProfilePage = () => {
           ) : null}
 
           <section>
-            <h2 className="mb-3 text-lg font-bold text-white">
-              {isSelf ? "Your public workouts" : "Public workouts"}
-            </h2>
+            <h2 className="font-display mb-3 text-2xl text-white">{isSelf ? "Your public workouts" : "Public workouts"}</h2>
             {data.publicWorkouts?.length ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {data.publicWorkouts.map((template) => (
-                  <article className="metal-panel rounded-lg p-5" key={template._id}>
-                    <p className="text-lg font-black text-white">{template.name}</p>
-                    {template.description ? <p className="mt-1 text-sm text-slate-400">{template.description}</p> : null}
-                    <p className="mt-2 text-sm text-forge-copper">
-                      {template.exercises?.map((exercise) => exercise.exerciseName).join(", ")}
-                    </p>
-                    {!isSelf ? (
-                      <Button
-                        className="mt-3"
-                        disabled={savedTemplateIds.includes(template._id)}
-                        loading={actionBusy}
-                        type="button"
-                        variant="secondary"
-                        onClick={() => saveWorkout(template)}
-                      >
-                        {savedTemplateIds.includes(template._id) ? "Saved to your templates" : "Save to My Templates"}
-                      </Button>
-                    ) : null}
-                  </article>
-                ))}
+              <div className="grid gap-3 md:grid-cols-2">
+                {data.publicWorkouts.map((template) => {
+                  const saved = savedTemplateIds.includes(template._id);
+                  return (
+                    <article className={`${card} flex flex-col p-4 sm:p-5`} key={template._id}>
+                      <h3 className="font-display text-lg text-white">{template.name}</h3>
+                      <p className="mt-0.5 text-sm text-zinc-500">{template.exercises?.length || 0} exercises</p>
+                      {template.description ? <p className="mt-2 text-sm leading-6 text-zinc-400">{template.description}</p> : null}
+                      <p className="mt-2 flex-1 text-sm leading-6 text-zinc-300">{template.exercises?.map((exercise) => exercise.exerciseName).join(" · ")}</p>
+                      {!isSelf ? (
+                        <button className={`${pill} mt-4 self-start`} disabled={saved || actionBusy} type="button" onClick={() => saveWorkout(template)}>
+                          {saved ? "Saved to your workouts" : "Save to my workouts"}
+                        </button>
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
-              <EmptyState title="No public workouts" description={isSelf ? "Mark a workout public from Design a Workout to show it here." : "Nothing marked public yet."} />
+              <p className="rounded-3xl border border-dashed border-white/12 p-6 text-center text-sm text-zinc-400">
+                {isSelf ? "Make a workout public in Design a Workout and it shows here." : "Nothing shared yet."}
+              </p>
             )}
           </section>
 
           <section>
-            <h2 className="mb-3 text-lg font-bold text-white">Recent activity</h2>
+            <h2 className="font-display mb-3 text-2xl text-white">Recent workouts</h2>
             {data.recentActivity?.length ? (
-              <div className="space-y-3">
+              <ul className="space-y-2">
                 {data.recentActivity.map((item) => (
-                  <article className="metal-panel rounded-lg p-4" key={item._id}>
-                    <p className="font-bold text-white">{item.title}</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      {formatNumber(item.totalVolume)}kg volume · {item.totalSets} sets · {item.totalReps} reps
-                    </p>
-                  </article>
+                  <li className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3 sm:p-4" key={item._id}>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-forge-ember/15 text-orange-300">
+                      <HistoryIcon aria-hidden="true" className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-bold text-white">{item.title || "Workout"}</span>
+                      <span className="block text-sm text-zinc-500">
+                        {item.totalSets} sets · {formatNumber(item.totalReps)} reps · {compact(item.totalVolume)} volume
+                      </span>
+                    </span>
+                    {item.createdAt ? <span className="shrink-0 text-xs text-zinc-500">{timeAgo(item.createdAt)}</span> : null}
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
-              <EmptyState icon={HistoryIcon} title="No workouts logged yet" description="Completed workouts will show up here." />
+              <p className="rounded-3xl border border-dashed border-white/12 p-6 text-center text-sm text-zinc-400">No workouts logged yet.</p>
             )}
           </section>
         </div>

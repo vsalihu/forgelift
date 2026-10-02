@@ -43,7 +43,7 @@ const DayCellIcon = ({ dayData, isPast }) => {
 
   if (dayData.type === "rest") {
     return (
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-600/40 text-slate-200">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-600/40 text-zinc-200">
         <RestDayIcon className="h-3.5 w-3.5" />
       </span>
     );
@@ -121,13 +121,13 @@ const PublicTrainingCalendar = ({ username }) => {
   if (hidden) return null;
 
   return (
-    <section className="metal-panel rounded-xl p-4 sm:p-5">
+    <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-black text-white sm:text-xl">Training calendar · {monthLabel}</h2>
+        <h2 className="font-display text-xl text-white sm:text-2xl">Training calendar <span className="font-sans text-base font-semibold text-zinc-400">{monthLabel}</span></h2>
         <div className="flex items-center gap-1">
           <button
             aria-label="Previous month"
-            className="rounded-md p-2 text-slate-300 hover:bg-white/10"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-300 hover:bg-white/10"
             type="button"
             onClick={() => goToMonth(-1)}
           >
@@ -135,7 +135,7 @@ const PublicTrainingCalendar = ({ username }) => {
           </button>
           <button
             aria-label="Next month"
-            className="rounded-md p-2 text-slate-300 hover:bg-white/10"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-300 hover:bg-white/10"
             type="button"
             onClick={() => goToMonth(1)}
           >
@@ -144,7 +144,7 @@ const PublicTrainingCalendar = ({ username }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 sm:text-xs">
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black uppercase tracking-wider text-zinc-500 sm:text-xs">
         {WEEKDAY_LABELS.map((label) => (
           <div className="py-1" key={label}>
             {label}
@@ -167,14 +167,14 @@ const PublicTrainingCalendar = ({ username }) => {
               }`}
               key={key}
             >
-              <span className={`text-xs font-bold ${isToday ? "text-orange-200" : "text-slate-300"}`}>{dayNumber}</span>
+              <span className={`text-xs font-bold ${isToday ? "text-orange-200" : "text-zinc-300"}`}>{dayNumber}</span>
               <DayCellIcon dayData={dayData} isPast={isPast} />
             </div>
           );
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-400">
+      <div className="mt-4 flex flex-wrap gap-3 text-xs text-zinc-400">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded-full bg-forge-ember" />
           Trained
@@ -188,7 +188,7 @@ const PublicTrainingCalendar = ({ username }) => {
           Missed
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-full bg-slate-600/40" />
+          <span className="h-3 w-3 rounded-full bg-zinc-600/40" />
           Rest
         </span>
         <span className="inline-flex items-center gap-1.5">

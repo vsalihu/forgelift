@@ -1,35 +1,39 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
-import Button from "../components/Button.jsx";
-import FormInput from "../components/FormInput.jsx";
+import { Check, RefreshCw } from "lucide-react";
 import Layout from "../components/Layout.jsx";
 import ConfirmDangerModal from "../components/ui/ConfirmDangerModal.jsx";
-import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
-import IconMetricCard from "../components/visuals/IconMetricCard.jsx";
-import VisualSummaryGrid from "../components/visuals/VisualSummaryGrid.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import { ClearCalendarIcon, ResetIcon } from "../components/icons/featureIcons.jsx";
+import { BaselinesIcon } from "../components/icons/navIcons.jsx";
 import { dataManagementService } from "../services/dataManagementService.js";
-import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
-import { ClearCalendarIcon } from "../components/icons/featureIcons.jsx";
-import { DataIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
 
-const formatDate = (date) =>
-  date ? new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(date)) : "None";
+const formatDate = (date) => (date ? new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(date)) : "None");
+const card = "rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-6";
+const dangerButton =
+  "min-h-12 rounded-full border border-red-400/40 bg-red-500/10 px-5 text-sm font-bold text-red-100 transition-colors hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:opacity-40";
+const dateInput =
+  "min-h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-base text-white outline-none [color-scheme:dark] focus:border-forge-ember/60";
+
+const Option = ({ checked, label, tone = "neutral", onChange }) => (
+  <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-zinc-200">
+    <input checked={checked} className="peer sr-only" type="checkbox" onChange={(event) => onChange(event.target.checked)} />
+    <span
+      aria-hidden="true"
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-amber-200 ${
+        checked ? (tone === "danger" ? "border-transparent bg-red-500 text-white" : "border-transparent bg-forge-ember text-[#160a02]") : "border-white/25"
+      }`}
+    >
+      {checked ? <Check className="h-4 w-4" /> : null}
+    </span>
+    {label}
+  </label>
+);
 
 const DataManagementPage = () => {
   const [summary, setSummary] = useState(null);
-  const [rangeForm, setRangeForm] = useState({
-    startDate: "",
-    endDate: "",
-    deleteWorkouts: true,
-    deletePRsInRange: true,
-    deleteMissionsInRange: false,
-    deleteReportsInRange: false
-  });
-  const [resetOptions, setResetOptions] = useState({
-    deleteStrengthBaselines: false,
-    deleteWorkoutTemplates: false,
-    deleteAssessmentHistory: false
-  });
+  const [rangeForm, setRangeForm] = useState({ startDate: "", endDate: "", deleteWorkouts: true, deletePRsInRange: true, deleteMissionsInRange: false, deleteReportsInRange: false });
+  const [resetOptions, setResetOptions] = useState({ deleteStrengthBaselines: false, deleteWorkoutTemplates: false, deleteAssessmentHistory: false });
   const [modal, setModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -39,7 +43,6 @@ const DataManagementPage = () => {
   const loadSummary = async () => {
     setLoading(true);
     setError("");
-
     try {
       const data = await dataManagementService.getDataSummary();
       setSummary(data.summary);
@@ -58,175 +61,199 @@ const DataManagementPage = () => {
     setWorking(true);
     setError("");
     setMessage("");
-
     try {
       const data = await action();
-      setMessage(data.message || "Data management action completed.");
+      setMessage(data.message || "Done.");
       setModal(null);
       await loadSummary();
     } catch (err) {
+      setModal(null);
       setError(err.message);
     } finally {
       setWorking(false);
     }
   };
 
+  const rangeOptions = ["deleteWorkouts", "deletePRsInRange", "deleteMissionsInRange", "deleteReportsInRange"];
+  const rangeHint = !rangeForm.startDate || !rangeForm.endDate
+    ? "Pick a start and end date."
+    : rangeForm.startDate > rangeForm.endDate
+      ? "The start date is after the end date."
+      : !rangeOptions.some((key) => rangeForm[key])
+        ? "Choose at least one thing to delete."
+        : "";
+
+  const stats = [
+    ["Workouts", summary?.workouts],
+    ["Records", summary?.personalRecords],
+    ["Baselines", summary?.strengthBaselines],
+    ["Missions", summary?.missions],
+    ["Workout plans", summary?.templates],
+    ["Reports", summary?.reports]
+  ];
+
   return (
     <Layout>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">Data Management</p>
-          <h1 className="mt-2 text-3xl font-black text-white">Reset or Delete Training Data</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            Delete selected training history or reset progress data. Your account, email, password, and profile stay.
-          </p>
-        </div>
-        <Button loading={loading} type="button" variant="secondary" onClick={loadSummary}>
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-        <TutorialLauncher pageKey="data_management" steps={getTutorialSteps("data_management")} />
-      </div>
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50"
+            disabled={loading}
+            type="button"
+            onClick={loadSummary}
+          >
+            <RefreshCw aria-hidden="true" className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} />
+            Refresh
+          </button>
+        }
+        description="See what ForgeLift has stored, and clear training data when you want a fresh start. Your account, email, password and profile always stay."
+        eyebrow="Your data"
+        title="Data management"
+        tutorialPageKey="data_management"
+      />
 
-      {error ? <div className="mb-5 rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
-      {message ? <div className="mb-5 rounded-md bg-green-500/10 p-3 text-sm text-green-200">{message}</div> : null}
+      {message ? (
+        <p className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3 text-sm font-semibold text-emerald-200" role="status">
+          {message}
+        </p>
+      ) : null}
+      {error ? <ErrorState message={error} onRetry={loadSummary} /> : null}
 
-      <VisualSummaryGrid className="mb-6">
-        <IconMetricCard icon={DumbbellIcon} label="Workouts" value={summary?.workouts ?? "-"} status="Logged sessions" variant="info" />
-        <IconMetricCard icon={DataIcon} label="PRs" value={summary?.personalRecords ?? "-"} status="Personal records" variant="rank" />
-        <IconMetricCard icon={DataIcon} label="Baselines" value={summary?.strengthBaselines ?? "-"} status="Strength estimates" variant="neutral" />
-        <IconMetricCard icon={DataIcon} label="Reports" value={summary?.reports ?? "-"} status="Monthly reports" variant="neutral" />
-      </VisualSummaryGrid>
-
-      <section data-tour-id="data-summary" className="metal-panel mb-6 rounded-lg p-5">
-        <h2 className="text-xl font-black text-white">Data summary</h2>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-md bg-black/20 p-3"><dt className="text-slate-400">First workout</dt><dd className="mt-1 font-bold text-white">{formatDate(summary?.firstWorkoutDate)}</dd></div>
-          <div className="rounded-md bg-black/20 p-3"><dt className="text-slate-400">Latest workout</dt><dd className="mt-1 font-bold text-white">{formatDate(summary?.latestWorkoutDate)}</dd></div>
-          <div className="rounded-md bg-black/20 p-3"><dt className="text-slate-400">Missions</dt><dd className="mt-1 font-bold text-white">{summary?.missions ?? 0}</dd></div>
-          <div className="rounded-md bg-black/20 p-3"><dt className="text-slate-400">Templates</dt><dd className="mt-1 font-bold text-white">{summary?.templates ?? 0}</dd></div>
+      <section className={card} data-tour-id="data-summary">
+        <h2 className="font-display text-xl text-white sm:text-2xl">What's stored</h2>
+        <p className="mt-1 text-sm text-zinc-400">
+          {summary?.firstWorkoutDate ? `Workouts from ${formatDate(summary.firstWorkoutDate)} to ${formatDate(summary.latestWorkoutDate)}.` : "No workouts logged yet."}
+        </p>
+        <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {stats.map(([label, value]) => (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3" key={label}>
+              <dt className="text-xs text-zinc-500">{label}</dt>
+              <dd className="font-display mt-0.5 text-2xl tabular-nums text-white">{loading && value === undefined ? "–" : value ?? 0}</dd>
+            </div>
+          ))}
         </dl>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div data-tour-id="delete-date-range" className="metal-panel rounded-lg p-5">
-          <h2 className="flex items-center gap-2 text-xl font-black text-white">
-            <ClearCalendarIcon className="h-5 w-5 text-forge-ember" />
-            Delete by date range
-          </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <FormInput label="Start date" type="date" value={rangeForm.startDate} onChange={(event) => setRangeForm({ ...rangeForm, startDate: event.target.value })} />
-            <FormInput label="End date" type="date" value={rangeForm.endDate} onChange={(event) => setRangeForm({ ...rangeForm, endDate: event.target.value })} />
-          </div>
-          <div className="mt-4 space-y-3 text-sm text-slate-300">
+      <section className={`${card} mt-4`} data-tour-id="delete-date-range">
+        <h2 className="font-display flex items-center gap-2 text-xl text-white sm:text-2xl">
+          <ClearCalendarIcon aria-hidden="true" className="h-6 w-6 text-orange-300" />
+          Clear a date range
+        </h2>
+        <p className="mt-1 text-sm text-zinc-400">Remove a stretch of training, for example a trip where you logged by mistake. Ranks and stats are recalculated afterwards.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-zinc-200">From</span>
+            <input className={dateInput} max={rangeForm.endDate || undefined} type="date" value={rangeForm.startDate} onChange={(event) => setRangeForm({ ...rangeForm, startDate: event.target.value })} />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold text-zinc-200">To</span>
+            <input className={dateInput} min={rangeForm.startDate || undefined} type="date" value={rangeForm.endDate} onChange={(event) => setRangeForm({ ...rangeForm, endDate: event.target.value })} />
+          </label>
+        </div>
+        <fieldset className="mt-4">
+          <legend className="mb-1 text-sm font-semibold text-zinc-200">What to clear</legend>
+          <div className="grid sm:grid-cols-2">
             {[
-              ["deleteWorkouts", "Delete workouts in this period"],
-              ["deletePRsInRange", "Delete PRs in this period"],
-              ["deleteMissionsInRange", "Delete missions and weekly targets in this period"],
-              ["deleteReportsInRange", "Delete reports and analytics in this period"]
+              ["deleteWorkouts", "Workouts"],
+              ["deletePRsInRange", "Personal records"],
+              ["deleteMissionsInRange", "Missions and weekly targets"],
+              ["deleteReportsInRange", "Reports and analytics"]
             ].map(([key, label]) => (
-              <label className="flex items-center gap-3" key={key}>
-                <input
-                  checked={rangeForm[key]}
-                  className="h-4 w-4 accent-forge-ember"
-                  type="checkbox"
-                  onChange={(event) => setRangeForm({ ...rangeForm, [key]: event.target.checked })}
-                />
-                {label}
-              </label>
+              <Option checked={rangeForm[key]} key={key} label={label} onChange={(value) => setRangeForm({ ...rangeForm, [key]: value })} />
             ))}
           </div>
-          <Button
-            className="mt-5"
+        </fieldset>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            className={dangerButton}
+            disabled={Boolean(rangeHint)}
             type="button"
-            variant="danger"
             onClick={() =>
               setModal({
                 type: "range",
-                title: "Delete selected period",
+                title: "Clear this range",
                 confirmWord: "DELETE",
-                description: "This deletes selected training data in the date range and recalculates derived systems.",
-                detailsList: [`Range: ${rangeForm.startDate || "not set"} to ${rangeForm.endDate || "not set"}`]
+                description: `Everything you ticked between ${formatDate(rangeForm.startDate)} and ${formatDate(rangeForm.endDate)} is deleted, then your stats are recalculated.`,
+                detailsList: [
+                  rangeForm.deleteWorkouts ? "Workouts" : null,
+                  rangeForm.deletePRsInRange ? "Personal records" : null,
+                  rangeForm.deleteMissionsInRange ? "Missions and weekly targets" : null,
+                  rangeForm.deleteReportsInRange ? "Reports and analytics" : null
+                ].filter(Boolean)
               })
             }
           >
-            Delete selected period
-          </Button>
-        </div>
-
-        <div className="space-y-6">
-          <div className="metal-panel rounded-lg p-5">
-            <h2 className="text-xl font-black text-white">Reset Strength Baselines</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Removes entered and estimated strength baselines, but keeps workout history.
-            </p>
-            <Button
-              className="mt-5"
-              type="button"
-              variant="danger"
-              onClick={() =>
-                setModal({
-                  type: "baselines",
-                  title: "Reset strength baselines",
-                  confirmWord: "RESET",
-                  description: "This removes all strength baselines. Workout history and workout-derived progress remain.",
-                  detailsList: ["User-entered baselines", "Estimated related baselines"]
-                })
-              }
-            >
-              Reset Strength Baselines
-            </Button>
-          </div>
-
-          <div data-tour-id="reset-training-data" className="rounded-lg border border-red-400/25 bg-red-500/10 p-5">
-            <h2 className="flex items-center gap-2 text-xl font-black text-white">
-              <Trash2 className="h-5 w-5 text-red-200" />
-              Reset All Training Data
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-red-100">
-              Removes workouts, PRs, ranks, recovery, overload, deload, missions, analytics, and reports. Your account and profile stay.
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-red-50">
-              {[
-                ["deleteStrengthBaselines", "Also delete strength baselines"],
-                ["deleteWorkoutTemplates", "Also delete workout templates"],
-                ["deleteAssessmentHistory", "Also delete ForgeLift Assessment history"]
-              ].map(([key, label]) => (
-                <label className="flex items-center gap-3" key={key}>
-                  <input
-                    checked={resetOptions[key]}
-                    className="h-4 w-4 accent-red-500"
-                    type="checkbox"
-                    onChange={(event) => setResetOptions({ ...resetOptions, [key]: event.target.checked })}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-            <Button
-              className="mt-5"
-              type="button"
-              variant="danger"
-              onClick={() =>
-                setModal({
-                  type: "reset",
-                  title: "Reset all training data",
-                  confirmWord: "RESET",
-                  description: "This cannot be undone. It keeps your account and profile, but removes training progress data.",
-                  detailsList: [
-                    "Workouts, PRs, ranks, recovery, weak points, balance, overload, deload, missions, analytics, reports",
-                    resetOptions.deleteStrengthBaselines ? "Strength baselines will also be deleted" : "Strength baselines will be kept",
-                    resetOptions.deleteWorkoutTemplates ? "Workout templates will also be deleted" : "Workout templates will be kept",
-                    resetOptions.deleteAssessmentHistory ? "Assessment history will also be deleted" : "Assessment history will be kept"
-                  ]
-                })
-              }
-            >
-              Reset All Training Data
-            </Button>
-          </div>
+            Clear this range
+          </button>
+          {rangeHint ? <p className="text-sm text-zinc-500">{rangeHint}</p> : null}
         </div>
       </section>
+
+      <h2 className="font-display mb-3 mt-10 text-xl text-red-200">Danger zone</h2>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-3xl border border-red-400/20 bg-red-500/[0.04] p-4 sm:p-6">
+          <h3 className="font-display flex items-center gap-2 text-lg text-white">
+            <BaselinesIcon aria-hidden="true" className="h-5 w-5 text-red-300" />
+            Reset strength baselines
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-zinc-400">Removes the lifts you entered and everything estimated from them. Workout history stays.</p>
+          <button
+            className={`${dangerButton} mt-4`}
+            type="button"
+            onClick={() =>
+              setModal({
+                type: "baselines",
+                title: "Reset baselines",
+                confirmWord: "RESET",
+                description: "All strength baselines are removed. Your workouts and the progress worked out from them stay.",
+                detailsList: ["Lifts you entered", "Estimates for related lifts"]
+              })
+            }
+          >
+            Reset baselines
+          </button>
+        </section>
+
+        <section className="rounded-3xl border border-red-400/30 bg-red-500/[0.07] p-4 sm:p-6" data-tour-id="reset-training-data">
+          <h3 className="font-display flex items-center gap-2 text-lg text-white">
+            <ResetIcon aria-hidden="true" className="h-5 w-5 text-red-300" />
+            Start over
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-zinc-300">
+            Removes workouts, records, ranks, recovery, missions, analytics and reports. Your account and profile stay.
+          </p>
+          <fieldset className="mt-3">
+            <legend className="sr-only">Also remove</legend>
+            {[
+              ["deleteStrengthBaselines", "Also remove strength baselines"],
+              ["deleteWorkoutTemplates", "Also remove workout plans"],
+              ["deleteAssessmentHistory", "Also remove assessment answers"]
+            ].map(([key, label]) => (
+              <Option checked={resetOptions[key]} key={key} label={label} tone="danger" onChange={(value) => setResetOptions({ ...resetOptions, [key]: value })} />
+            ))}
+          </fieldset>
+          <button
+            className="mt-4 min-h-12 rounded-full bg-red-500 px-5 text-sm font-black text-white hover:bg-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+            type="button"
+            onClick={() =>
+              setModal({
+                type: "reset",
+                title: "Reset all training data",
+                confirmWord: "RESET",
+                description: "Your account and profile stay. All training progress is removed.",
+                detailsList: [
+                  "Workouts, records, ranks, recovery, weak points, balance, overload, deload, missions, analytics and reports",
+                  resetOptions.deleteStrengthBaselines ? "Strength baselines are removed too" : "Strength baselines are kept",
+                  resetOptions.deleteWorkoutTemplates ? "Workout plans are removed too" : "Workout plans are kept",
+                  resetOptions.deleteAssessmentHistory ? "Assessment answers are removed too" : "Assessment answers are kept"
+                ]
+              })
+            }
+          >
+            Reset all training data
+          </button>
+        </section>
+      </div>
 
       {modal ? (
         <ConfirmDangerModal
@@ -252,17 +279,8 @@ const DataManagementPage = () => {
                 })
               );
             }
-
-            if (modal.type === "baselines") {
-              return runAction(() => dataManagementService.resetStrengthBaselines());
-            }
-
-            return runAction(() =>
-              dataManagementService.resetTrainingData({
-                confirmText: "RESET",
-                ...resetOptions
-              })
-            );
+            if (modal.type === "baselines") return runAction(() => dataManagementService.resetStrengthBaselines());
+            return runAction(() => dataManagementService.resetTrainingData({ confirmText: "RESET", ...resetOptions }));
           }}
         />
       ) : null}

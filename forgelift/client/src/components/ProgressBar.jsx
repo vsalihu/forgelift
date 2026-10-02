@@ -3,7 +3,7 @@ const ProgressBar = ({ value = 0, label }) => {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
+      <div className="mb-2 flex items-center justify-between text-sm text-zinc-300">
         <span>{label}</span>
         <span>{boundedValue}%</span>
       </div>

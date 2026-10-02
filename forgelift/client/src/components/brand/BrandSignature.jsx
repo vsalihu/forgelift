@@ -1,8 +1,8 @@
 const variantClasses = {
   hero: "mt-4 text-sm uppercase tracking-[0.25em] text-amber-300/80",
-  subtle: "mt-4 text-xs tracking-wide text-slate-500",
-  footer: "text-center text-xs tracking-wide text-slate-500",
-  loader: "mt-3 text-xs uppercase tracking-[0.25em] text-slate-500"
+  subtle: "mt-4 text-xs tracking-wide text-zinc-500",
+  footer: "text-center text-xs tracking-wide text-zinc-500",
+  loader: "mt-3 text-xs uppercase tracking-[0.25em] text-zinc-500"
 };
 
 const BrandSignature = ({ variant = "subtle", className = "" }) => (

@@ -10,7 +10,7 @@ const PageLoader = ({ text = "Forging your progress..." }) => (
       transition={{ duration: 0.2 }}
     >
       <img alt="ForgeLift" className="mx-auto h-12 w-auto" src="/logo-full.png" />
-      <p className="mt-3 text-sm text-forge-steel">{text}</p>
+      <p className="mt-3 text-sm text-zinc-400">{text}</p>
       <BrandSignature variant="loader" />
       <div className="mx-auto mt-5 h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
         <motion.div

@@ -36,18 +36,18 @@ const TutorialCard = ({
         <span className="rounded-full bg-forge-ember/15 px-3 py-1 text-xs font-black text-orange-100">
           {stepIndex + 1}/{totalSteps}
         </span>
-        <button className="text-xs font-bold text-slate-400 hover:text-white" type="button" onClick={onSkip}>
+        <button className="text-xs font-bold text-zinc-400 hover:text-white" type="button" onClick={onSkip}>
           Skip
         </button>
       </div>
       <h2 className="text-lg font-black text-white">{targetMissing ? step.fallbackTitle || step.title : step.title}</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
+      <p className="mt-2 text-sm leading-6 text-zinc-300">
         {targetMissing
           ? step.fallbackContent || "This section is not available on this page yet."
           : step.content}
       </p>
-      {step.actionHint ? <p className="mt-3 rounded-lg bg-white/5 p-3 text-sm text-slate-300">{step.actionHint}</p> : null}
-      <label className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400">
+      {step.actionHint ? <p className="mt-3 rounded-lg bg-white/5 p-3 text-sm text-zinc-300">{step.actionHint}</p> : null}
+      <label className="mt-4 flex items-center gap-2 text-xs font-semibold text-zinc-400">
         <input
           checked={dontShowAgain}
           className="h-4 w-4 accent-forge-ember"

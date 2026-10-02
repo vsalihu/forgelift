@@ -13,7 +13,7 @@ const RpeGuide = () => (
       {rpeRows.map(([label, description]) => (
         <div className="flex gap-3 text-sm" key={label}>
           <span className="w-16 shrink-0 font-bold text-forge-copper">{label}</span>
-          <span className="text-slate-300">{description}</span>
+          <span className="text-zinc-300">{description}</span>
         </div>
       ))}
     </div>

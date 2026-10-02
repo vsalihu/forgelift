@@ -6,7 +6,7 @@ const variants = {
   danger: "from-red-500 to-orange-400",
   info: "from-sky-400 to-cyan-300",
   rank: "from-forge-copper to-forge-ember",
-  neutral: "from-slate-400 to-slate-200"
+  neutral: "from-zinc-400 to-zinc-200"
 };
 
 const AnimatedProgressBar = ({ value = 0, max = 100, label, showPercentage = true, variant = "neutral", className = "" }) => {
@@ -17,7 +17,7 @@ const AnimatedProgressBar = ({ value = 0, max = 100, label, showPercentage = tru
     <div className={className}>
       {(label || showPercentage) ? (
         <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-          {label ? <span className="font-semibold text-slate-300">{label}</span> : <span />}
+          {label ? <span className="font-semibold text-zinc-300">{label}</span> : <span />}
           {showPercentage ? <span className="font-bold text-white">{percentage}%</span> : null}
         </div>
       ) : null}

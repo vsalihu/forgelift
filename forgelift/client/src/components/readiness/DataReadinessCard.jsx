@@ -32,7 +32,7 @@ const DataReadinessCard = ({ readiness }) => {
             <InfoIcon className="h-5 w-5 text-forge-ember" />
             <h2 className="text-lg font-black text-white">{statusCopy[readiness.overallReadiness] || "Data readiness"}</h2>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-zinc-300">
             {readiness.overallReadiness === "ready"
               ? "ForgeLift has enough real training data for stronger recommendations."
               : "ForgeLift needs a little more real data before making confident claims."}
@@ -45,15 +45,15 @@ const DataReadinessCard = ({ readiness }) => {
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {checklist.map((item) => (
-          <Link className="flex items-center gap-2 rounded-md bg-black/20 p-3 text-sm text-slate-200 hover:bg-white/10" key={item.label} to={item.to}>
-            {item.done ? <SuccessIcon className="h-4 w-4 text-emerald-300" /> : <Circle className="h-4 w-4 text-slate-500" />}
+          <Link className="flex items-center gap-2 rounded-md bg-black/20 p-3 text-sm text-zinc-200 hover:bg-white/10" key={item.label} to={item.to}>
+            {item.done ? <SuccessIcon className="h-4 w-4 text-emerald-300" /> : <Circle className="h-4 w-4 text-zinc-500" />}
             {item.label}
           </Link>
         ))}
       </div>
 
       {readiness.messages?.length ? (
-        <div className="mt-4 rounded-md bg-black/20 p-3 text-sm text-slate-400">
+        <div className="mt-4 rounded-md bg-black/20 p-3 text-sm text-zinc-400">
           {readiness.messages.slice(0, 3).map((message) => (
             <p key={message}>- {message}</p>
           ))}

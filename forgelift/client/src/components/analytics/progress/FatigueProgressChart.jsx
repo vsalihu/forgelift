@@ -33,7 +33,7 @@ const FatigueProgressChart = ({ weeks = [] }) => {
         }))
       }}
     >
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Training load vs your normal</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">Training load vs your normal</p>
       <div className="h-44">
         <ResponsiveContainer height="100%" width="100%">
           <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -8 }} syncId={SYNC_ID}>
@@ -52,7 +52,7 @@ const FatigueProgressChart = ({ weeks = [] }) => {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Strength vs when you started</p>
+      <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">Strength vs when you started</p>
       <div className="h-44">
         <ResponsiveContainer height="100%" width="100%">
           <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: -8 }} syncId={SYNC_ID}>

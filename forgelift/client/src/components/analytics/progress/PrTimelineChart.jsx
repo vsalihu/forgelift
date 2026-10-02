@@ -8,12 +8,12 @@ const PrTooltip = ({ active, payload, unit }) => {
   const week = payload[0].payload;
   return (
     <div style={tooltipProps.contentStyle} className="max-w-64 px-3 py-2">
-      <p className="text-xs text-slate-400">Week of {formatLongDate(week.t)}</p>
+      <p className="text-xs text-zinc-400">Week of {formatLongDate(week.t)}</p>
       <p className="font-bold text-white">
         {week.count} new record{week.count === 1 ? "" : "s"}
       </p>
       {week.highlights.map((highlight) => (
-        <p className="text-xs text-slate-300" key={highlight.exerciseName}>
+        <p className="text-xs text-zinc-300" key={highlight.exerciseName}>
           {highlight.exerciseName}: {formatNumber(highlight.value)} {unit} (+{formatNumber(highlight.improvementPercent)}%)
         </p>
       ))}
@@ -48,7 +48,7 @@ const PrTimelineChart = ({ weeks = [], unit }) => {
       }}
       footer={
         total ? (
-          <p className="text-sm leading-6 text-slate-300">
+          <p className="text-sm leading-6 text-zinc-300">
             <span className="font-bold text-white">{total}</span> new records in this period. Best week: {formatShortDate(bestWeek.t)} with{" "}
             <span className="font-bold text-white">{bestWeek.count}</span>.
           </p>

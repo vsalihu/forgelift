@@ -24,7 +24,7 @@ const MuscleBalanceRadar = ({ balance = [] }) => {
       }}
       footer={
         hasData && lowest && highest && highest.current > 0 ? (
-          <p className="text-sm leading-6 text-slate-300">
+          <p className="text-sm leading-6 text-zinc-300">
             Most work: <span className="font-bold text-white">{highest.group}</span> ({formatNumber(highest.current)} sets/week). Least:{" "}
             <span className="font-bold text-white">{lowest.group}</span> ({formatNumber(lowest.current)} sets/week).
           </p>

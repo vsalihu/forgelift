@@ -78,8 +78,8 @@ const ConsistencyHeatmap = ({ consistency }) => {
       footer={
         <dl className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
           {stats.map(([label, value]) => (
-            <div className="rounded-lg bg-black/25 p-3" key={label}>
-              <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3" key={label}>
+              <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{label}</dt>
               <dd className="mt-1 text-lg font-black text-white">{value}</dd>
             </div>
           ))}
@@ -87,7 +87,7 @@ const ConsistencyHeatmap = ({ consistency }) => {
       }
     >
       <div className="flex gap-2">
-        <div className="grid shrink-0 grid-rows-[16px_repeat(7,12px)] gap-[3px] pt-px text-[10px] leading-3 text-slate-500">
+        <div className="grid shrink-0 grid-rows-[16px_repeat(7,12px)] gap-[3px] pt-px text-[10px] leading-3 text-zinc-500">
           <span />
           {WEEKDAYS.map((label, index) => (
             <span key={index}>{label}</span>
@@ -97,7 +97,7 @@ const ConsistencyHeatmap = ({ consistency }) => {
           <div className="flex w-max gap-[3px]">
             {weeks.map((cells, weekIndex) => (
               <div className="grid grid-rows-[16px_repeat(7,12px)] gap-[3px]" key={cells[0].key}>
-                <span className="whitespace-nowrap text-[10px] leading-3 text-slate-500">{monthLabels[weekIndex]}</span>
+                <span className="whitespace-nowrap text-[10px] leading-3 text-zinc-500">{monthLabels[weekIndex]}</span>
                 {cells.map((cell) => {
                   if (cell.future || cell.beforeRange) return <span className="h-3 w-3" key={cell.key} />;
                   const sets = cell.day?.sets || 0;
@@ -119,7 +119,7 @@ const ConsistencyHeatmap = ({ consistency }) => {
           </div>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
         <span>Less</span>
         <span className="h-3 w-3 rounded-[3px]" style={{ background: EMPTY }} title="Rest day" />
         {LEVELS.map((level) => (

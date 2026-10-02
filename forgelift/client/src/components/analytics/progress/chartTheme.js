@@ -28,9 +28,10 @@ export const axisProps = {
 
 export const tooltipProps = {
   contentStyle: {
-    background: "#0b0d11",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: 8,
+    background: "rgba(14, 16, 20, 0.96)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: 14,
+    boxShadow: "0 20px 40px -16px rgba(0, 0, 0, 0.9)",
     color: "#fff",
     fontSize: 13
   },

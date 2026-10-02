@@ -59,23 +59,23 @@ const RankJourneyChart = ({ rankJourney }) => {
       footer={
         current ? (
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
-            <div className="rounded-lg bg-black/25 p-3">
-              <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">Now</dt>
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+              <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Now</dt>
               <dd className="mt-1 font-bold text-white">
                 {current.rank} · {formatNumber(current.score, 0)} pts
               </dd>
             </div>
             {current.nextRank ? (
-              <div className="rounded-lg bg-black/25 p-3">
-                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   {current.nextRank} ({formatNumber(current.pointsToNextRank, 0)} pts to go)
                 </dt>
                 <dd className="mt-1 font-bold text-white">{describeEta(nextRankEta, { ceilingLabel: " pts" })}</dd>
               </div>
             ) : null}
             {!goesToMax ? (
-              <div className="rounded-lg bg-black/25 p-3">
-                <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">Max rank (Ultimate)</dt>
+              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Max rank (Ultimate)</dt>
                 <dd className="mt-1 font-bold text-white">{current.nextRank ? describeEta(maxEta, { ceilingLabel: " pts" }) : "Reached"}</dd>
               </div>
             ) : null}

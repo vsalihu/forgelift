@@ -45,7 +45,7 @@ const BodyweightChart = ({ bodyweight = [], lift, unit }) => {
           .map((row) => ({ ...row, date: formatLongDate(row.t) }))
       }}
     >
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Bodyweight ({unit})</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">Bodyweight ({unit})</p>
       <div className="h-40">
         <ResponsiveContainer height="100%" width="100%">
           <LineChart data={weightRows} margin={{ top: 8, right: 12, bottom: 0, left: -8 }}>
@@ -57,7 +57,7 @@ const BodyweightChart = ({ bodyweight = [], lift, unit }) => {
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{lift?.exerciseName || "Lift"} ÷ bodyweight</p>
+      <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">{lift?.exerciseName || "Lift"} ÷ bodyweight</p>
       {ratioRows.length ? (
         <div className="h-40">
           <ResponsiveContainer height="100%" width="100%">
@@ -71,7 +71,7 @@ const BodyweightChart = ({ bodyweight = [], lift, unit }) => {
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="text-sm text-slate-400">Pick a lift in the strength chart above to see it here.</p>
+        <p className="text-sm text-zinc-400">Pick a lift in the strength chart above to see it here.</p>
       )}
     </ChartCard>
   );

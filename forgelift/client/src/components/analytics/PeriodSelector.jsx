@@ -7,13 +7,14 @@ const options = [
 ];
 
 const PeriodSelector = ({ value, onChange }) => (
-  <div aria-label="Date range" className="inline-flex rounded-md border border-white/10 bg-black/30 p-1" role="group">
+  <div aria-label="Date range" className="inline-flex gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1" role="group">
     {options.map((option) => (
       <button
-        className={`rounded px-3 py-2 text-sm font-semibold transition ${
-          value === option.value ? "bg-forge-ember text-[#160a02]" : "text-slate-300 hover:bg-white/10"
-        }`}
+        aria-label={option.title}
         aria-pressed={value === option.value}
+        className={`min-h-10 min-w-11 rounded-full px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+          value === option.value ? "bg-forge-ember text-[#160a02] shadow-[0_0_20px_-6px_rgba(249,115,22,0.9)]" : "text-zinc-300 hover:bg-white/[0.07] hover:text-white"
+        }`}
         key={option.value}
         title={option.title}
         type="button"

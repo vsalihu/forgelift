@@ -1,27 +1,35 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
-import Button from "../components/Button.jsx";
-import FormInput from "../components/FormInput.jsx";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus } from "lucide-react";
 import Layout from "../components/Layout.jsx";
-import Badge from "../components/ui/Badge.jsx";
-import ConfirmModal from "../components/ui/ConfirmModal.jsx";
-import EmptyState from "../components/ui/EmptyState.jsx";
-import ErrorState from "../components/ui/ErrorState.jsx";
-import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
-import PageHeader from "../components/ui/PageHeader.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import { setsPerMuscle } from "../components/exercises/exerciseMeta.js";
+import BuilderExerciseRow from "../components/templates/BuilderExerciseRow.jsx";
+import MuscleCoverage from "../components/templates/MuscleCoverage.jsx";
+import SendToFriendSheet from "../components/templates/SendToFriendSheet.jsx";
+import TemplateCard from "../components/templates/TemplateCard.jsx";
+import { DesignWorkoutIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { activityService } from "../services/activityService.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
-import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
 import { gymDraftInProgress, startInGymMode } from "../utils/gymHandoff.js";
-import { DumbbellIcon } from "../components/icons/navIcons.jsx";
+import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
 
-const emptyTemplate = { name: "", description: "", exercises: [] };
-const numberFieldClass = "min-h-10 w-16 rounded-md border border-white/10 bg-black/30 px-2 text-center text-sm text-white outline-none focus:border-forge-ember";
+const emptyForm = { name: "", description: "", exercises: [] };
+const primaryButton =
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-6 text-sm font-black text-[#160a02] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-40";
+const secondaryButton =
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white transition-colors hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200";
+
+let rowKey = 0;
+const withKey = (item) => ({ ...item, _key: `row-${(rowKey += 1)}` });
+const snapshot = (form) =>
+  JSON.stringify({ ...form, exercises: form.exercises.map(({ _key, ...item }) => item) });
 
 const WorkoutTemplatesPage = () => {
   const { user } = useAuth();
@@ -29,19 +37,25 @@ const WorkoutTemplatesPage = () => {
   const [templates, setTemplates] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [friends, setFriends] = useState([]);
-  const [form, setForm] = useState(emptyTemplate);
-  const [editingId, setEditingId] = useState("");
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [editingId, setEditingId] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const initialRef = useRef(snapshot(emptyForm));
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [builderError, setBuilderError] = useState("");
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
   const [pendingDeleteId, setPendingDeleteId] = useState("");
   const [pendingStart, setPendingStart] = useState(null);
-  const [visibilityBusyId, setVisibilityBusyId] = useState("");
-  const [sendPickerId, setSendPickerId] = useState("");
-  const [selectedFriendId, setSelectedFriendId] = useState("");
-  const [sendingId, setSendingId] = useState("");
-  const [sentConfirmationId, setSentConfirmationId] = useState("");
+  const [busyId, setBusyId] = useState("");
+  const [sendTemplate, setSendTemplate] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [creatingSuggestion, setCreatingSuggestion] = useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -50,7 +64,7 @@ const WorkoutTemplatesPage = () => {
       const [templateData, exerciseData, friendData] = await Promise.all([
         workoutTemplateService.getTemplates(),
         exerciseService.getExercises(),
-        friendService.getFriends()
+        friendService.getFriends().catch(() => ({ friends: [] }))
       ]);
       setTemplates(templateData.templates || []);
       setExercises(exerciseData.exercises || []);
@@ -66,100 +80,108 @@ const WorkoutTemplatesPage = () => {
     loadData();
   }, []);
 
-  const findLibraryExercise = (templateExercise) =>
-    exercises.find(
-      (exercise) => exercise._id === templateExercise.exerciseId || exercise.name === templateExercise.exerciseName
-    );
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
-  const addExerciseFromPicker = (exercise) => {
+  const findExercise = (item) => exercises.find((exercise) => exercise._id === item.exerciseId || exercise.name === item.exerciseName);
+  const topMusclesFor = (template) => setsPerMuscle(template.exercises || [], findExercise).slice(0, 3).map((entry) => entry.muscle);
+  const coverage = useMemo(() => setsPerMuscle(form.exercises, findExercise), [form.exercises, exercises]);
+  const totalSets = form.exercises.reduce((total, item) => total + (Number(item.targetSets) || 0), 0);
+  const dirty = builderOpen && snapshot(form) !== initialRef.current;
+  const badRow = form.exercises.some((item) => item.targetRepMin !== "" && item.targetRepMax !== "" && Number(item.targetRepMin) > Number(item.targetRepMax));
+  const missing = !form.name.trim() ? "Give the workout a name." : !form.exercises.length ? "Add at least one exercise." : badRow ? "Fix the rep range marked in red." : "";
+
+  // Builder
+
+  const openBuilder = (template) => {
+    const next = template
+      ? { name: template.name, description: template.description || "", exercises: (template.exercises || []).map(withKey) }
+      : emptyForm;
+    setEditingId(template?._id || "");
+    setForm(next);
+    initialRef.current = snapshot(next);
+    setBuilderError("");
+    setBuilderOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const closeBuilder = () => {
+    setBuilderOpen(false);
+    setConfirmDiscard(false);
+    setEditingId("");
+    setForm(emptyForm);
+    window.scrollTo({ top: 0 });
+  };
+
+  const requestClose = () => (dirty ? setConfirmDiscard(true) : closeBuilder());
+
+  const addExercise = (exercise) => {
     setForm((current) => ({
       ...current,
       exercises: [
         ...current.exercises,
-        {
+        withKey({
           exerciseId: exercise._id,
-          exerciseName: exercise.name,
+          exerciseName: exercise.name || exercise.exerciseName,
           targetSets: 3,
           targetRepMin: exercise.defaultRepMin || 8,
           targetRepMax: exercise.defaultRepMax || 12,
           notes: ""
-        }
+        })
       ]
     }));
-    if (!exercises.some((item) => item._id === exercise._id)) {
-      setExercises((current) => [...current, exercise]);
-    }
+    if (exercise._id && !exercises.some((item) => item._id === exercise._id)) setExercises((current) => [...current, exercise]);
   };
 
-  const updateExerciseField = (index, field, value) => {
-    setForm((current) => ({
-      ...current,
-      exercises: current.exercises.map((exercise, currentIndex) =>
-        currentIndex === index ? { ...exercise, [field]: value } : exercise
-      )
-    }));
-  };
+  const changeExercise = (index, field, value) =>
+    setForm((current) => ({ ...current, exercises: current.exercises.map((item, i) => (i === index ? { ...item, [field]: value } : item)) }));
 
-  const removeExercise = (index) => {
-    setForm((current) => ({ ...current, exercises: current.exercises.filter((_item, current2) => current2 !== index) }));
-  };
-
-  const moveExercise = (index, direction) => {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= form.exercises.length) return;
+  const moveExercise = (index, direction) =>
     setForm((current) => {
-      const nextExercises = [...current.exercises];
-      [nextExercises[index], nextExercises[targetIndex]] = [nextExercises[targetIndex], nextExercises[index]];
-      return { ...current, exercises: nextExercises };
+      const target = index + direction;
+      if (target < 0 || target >= current.exercises.length) return current;
+      const next = [...current.exercises];
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...current, exercises: next };
     });
-  };
+
+  const removeExercise = (index) => setForm((current) => ({ ...current, exercises: current.exercises.filter((_, i) => i !== index) }));
 
   const saveTemplate = async (event) => {
     event.preventDefault();
+    if (missing) {
+      setBuilderError(missing);
+      return;
+    }
     setSaving(true);
-    setError("");
+    setBuilderError("");
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      exercises: form.exercises.map(({ _key, ...item }) => ({
+        ...item,
+        targetSets: Number(item.targetSets) || 3,
+        targetRepMin: Number(item.targetRepMin) || 8,
+        targetRepMax: Number(item.targetRepMax) || Number(item.targetRepMin) || 12
+      }))
+    };
     try {
-      if (editingId) await workoutTemplateService.updateTemplate(editingId, form);
-      else await workoutTemplateService.createTemplate(form);
-      setForm(emptyTemplate);
-      setEditingId("");
+      if (editingId) await workoutTemplateService.updateTemplate(editingId, payload);
+      else await workoutTemplateService.createTemplate(payload);
+      closeBuilder();
+      setNotice(`Saved "${payload.name}".`);
       await loadData();
     } catch (err) {
-      setError(err.message);
+      setBuilderError(err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const editTemplate = (template) => {
-    setEditingId(template._id);
-    setForm({
-      name: template.name,
-      description: template.description || "",
-      exercises: template.exercises || []
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const cancelEdit = () => {
-    setEditingId("");
-    setForm(emptyTemplate);
-  };
-
-  const confirmDeleteTemplate = () => {
-    const templateId = pendingDeleteId;
-    if (!templateId) return;
-    const templateToDelete = templates.find((item) => item._id === templateId);
-    setError("");
-    setPendingDeleteId("");
-    setTemplates((current) => current.filter((item) => item._id !== templateId));
-    if (editingId === templateId) cancelEdit();
-
-    workoutTemplateService.deleteTemplate(templateId).catch((err) => {
-      setError(err.message);
-      if (templateToDelete) setTemplates((current) => [templateToDelete, ...current]);
-    });
-  };
+  // List actions
 
   const startTemplate = (template) => {
     if (gymDraftInProgress()) {
@@ -170,65 +192,67 @@ const WorkoutTemplatesPage = () => {
   };
 
   const toggleVisibility = async (template) => {
-    const nextVisibility = template.visibility === "public" ? "private" : "public";
-    setVisibilityBusyId(template._id);
+    const visibility = template.visibility === "public" ? "private" : "public";
+    setBusyId(template._id);
     setError("");
     try {
-      const data = await workoutTemplateService.setVisibility(template._id, nextVisibility);
+      const data = await workoutTemplateService.setVisibility(template._id, visibility);
       setTemplates((current) => current.map((item) => (item._id === template._id ? data.template : item)));
+      setNotice(visibility === "public" ? `"${template.name}" is public. Friends can find and copy it.` : `"${template.name}" is private again.`);
     } catch (err) {
       setError(err.message);
     } finally {
-      setVisibilityBusyId("");
+      setBusyId("");
     }
   };
 
-  const openSendPicker = (templateId) => {
-    setSentConfirmationId("");
-    setSelectedFriendId("");
-    setSendPickerId(sendPickerId === templateId ? "" : templateId);
-  };
-
-  const sendTemplate = async (templateId) => {
-    if (!selectedFriendId) return;
-    setSendingId(templateId);
-    setError("");
+  const sendToFriend = async (template, friendId) => {
+    setSending(true);
     try {
-      await activityService.sendWorkout(templateId, selectedFriendId);
-      setSentConfirmationId(templateId);
-      setSendPickerId("");
-    } catch (err) {
-      setError(err.message);
+      await activityService.sendWorkout(template._id, friendId);
+      const friend = friends.find((item) => item._id === friendId);
+      setSendTemplate(null);
+      setNotice(`Sent "${template.name}" to ${friend?.name || "your friend"}.`);
     } finally {
-      setSendingId("");
+      setSending(false);
     }
+  };
+
+  const confirmDelete = () => {
+    const id = pendingDeleteId;
+    const removed = templates.find((item) => item._id === id);
+    setPendingDeleteId("");
+    setError("");
+    setTemplates((current) => current.filter((item) => item._id !== id));
+    workoutTemplateService.deleteTemplate(id).catch((err) => {
+      setError(err.message);
+      if (removed) setTemplates((current) => [removed, ...current]);
+    });
   };
 
   const createSuggestion = async (suggestion) => {
-    await workoutTemplateService.createTemplate({
-      name: suggestion.name,
-      description: "Starter template suggestion",
-      goalPath: user?.goalPath,
-      exercises: suggestion.exercises
-    });
-    await loadData();
+    setCreatingSuggestion(suggestion.name);
+    setError("");
+    try {
+      await workoutTemplateService.createTemplate({ name: suggestion.name, description: "Starter workout for your goal", goalPath: user?.goalPath, exercises: suggestion.exercises });
+      setNotice(`Added "${suggestion.name}". Edit it any time.`);
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreatingSuggestion("");
+    }
   };
 
-  const totalSets = form.exercises.reduce((total, exercise) => total + (Number(exercise.targetSets) || 0), 0);
-
-  return (
-    <Layout>
-      <ExercisePicker
-        open={pickerOpen}
-        exercises={exercises}
-        onClose={() => setPickerOpen(false)}
-        onSelect={addExerciseFromPicker}
-      />
+  const dialogs = (
+    <>
+      <ExercisePicker exercises={exercises} open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={addExercise} />
+      <SendToFriendSheet friends={friends} sending={sending} template={sendTemplate} onClose={() => setSendTemplate(null)} onSend={sendToFriend} />
       {pendingStart ? (
         <ConfirmModal
           cancelLabel="Keep my workout"
           confirmLabel="Start this one"
-          description="You have a Gym Mode workout in progress. Starting this template replaces it."
+          description="You have a Gym Mode workout in progress. Starting this one replaces it."
           title="Replace your workout in progress?"
           tone="primary"
           onCancel={() => setPendingStart(null)}
@@ -237,236 +261,241 @@ const WorkoutTemplatesPage = () => {
       ) : null}
       {pendingDeleteId ? (
         <ConfirmModal
-          title="Delete this workout template?"
           confirmLabel="Delete"
+          description="Workouts you already logged from it stay saved."
+          title="Delete this workout?"
           onCancel={() => setPendingDeleteId("")}
-          onConfirm={confirmDeleteTemplate}
+          onConfirm={confirmDelete}
         />
       ) : null}
+      {confirmDiscard ? (
+        <ConfirmModal
+          cancelLabel="Keep editing"
+          confirmLabel="Discard"
+          description="Your changes to this workout haven't been saved."
+          title="Discard changes?"
+          onCancel={() => setConfirmDiscard(false)}
+          onConfirm={closeBuilder}
+        />
+      ) : null}
+    </>
+  );
 
-      <PageHeader
-        eyebrow="Workout Builder"
-        title="Design a Workout"
-        description="Search the exercise library, filter by muscle group, or add your own movement, then save it to train later."
-        actions={
-          <Link className="inline-flex min-h-11 items-center rounded-full bg-forge-ember px-4 py-2 text-sm font-semibold text-[#160a02]" to="/gym-mode">
-            Start Gym Mode
-          </Link>
-        }
-      />
-      {error ? <ErrorState message={error} /> : null}
-      {loading ? <LoadingSkeleton rows={4} /> : null}
+  if (builderOpen) {
+    return (
+      <Layout>
+        {dialogs}
+        <form className="mx-auto max-w-6xl" noValidate onSubmit={saveTemplate}>
+          <button className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-full pr-3 text-sm font-semibold text-zinc-400 hover:text-white" type="button" onClick={requestClose}>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            Your workouts
+          </button>
 
-      {!loading ? (
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <form className="metal-panel rounded-xl p-5" onSubmit={saveTemplate}>
-            <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div className="min-w-0 space-y-5">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-forge-copper">1. Basics</p>
-                <h2 className="mt-1 text-xl font-bold text-white">{editingId ? "Edit workout" : "New workout"}</h2>
+                <p className="text-sm font-semibold text-orange-300">{editingId ? "Edit workout" : "New workout"}</p>
+                <label className="sr-only" htmlFor="template-name">
+                  Workout name
+                </label>
+                <input
+                  autoComplete="off"
+                  className="font-display mt-1 w-full border-b border-white/10 bg-transparent pb-2 text-3xl text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-forge-ember/60 sm:text-4xl"
+                  id="template-name"
+                  maxLength={80}
+                  placeholder="Name your workout"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                />
+                <label className="sr-only" htmlFor="template-description">
+                  Description
+                </label>
+                <input
+                  autoComplete="off"
+                  className="mt-3 w-full bg-transparent text-base text-zinc-300 outline-none placeholder:text-zinc-600"
+                  id="template-description"
+                  maxLength={200}
+                  placeholder="Add a short description (optional)"
+                  value={form.description}
+                  onChange={(event) => setForm({ ...form, description: event.target.value })}
+                />
               </div>
-              {editingId ? (
-                <button className="text-sm font-semibold text-slate-400 hover:text-white" type="button" onClick={cancelEdit}>
-                  Cancel edit
-                </button>
+
+              {form.exercises.length ? (
+                <ol className="space-y-2.5">
+                  {form.exercises.map((item, index) => {
+                    const library = findExercise(item);
+                    return (
+                      <BuilderExerciseRow
+                        count={form.exercises.length}
+                        index={index}
+                        item={item}
+                        key={item._key}
+                        muscles={library?.primaryMuscles?.slice(0, 3) || []}
+                        onChange={changeExercise}
+                        onMove={moveExercise}
+                        onRemove={removeExercise}
+                      />
+                    );
+                  })}
+                </ol>
               ) : null}
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormInput label="Workout name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-              <FormInput label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
-            </div>
 
-            <div className="mb-3 mt-6 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-forge-copper">2. Exercises</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  {form.exercises.length ? `${form.exercises.length} exercises · ${totalSets} total sets` : "No exercises added yet."}
-                </p>
-              </div>
-              <Button type="button" onClick={() => setPickerOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Add Exercise
-              </Button>
-            </div>
-
-            {form.exercises.length ? (
-              <div className="space-y-3">
-                {form.exercises.map((exercise, index) => {
-                  const libraryExercise = findLibraryExercise(exercise);
-                  return (
-                    <div className="rounded-lg border border-white/10 bg-black/25 p-3" key={`${exercise.exerciseName}-${index}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-white">{exercise.exerciseName}</p>
-                          {libraryExercise?.primaryMuscles?.length ? (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {libraryExercise.primaryMuscles.slice(0, 3).map((muscle) => (
-                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-slate-300" key={muscle}>
-                                  {muscle}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-30"
-                            disabled={index === 0}
-                            type="button"
-                            onClick={() => moveExercise(index, -1)}
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-30"
-                            disabled={index === form.exercises.length - 1}
-                            type="button"
-                            onClick={() => moveExercise(index, 1)}
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="rounded-md p-1.5 text-red-300 hover:bg-red-500/10"
-                            type="button"
-                            onClick={() => removeExercise(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-300">
-                        <label className="flex items-center gap-2">
-                          Sets
-                          <input
-                            className={numberFieldClass}
-                            min="1"
-                            type="number"
-                            value={exercise.targetSets}
-                            onChange={(event) => updateExerciseField(index, "targetSets", Number(event.target.value) || 1)}
-                          />
-                        </label>
-                        <label className="flex items-center gap-2">
-                          Reps
-                          <input
-                            className={numberFieldClass}
-                            min="1"
-                            type="number"
-                            value={exercise.targetRepMin}
-                            onChange={(event) => updateExerciseField(index, "targetRepMin", Number(event.target.value) || 1)}
-                          />
-                          <span className="text-slate-500">to</span>
-                          <input
-                            className={numberFieldClass}
-                            min="1"
-                            type="number"
-                            value={exercise.targetRepMax}
-                            onChange={(event) => updateExerciseField(index, "targetRepMax", Number(event.target.value) || 1)}
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
               <button
-                className="w-full rounded-lg border border-dashed border-white/15 p-6 text-center text-slate-400 hover:border-forge-copper/60 hover:text-white"
+                className={`flex w-full items-center justify-center gap-3 rounded-3xl border border-dashed text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 ${
+                  form.exercises.length ? "min-h-14 border-white/15 text-zinc-300 hover:border-forge-ember/50 hover:text-white" : "min-h-40 flex-col border-forge-ember/30 bg-forge-ember/[0.04] text-zinc-200 hover:border-forge-ember/60"
+                }`}
                 type="button"
                 onClick={() => setPickerOpen(true)}
               >
-                <DumbbellIcon className="mx-auto mb-2 h-6 w-6" />
-                Search or filter the exercise library to add your first movement.
+                {form.exercises.length ? (
+                  <>
+                    <Plus aria-hidden="true" className="h-4 w-4 text-orange-300" />
+                    Add another exercise
+                  </>
+                ) : (
+                  <>
+                    <DumbbellIcon aria-hidden="true" className="h-8 w-8 text-orange-300" />
+                    <span className="font-display text-xl text-white">Add your first exercise</span>
+                    <span className="font-normal text-zinc-400">Search the library or filter by muscle.</span>
+                  </>
+                )}
               </button>
-            )}
+            </div>
 
-            <Button className="mt-5 w-full" disabled={!form.exercises.length} loading={saving} type="submit">
-              {editingId ? "Save workout" : "Save workout"}
-            </Button>
-          </form>
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+              <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-5">
+                <dl className="grid grid-cols-2 gap-2">
+                  <div className="rounded-2xl bg-white/[0.04] px-3 py-2.5">
+                    <dt className="text-xs text-zinc-500">Exercises</dt>
+                    <dd className="font-display text-2xl tabular-nums text-white">{form.exercises.length}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-white/[0.04] px-3 py-2.5">
+                    <dt className="text-xs text-zinc-500">Sets</dt>
+                    <dd className="font-display text-2xl tabular-nums text-white">{totalSets}</dd>
+                  </div>
+                </dl>
+                <h2 className="font-display mb-3 mt-5 text-lg text-white">Sets per muscle</h2>
+                <MuscleCoverage entries={coverage} />
+              </section>
 
-          <section>
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-forge-copper">Your workouts</p>
-            {templates.length ? (
-              <div className="space-y-4">
-                {templates.map((template) => (
-                  <article className="metal-panel rounded-lg p-5" key={template._id}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-xl font-black text-white">{template.name}</h2>
-                          <Badge tone={template.visibility === "public" ? "orange" : "neutral"}>
-                            {template.visibility === "public" ? "Public" : "Private"}
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-sm text-slate-400">{template.description || "No description"}</p>
-                        <p className="mt-2 text-sm text-forge-copper">{template.exercises.length} exercises</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button type="button" onClick={() => startTemplate(template)}>Start</Button>
-                        <Button
-                          loading={visibilityBusyId === template._id}
-                          type="button"
-                          variant="secondary"
-                          onClick={() => toggleVisibility(template)}
-                        >
-                          {template.visibility === "public" ? "Make Private" : "Make Public"}
-                        </Button>
-                        <Button type="button" variant="secondary" onClick={() => openSendPicker(template._id)}>
-                          Send to...
-                        </Button>
-                        <Button type="button" variant="secondary" onClick={() => editTemplate(template)}>Edit</Button>
-                        <Button type="button" variant="ghost" onClick={() => setPendingDeleteId(template._id)}>Delete</Button>
-                      </div>
-                    </div>
+              {builderError ? (
+                <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+                  {builderError}
+                </p>
+              ) : null}
+              <div className="flex flex-col gap-2">
+                <button className={primaryButton} disabled={saving} type="submit">
+                  {saving ? "Saving..." : editingId ? "Save changes" : "Save workout"}
+                </button>
+                {missing && !builderError ? <p className="text-center text-xs text-zinc-500">{missing}</p> : null}
+                <button className={secondaryButton} type="button" onClick={requestClose}>
+                  Cancel
+                </button>
+              </div>
+            </aside>
+          </div>
+        </form>
+      </Layout>
+    );
+  }
 
-                    {sendPickerId === template._id ? (
-                      <div className="mt-4 flex flex-col gap-2 rounded-md bg-black/25 p-3 sm:flex-row sm:items-center">
-                        {friends.length ? (
-                          <>
-                            <select
-                              className="min-h-11 flex-1 rounded-md border border-white/10 bg-black/30 px-3 text-white"
-                              value={selectedFriendId}
-                              onChange={(event) => setSelectedFriendId(event.target.value)}
-                            >
-                              <option value="">Choose a friend...</option>
-                              {friends.map((friend) => (
-                                <option key={friend._id} value={friend._id}>{friend.name} (@{friend.username})</option>
-                              ))}
-                            </select>
-                            <Button
-                              disabled={!selectedFriendId}
-                              loading={sendingId === template._id}
-                              type="button"
-                              onClick={() => sendTemplate(template._id)}
-                            >
-                              Send
-                            </Button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-slate-400">Add a friend first to send workouts.</p>
-                        )}
-                      </div>
-                    ) : null}
-                    {sentConfirmationId === template._id ? (
-                      <p className="mt-3 text-sm font-semibold text-emerald-300">Sent!</p>
-                    ) : null}
+  const suggestions = getTemplateSuggestions(user?.goalPath);
+
+  return (
+    <Layout>
+      {dialogs}
+      <PageHeader
+        actions={
+          templates.length ? (
+            <button className={primaryButton} type="button" onClick={() => openBuilder(null)}>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              New workout
+            </button>
+          ) : null
+        }
+        description="Build workouts once, then start them in Gym Mode with one tap."
+        eyebrow="Design a workout"
+        title="Your workouts"
+      />
+
+      {notice ? (
+        <p className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3 text-sm font-semibold text-emerald-200" role="status">
+          {notice}
+        </p>
+      ) : null}
+      {error ? <ErrorState message={error} onRetry={loadData} /> : null}
+
+      {loading ? (
+        <div aria-busy="true" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {[0, 1, 2].map((item) => (
+            <div className="h-64 animate-pulse rounded-3xl bg-white/[0.03]" key={item} />
+          ))}
+        </div>
+      ) : null}
+
+      {!loading && templates.length ? (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {templates.map((template, index) => (
+            <TemplateCard
+              busy={busyId === template._id}
+              index={index}
+              key={template._id}
+              template={template}
+              topMuscles={topMusclesFor(template)}
+              onDelete={setPendingDeleteId}
+              onEdit={openBuilder}
+              onSend={setSendTemplate}
+              onStart={startTemplate}
+              onToggleVisibility={toggleVisibility}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {!loading && !error && !templates.length ? (
+        <div className="space-y-6">
+          <section className="relative overflow-clip rounded-[2rem] border border-forge-ember/25 bg-gradient-to-br from-forge-ember/[0.14] via-white/[0.02] to-transparent p-6 sm:p-8">
+            <DesignWorkoutIcon aria-hidden="true" className="h-10 w-10 text-orange-300" />
+            <h2 className="font-display mt-4 text-3xl text-white">Build your first workout.</h2>
+            <p className="mt-2 max-w-lg text-zinc-300">Pick the exercises, sets and reps once. Next time you train, start it in Gym Mode and just tick off sets.</p>
+            <button className={`${primaryButton} mt-5`} type="button" onClick={() => openBuilder(null)}>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              New workout
+            </button>
+          </section>
+
+          {suggestions.length ? (
+            <section>
+              <h2 className="font-display text-xl text-white">Or start from one of these</h2>
+              <p className="mt-1 text-sm text-zinc-400">Picked for your goal{user?.goalPath ? `, ${user.goalPath}` : ""}. You can edit them after.</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {suggestions.map((suggestion) => (
+                  <article className="flex flex-col rounded-3xl border border-white/[0.08] bg-white/[0.025] p-4" key={suggestion.name}>
+                    <h3 className="font-display text-lg text-white">{suggestion.name}</h3>
+                    <ol className="mt-2 flex-1 space-y-1 text-sm text-zinc-400">
+                      {suggestion.exercises.map((item) => (
+                        <li className="flex justify-between gap-3" key={item.exerciseName}>
+                          <span className="truncate">{item.exerciseName}</span>
+                          <span className="shrink-0 tabular-nums text-zinc-500">
+                            {item.targetSets} × {item.targetRepMin}-{item.targetRepMax}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                    <button
+                      className={`${secondaryButton} mt-4 min-h-11`}
+                      disabled={Boolean(creatingSuggestion)}
+                      type="button"
+                      onClick={() => createSuggestion(suggestion)}
+                    >
+                      {creatingSuggestion === suggestion.name ? "Adding..." : "Use this one"}
+                    </button>
                   </article>
                 ))}
               </div>
-            ) : (
-              <div className="space-y-4">
-                <EmptyState title="No workouts yet" description="Design one on the left, or start from a suggestion for your goal path." />
-                <div className="grid gap-3 md:grid-cols-2">
-                  {getTemplateSuggestions(user?.goalPath).map((suggestion) => (
-                    <button className="rounded-lg border border-white/10 bg-black/20 p-4 text-left hover:border-forge-copper/60" key={suggestion.name} type="button" onClick={() => createSuggestion(suggestion)}>
-                      <p className="font-bold text-white">{suggestion.name}</p>
-                      <p className="mt-2 text-sm text-slate-400">{suggestion.exercises.map((exercise) => exercise.exerciseName).join(", ")}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
+            </section>
+          ) : null}
         </div>
       ) : null}
     </Layout>

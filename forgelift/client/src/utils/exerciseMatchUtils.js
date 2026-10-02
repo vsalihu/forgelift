@@ -49,6 +49,7 @@ export const filterAndRankExercises = ({ exercises = [], search = "", muscle = "
         ![
           exercise.name,
           exercise.category,
+          exercise.equipment,
           ...(exercise.mainMuscleGroups || []),
           ...(exercise.detailedMuscles || []),
           ...(exercise.primaryMuscles || []),

@@ -1,252 +1,111 @@
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, PlusCircle, Search, Trash2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import Layout from "../components/Layout.jsx";
-import FormInput from "../components/FormInput.jsx";
-import SelectInput from "../components/SelectInput.jsx";
-import Button from "../components/Button.jsx";
 import CustomExerciseForm from "../components/exercises/CustomExerciseForm.jsx";
+import ExerciseDetailSheet from "../components/exercises/ExerciseDetailSheet.jsx";
+import ExerciseTile from "../components/exercises/ExerciseTile.jsx";
+import FilterSelect from "../components/exercises/FilterSelect.jsx";
+import MuscleFilterChips from "../components/exercises/MuscleFilterChips.jsx";
+import { RoleLegend } from "../components/exercises/MuscleImpactBars.jsx";
+import { titleCase } from "../components/exercises/exerciseMeta.js";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
-import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
-import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import SearchInput from "../components/ui/SearchInput.jsx";
+import SegmentedControl from "../components/ui/SegmentedControl.jsx";
 import { exerciseService } from "../services/exerciseService.js";
-import { advancedMuscleFilters, getMuscleFilterCounts, muscleFilters } from "../utils/exerciseMatchUtils.js";
+import { advancedMuscleFilters, filterAndRankExercises, getMuscleFilterCounts, muscleFilters } from "../utils/exerciseMatchUtils.js";
 import { getBroadMuscleImage, getMuscleImage } from "../utils/muscleImages.js";
-import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
-import { DumbbellIcon } from "../components/icons/navIcons.jsx";
 
-const typeOptions = [
-  { value: "compound", label: "Compound" },
-  { value: "isolation", label: "Isolation" },
-  { value: "machine", label: "Machine" },
-  { value: "bodyweight", label: "Bodyweight" },
-  { value: "cardio", label: "Cardio" }
-];
+const PAGE_SIZE = 24;
+const TYPE_OPTIONS = ["compound", "isolation", "machine", "bodyweight", "cardio"].map((value) => ({ value, label: titleCase(value) }));
+const EMPTY_FILTERS = { search: "", muscle: "All", type: "", equipment: "", difficulty: "" };
 
-const equipmentOptions = [
-  "barbell",
-  "dumbbell",
-  "machine",
-  "cable",
-  "bodyweight",
-  "smith machine",
-  "kettlebell",
-  "treadmill",
-  "bike"
-].map((equipment) => ({ value: equipment, label: equipment.replace(/\b\w/g, (letter) => letter.toUpperCase()) }));
-
-const difficultyOptions = ["Beginner", "Intermediate", "Advanced"].map((difficulty) => ({
-  value: difficulty,
-  label: difficulty
-}));
-
-const getMatchBadge = (exercise, activeMuscle) => {
-  if (!activeMuscle) return null;
-
-  const normalize = (value) => value.toLowerCase();
-  const target = normalize(activeMuscle);
-  const includesTarget = (value = "") => normalize(value).includes(target) || target.includes(normalize(value));
-  const findMatch = (items = []) => items.find((item) => includesTarget(item));
-
-  const primary = findMatch(exercise.primaryMuscles);
-  if (primary) return { label: `Primary: ${primary}`, className: "bg-emerald-500/15 text-emerald-200" };
-
-  const secondary = findMatch(exercise.secondaryMuscles);
-  if (secondary) return { label: `Secondary: ${secondary}`, className: "bg-amber-500/15 text-amber-200" };
-
-  const stabiliser = findMatch(exercise.stabiliserMuscles);
-  if (stabiliser) return { label: `Stabiliser: ${stabiliser}`, className: "bg-violet-500/15 text-violet-200" };
-
-  if (includesTarget(exercise.category || "")) {
-    return { label: `Category: ${exercise.category}`, className: "bg-sky-500/15 text-sky-200" };
-  }
-
-  const impact = Object.keys(exercise.impactProfile || {}).find((muscle) => includesTarget(muscle));
-  if (impact) return { label: `Impact: ${impact}`, className: "bg-white/10 text-slate-200" };
-
-  return null;
-};
-
-const ExerciseCard = ({ exercise, activeMuscle, onEdit, onDelete, tourId }) => {
-  const matchBadge = getMatchBadge(exercise, activeMuscle);
-
-  return (
-    <article data-tour-id={tourId} className="metal-panel rounded-lg p-5 shadow-metal">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-forge-copper">
-            {exercise.category}
-          </p>
-          <h2 className="mt-2 text-xl font-black text-white">{exercise.name}</h2>
-        </div>
-        <span className="rounded-md bg-white/10 p-2 text-forge-ember">
-          <DumbbellIcon className="h-5 w-5" />
-        </span>
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold">
-        {matchBadge ? (
-          <span className={`rounded-full px-3 py-1 ${matchBadge.className}`}>{matchBadge.label}</span>
-        ) : null}
-        <span className="rounded-full bg-forge-ember/15 px-3 py-1 text-orange-200">
-          {exercise.exerciseType}
-        </span>
-        {exercise.isCustom ? <span className="rounded-full bg-cyan-500/15 px-3 py-1 text-cyan-200">Custom</span> : null}
-        {exercise.equipment ? (
-          <span className="rounded-full bg-white/10 px-3 py-1 text-slate-200">{exercise.equipment}</span>
-        ) : null}
-        {exercise.difficulty ? (
-          <span className="rounded-full bg-white/10 px-3 py-1 text-slate-200">{exercise.difficulty}</span>
-        ) : null}
-        <span className="rounded-full bg-white/10 px-3 py-1 text-slate-200">
-          {exercise.defaultRepMin}-{exercise.defaultRepMax} reps
-        </span>
-        <span className="rounded-full bg-white/10 px-3 py-1 text-slate-200">
-          +{exercise.overloadIncrementKg}kg
-        </span>
-      </div>
-      {exercise.isCustom ? (
-        <div className="mb-4 flex gap-2">
-          <button className="inline-flex min-h-10 items-center gap-2 rounded-md bg-white/10 px-3 text-sm font-semibold text-white hover:bg-white/15" type="button" onClick={() => onEdit(exercise)}>
-            <Edit3 className="h-4 w-4" />
-            Edit
-          </button>
-          <button className="inline-flex min-h-10 items-center gap-2 rounded-md bg-red-500/10 px-3 text-sm font-semibold text-red-100 hover:bg-red-500/20" type="button" onClick={() => onDelete(exercise._id)}>
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </button>
-        </div>
-      ) : null}
-
-      <div className="space-y-3 text-sm">
-        <div>
-          <p className="mb-1 font-semibold text-slate-300">Primary</p>
-          <p className="text-slate-400">{exercise.primaryMuscles.join(", ") || "None listed"}</p>
-        </div>
-        <div>
-          <p className="mb-1 font-semibold text-slate-300">Secondary</p>
-          <p className="text-slate-400">{exercise.secondaryMuscles.join(", ") || "None listed"}</p>
-        </div>
-        <div>
-          <p className="mb-1 font-semibold text-slate-300">Stabiliser</p>
-          <p className="text-slate-400">{exercise.stabiliserMuscles.join(", ") || "None listed"}</p>
-        </div>
-        <div>
-          <p className="mb-2 font-semibold text-slate-300">Impact profile</p>
-          <div className="space-y-2">
-            {Object.entries(exercise.impactProfile || {}).map(([muscle, impact]) => (
-              <div className="flex items-center gap-3" key={muscle}>
-                <span className="w-28 shrink-0 text-slate-400">{muscle}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-forge-copper to-forge-ember"
-                    style={{ width: `${Math.min(Number(impact) || 0, 100)}%` }}
-                  />
-                </div>
-                <span className="w-10 text-right text-slate-300">{impact}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-};
+const optionsFrom = (exercises, key) =>
+  [...new Set(exercises.map((exercise) => exercise[key]).filter(Boolean))].sort().map((value) => ({ value, label: titleCase(value) }));
 
 const ExerciseLibraryPage = () => {
   const [exercises, setExercises] = useState([]);
-  const [allExercises, setAllExercises] = useState([]);
-  const [filters, setFilters] = useState({ search: "", muscle: "", type: "", equipment: "", difficulty: "" });
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [showAdvancedMuscles, setShowAdvancedMuscles] = useState(false);
-  const [customFormOpen, setCustomFormOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState(null);
-  const [savingCustom, setSavingCustom] = useState(false);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [source, setSource] = useState("all");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [selected, setSelected] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState("");
 
-  useEffect(() => {
-    const loadAllExercises = async () => {
-      try {
-        const data = await exerciseService.getExercises();
-        setAllExercises(data.exercises || []);
-      } catch (_err) {
-        setAllExercises([]);
-      }
-    };
-    loadAllExercises();
-  }, []);
-
-  useEffect(() => {
-    const loadExercises = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const data = await exerciseService.getExercises(filters);
-        const loaded = data.exercises || [];
-        setExercises(
-          loaded.filter((exercise) =>
-            sourceFilter === "custom" ? exercise.isCustom : sourceFilter === "default" ? !exercise.isCustom : true
-          )
-        );
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadExercises();
-  }, [filters, sourceFilter]);
-
-  const hasFilters = useMemo(() => Object.values(filters).some(Boolean), [filters]);
-  const countExercises = allExercises.length ? allExercises : exercises;
-  const countFilters = { search: filters.search, type: filters.type, equipment: filters.equipment, difficulty: filters.difficulty };
-  const broadCounts = useMemo(
-    () => getMuscleFilterCounts({ exercises: countExercises, filters: countFilters, filterList: muscleFilters }),
-    [countExercises, filters.search, filters.type, filters.equipment, filters.difficulty]
-  );
-  const advancedCounts = useMemo(
-    () => getMuscleFilterCounts({ exercises: countExercises, filters: countFilters, filterList: advancedMuscleFilters }),
-    [countExercises, filters.search, filters.type, filters.equipment, filters.difficulty]
-  );
-
-  const handleSaveCustom = async (payload) => {
-    setSavingCustom(true);
+  const load = async () => {
+    setLoading(true);
+    setError("");
     try {
-      if (editingExercise?._id) {
-        await exerciseService.updateCustomExercise(editingExercise._id, payload);
-      } else {
-        await exerciseService.createCustomExercise(payload);
-      }
-      setCustomFormOpen(false);
-      setEditingExercise(null);
       const data = await exerciseService.getExercises();
-      setAllExercises(data.exercises || []);
-      setFilters({ ...filters });
+      setExercises(data.exercises || []);
     } catch (err) {
       setError(err.message);
     } finally {
-      setSavingCustom(false);
+      setLoading(false);
     }
   };
 
-  const confirmDeleteCustom = () => {
-    const id = pendingDeleteId;
-    if (!id) return;
-    const deletedExercise = allExercises.find((exercise) => exercise._id === id);
-    setError("");
-    setPendingDeleteId("");
-    setAllExercises((current) => current.filter((exercise) => exercise._id !== id));
-    setExercises((current) => current.filter((exercise) => exercise._id !== id));
+  useEffect(() => {
+    load();
+  }, []);
 
+  useEffect(() => setVisible(PAGE_SIZE), [filters, source]);
+
+  const pool = useMemo(
+    () => exercises.filter((exercise) => (source === "custom" ? exercise.isCustom : source === "default" ? !exercise.isCustom : true)),
+    [exercises, source]
+  );
+  const results = useMemo(() => filterAndRankExercises({ exercises: pool, ...filters }), [pool, filters]);
+  const countFilters = { search: filters.search, type: filters.type, equipment: filters.equipment, difficulty: filters.difficulty };
+  const broadCounts = useMemo(
+    () => getMuscleFilterCounts({ exercises: pool, filters: countFilters, filterList: muscleFilters }),
+    [pool, filters.search, filters.type, filters.equipment, filters.difficulty]
+  );
+  const advancedCounts = useMemo(
+    () => (showAdvanced ? getMuscleFilterCounts({ exercises: pool, filters: countFilters, filterList: advancedMuscleFilters }) : {}),
+    [showAdvanced, pool, filters.search, filters.type, filters.equipment, filters.difficulty]
+  );
+  const equipmentOptions = useMemo(() => optionsFrom(exercises, "equipment"), [exercises]);
+  const difficultyOptions = useMemo(() => optionsFrom(exercises, "difficulty"), [exercises]);
+  const customCount = exercises.filter((exercise) => exercise.isCustom).length;
+  const hasFilters = source !== "all" || Object.entries(filters).some(([key, value]) => (key === "muscle" ? value !== "All" : Boolean(value)));
+
+  const update = (patch) => setFilters((current) => ({ ...current, ...patch }));
+
+  const openCreate = () => {
+    setEditing(null);
+    setFormOpen(true);
+  };
+
+  const handleSave = async (payload) => {
+    setSaving(true);
+    try {
+      const data = editing?._id ? await exerciseService.updateCustomExercise(editing._id, payload) : await exerciseService.createCustomExercise(payload);
+      setFormOpen(false);
+      setEditing(null);
+      await load();
+      if (data?.exercise) setSelected(data.exercise);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    const id = pendingDeleteId;
+    const removed = exercises.find((exercise) => exercise._id === id);
+    setPendingDeleteId("");
+    setSelected(null);
+    setError("");
+    setExercises((current) => current.filter((exercise) => exercise._id !== id));
     exerciseService.deleteCustomExercise(id).catch((err) => {
       setError(err.message);
-      if (deletedExercise) {
-        setAllExercises((current) => [...current, deletedExercise]);
-        setExercises((current) => [...current, deletedExercise]);
-      }
+      if (removed) setExercises((current) => [...current, removed]);
     });
   };
 
@@ -254,176 +113,170 @@ const ExerciseLibraryPage = () => {
     <Layout>
       {pendingDeleteId ? (
         <ConfirmModal
-          title="Delete this custom exercise?"
-          description="Workouts already logged will stay saved."
           confirmLabel="Delete"
+          description="Workouts you already logged with it stay saved."
+          title="Delete this exercise?"
           onCancel={() => setPendingDeleteId("")}
-          onConfirm={confirmDeleteCustom}
+          onConfirm={confirmDelete}
         />
       ) : null}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-forge-copper">
-            Exercise Library
-          </p>
-          <h1 className="mt-2 text-3xl font-black text-white">Training movements</h1>
+      <ExerciseDetailSheet
+        exercise={formOpen ? null : selected}
+        onClose={() => setSelected(null)}
+        onDelete={setPendingDeleteId}
+        onEdit={(exercise) => {
+          setEditing(exercise);
+          setFormOpen(true);
+        }}
+      />
+      <CustomExerciseForm
+        initialExercise={editing}
+        loading={saving}
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditing(null);
+        }}
+        onSave={handleSave}
+      />
+
+      <PageHeader
+        actions={
+          <button
+            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-5 text-sm font-black text-[#160a02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+            data-tour-id="exercise-create-custom"
+            type="button"
+            onClick={openCreate}
+          >
+            <PlusCircle aria-hidden="true" className="h-4 w-4" />
+            Create exercise
+          </button>
+        }
+        description="Every movement shows which muscles it trains and how hard. Tap one for the full breakdown."
+        eyebrow="Exercise library"
+        title="Know what every lift hits"
+        tutorialPageKey="exercise_library"
+      />
+
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1" data-tour-id="exercise-search">
+            <SearchInput placeholder="Search name, muscle or equipment" value={filters.search} onChange={(event) => update({ search: event.target.value })} />
+          </div>
+          <SegmentedControl
+            className="w-full sm:w-auto"
+            fill
+            options={[
+              { value: "all", label: "All" },
+              { value: "default", label: "ForgeLift" },
+              { value: "custom", label: customCount ? `Yours (${customCount})` : "Yours" }
+            ]}
+            value={source}
+            onChange={setSource}
+          />
         </div>
-        <button
-          className="mb-4 text-sm font-semibold text-forge-ember hover:text-orange-300"
-          type="button"
-          onClick={() => setShowAdvancedMuscles(!showAdvancedMuscles)}
-        >
-          {showAdvancedMuscles ? "Hide advanced muscles" : "Show advanced muscles"}
-        </button>
-        <div className="flex flex-col gap-2 sm:items-end">
-          <Button data-tour-id="exercise-create-custom" type="button" onClick={() => { setEditingExercise(null); setCustomFormOpen(true); }}>
-            <PlusCircle className="h-4 w-4" />
-            Create Exercise
-          </Button>
-          <TutorialLauncher pageKey="exercise_library" steps={getTutorialSteps("exercise_library")} />
-          <p className="text-sm text-slate-400">{exercises.length} exercises found</p>
+
+        <MuscleFilterChips
+          counts={broadCounts}
+          imageFor={getBroadMuscleImage}
+          muscles={muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0)}
+          tourId="exercise-filter-chips"
+          value={filters.muscle}
+          onChange={(muscle) => update({ muscle })}
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterSelect anyLabel="Any type" label="Type" options={TYPE_OPTIONS} value={filters.type} onChange={(type) => update({ type })} />
+          <FilterSelect anyLabel="Any equipment" label="Equipment" options={equipmentOptions} value={filters.equipment} onChange={(equipment) => update({ equipment })} />
+          <FilterSelect anyLabel="Any level" label="Difficulty" options={difficultyOptions} value={filters.difficulty} onChange={(difficulty) => update({ difficulty })} />
+          <button
+            aria-expanded={showAdvanced}
+            className="min-h-11 rounded-full px-3 text-sm font-semibold text-orange-300 hover:text-orange-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+            type="button"
+            onClick={() => setShowAdvanced((value) => !value)}
+          >
+            {showAdvanced ? "Hide specific muscles" : "Specific muscles"}
+          </button>
         </div>
+
+        {showAdvanced ? (
+          <MuscleFilterChips
+            counts={advancedCounts}
+            imageFor={getMuscleImage}
+            label="Filter by specific muscle"
+            muscles={advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0)}
+            value={filters.muscle}
+            onChange={(muscle) => update({ muscle })}
+          />
+        ) : null}
       </div>
 
-      <section className="metal-panel mb-6 rounded-lg p-5">
-        <div data-tour-id="exercise-filter-chips" className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible">
-          {[
-            ["all", "All"],
-            ["default", "ForgeLift Exercises"],
-            ["custom", "My Custom Exercises"]
-          ].map(([value, label]) => (
+      <div className="mb-4 mt-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p aria-live="polite" className="text-sm text-zinc-400">
+          {loading ? "Loading exercises..." : `${results.length} exercise${results.length === 1 ? "" : "s"}`}
+          {hasFilters && !loading ? (
             <button
-              className={`min-h-10 shrink-0 rounded-full px-3 py-2 text-xs font-bold transition ${
-                sourceFilter === value ? "bg-cyan-500/20 text-cyan-100" : "bg-white/10 text-slate-300 hover:bg-white/15"
-              }`}
-              key={value}
+              className="ml-3 font-semibold text-orange-300 hover:text-orange-200"
               type="button"
-              onClick={() => setSourceFilter(value)}
+              onClick={() => {
+                setFilters(EMPTY_FILTERS);
+                setSource("all");
+              }}
             >
-              {label}
+              Clear filters
             </button>
+          ) : null}
+        </p>
+        <RoleLegend roles={["primary", "secondary", "stabiliser"]} />
+      </div>
+
+      {error ? <ErrorState message={error} onRetry={load} /> : null}
+
+      {loading ? (
+        <div aria-busy="true" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div className="h-48 animate-pulse rounded-3xl bg-white/[0.03]" key={index} />
           ))}
-        </div>
-        <div className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible">
-          {muscleFilters.filter((muscle) => muscle === "All" || broadCounts[muscle] > 0).map((muscle) => {
-            const value = muscle === "All" ? "" : muscle;
-            const active = filters.muscle === value;
-            const image = getBroadMuscleImage(muscle);
-
-            return (
-              <button
-                key={muscle}
-                type="button"
-                className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
-                  active
-                    ? "bg-forge-ember text-[#160a02]"
-                    : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
-                }`}
-                onClick={() => setFilters({ ...filters, muscle: value })}
-              >
-                {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
-                {muscle} {muscle !== "All" ? `(${broadCounts[muscle] || 0})` : ""}
-              </button>
-            );
-          })}
-        </div>
-        {showAdvancedMuscles ? (
-          <div className="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2">
-            {advancedMuscleFilters.filter((muscle) => advancedCounts[muscle] > 0).map((muscle) => {
-              const active = filters.muscle === muscle;
-              const image = getMuscleImage(muscle);
-              return (
-                <button
-                  key={muscle}
-                  type="button"
-                  className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
-                    active
-                      ? "bg-forge-ember text-[#160a02]"
-                      : "bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white"
-                  }`}
-                  onClick={() => setFilters({ ...filters, muscle })}
-                >
-                  {image ? <img alt="" aria-hidden="true" className="h-5 w-5 rounded-full bg-black/20 object-contain" src={image} /> : null}
-                  {muscle} ({advancedCounts[muscle] || 0})
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
-        <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
-          <div data-tour-id="exercise-search">
-          <FormInput
-            label="Search by name"
-            placeholder="Bench Press"
-            value={filters.search}
-            onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-          />
-          </div>
-          <SelectInput
-            label="Exercise type"
-            options={typeOptions}
-            value={filters.type}
-            onChange={(event) => setFilters({ ...filters, type: event.target.value })}
-          />
-          <SelectInput
-            label="Equipment"
-            options={equipmentOptions}
-            value={filters.equipment}
-            onChange={(event) => setFilters({ ...filters, equipment: event.target.value })}
-          />
-          <SelectInput
-            label="Difficulty"
-            options={difficultyOptions}
-            value={filters.difficulty}
-            onChange={(event) => setFilters({ ...filters, difficulty: event.target.value })}
-          />
-        </div>
-        {hasFilters ? (
-          <button
-            className="mt-4 text-sm font-semibold text-forge-ember hover:text-orange-300"
-            onClick={() => { setFilters({ search: "", muscle: "", type: "", equipment: "", difficulty: "" }); setSourceFilter("all"); }}
-          >
-            Clear filters
-          </button>
-        ) : null}
-      </section>
-
-      {loading ? <LoadingSkeleton rows={6} variant="card" /> : null}
-      {error ? <div className="rounded-md bg-red-500/10 p-3 text-sm text-red-200">{error}</div> : null}
-
-      {!loading && !error && exercises.length === 0 ? (
-        <div className="metal-panel rounded-lg p-8 text-center text-slate-400">
-          <Search className="mx-auto mb-3 h-8 w-8 text-forge-copper" />
-          No exercises match those filters.
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {exercises.map((exercise, index) => (
-          <ExerciseCard
-            exercise={exercise}
-            activeMuscle={filters.muscle}
-            key={exercise._id}
-            tourId={index === 0 ? "exercise-card" : undefined}
-            onDelete={setPendingDeleteId}
-            onEdit={(item) => {
-              setEditingExercise(item);
-              setCustomFormOpen(true);
-            }}
-          />
-        ))}
-      </div>
-      <CustomExerciseForm
-        initialExercise={editingExercise}
-        loading={savingCustom}
-        open={customFormOpen}
-        onClose={() => {
-          setCustomFormOpen(false);
-          setEditingExercise(null);
-        }}
-        onSave={handleSaveCustom}
-      />
+      {!loading && !error && !results.length ? (
+        <div className="rounded-3xl border border-dashed border-white/12 px-6 py-12 text-center">
+          <p className="font-display text-2xl text-white">{source === "custom" && !customCount ? "No exercises of your own yet." : "Nothing matches."}</p>
+          <p className="mx-auto mt-2 max-w-md text-zinc-400">
+            {source === "custom" && !customCount ? "If ForgeLift doesn't have a movement you do, add it with your own muscle targets." : "Try fewer filters, or add the movement yourself."}
+          </p>
+          <button
+            className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-5 text-sm font-bold text-white hover:bg-white/[0.09]"
+            type="button"
+            onClick={openCreate}
+          >
+            <PlusCircle aria-hidden="true" className="h-4 w-4 text-orange-300" />
+            Create exercise
+          </button>
+        </div>
+      ) : null}
+
+      {!loading && results.length ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {results.slice(0, visible).map(({ exercise, match }, index) => (
+              <ExerciseTile exercise={exercise} key={exercise._id || exercise.name} match={match} tourId={index === 0 ? "exercise-card" : undefined} onClick={setSelected} />
+            ))}
+          </div>
+          {results.length > visible ? (
+            <div className="mt-6 text-center">
+              <button
+                className="min-h-12 rounded-full border border-white/12 bg-white/[0.05] px-6 text-sm font-bold text-white hover:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+                type="button"
+                onClick={() => setVisible((count) => count + PAGE_SIZE)}
+              >
+                Show more ({results.length - visible} left)
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </Layout>
   );
 };

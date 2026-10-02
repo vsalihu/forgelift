@@ -3,6 +3,18 @@ const upperCompoundNames = ["Bench Press", "Overhead Press", "Barbell Row"];
 
 const roundOne = (value) => Math.round((value || 0) * 10) / 10;
 
+// Lighter targets snap to a weight you can actually load.
+const roundToPlate = (value, unit) => {
+  const step = value >= 20 ? (unit === "lb" ? 5 : 2.5) : 0.5;
+  return Math.max(0, Math.round(value / step) * step);
+};
+
+// Increments are stored in kg. Imperial lifters load plates in lb, so convert to the nearest 2.5 lb step.
+const toUnitIncrement = (kg, unit) => {
+  if (!kg) return 0;
+  return unit === "lb" ? Math.max(2.5, Math.round((kg * 2.20462) / 2.5) * 2.5) : kg;
+};
+
 const getIncrement = (exercise) => {
   if (exercise?.overloadIncrementKg !== undefined && exercise.overloadIncrementKg !== null) {
     return Number(exercise.overloadIncrementKg) || 0;
@@ -97,20 +109,23 @@ const getPlateauState = (previousWorkoutExercises, latestWorkoutExercise) => {
   if (sessions.length < 3) return { plateau: false, deloadFlag: false };
 
   const latest = sessions[0];
-  const previousThree = sessions.slice(1, 3);
+  const topWeights = sessions.map((session) => getTopWeightSets(session.sets || []).topWeight);
   const previousFour = sessions.slice(1, 4);
-  const previousBest1RM = Math.max(...previousThree.map((session) => session.exerciseBestEstimated1RM || 0), 0);
-  const previousBestVolume = Math.max(...previousThree.map((session) => session.exerciseTotalVolume || 0), 0);
   const previousBest1RM4 = Math.max(...previousFour.map((session) => session.exerciseBestEstimated1RM || 0), 0);
-  const noImprovement3 = (latest.exerciseBestEstimated1RM || 0) <= previousBest1RM;
-  const noVolume3 = (latest.exerciseTotalVolume || 0) <= previousBestVolume;
   const noImprovement4 = sessions.length >= 4 && (latest.exerciseBestEstimated1RM || 0) <= previousBest1RM4;
   const highRpeRepeated = sessions.filter((session) => (session.exerciseAverageRPE || 0) >= 9).length >= 3;
 
-  return {
-    plateau: noImprovement3 && noVolume3,
-    deloadFlag: noImprovement4 && highRpeRepeated
-  };
+  // Only compare with the last two sessions at this weight or heavier. A lighter session with more reps
+  // (from before a weight jump) isn't a fair comparison: fewer reps after going up is progress, not a plateau.
+  const comparable = sessions.slice(1, 3).filter((_, index) => topWeights[index + 1] >= topWeights[0]);
+  const previousBest1RM = Math.max(...comparable.map((session) => session.exerciseBestEstimated1RM || 0), 0);
+  const previousBestVolume = Math.max(...comparable.map((session) => session.exerciseTotalVolume || 0), 0);
+  const plateau =
+    comparable.length === 2 &&
+    (latest.exerciseBestEstimated1RM || 0) <= previousBest1RM &&
+    (latest.exerciseTotalVolume || 0) <= previousBestVolume;
+
+  return { plateau, deloadFlag: noImprovement4 && highRpeRepeated };
 };
 
 const getGoalPathContext = ({ user, exercise, muscles, weakPoints, trainingBalance }) => {
@@ -152,6 +167,8 @@ const getWeakPointContext = ({ muscles, weakPoints, exercise, trainingBalance })
   return "";
 };
 
+export { roundToPlate };
+
 export const generateOverloadRecommendation = ({
   user,
   exercise,
@@ -162,10 +179,14 @@ export const generateOverloadRecommendation = ({
   trainingBalance
 }) => {
   const exerciseName = exercise?.name || latestWorkoutExercise.exerciseName;
+  const unit = user?.preferredUnits === "imperial" ? "lb" : "kg";
   const repMin = exercise?.defaultRepMin || 6;
   const repMax = exercise?.defaultRepMax || 10;
-  const increment = getIncrement(exercise || { name: exerciseName, exerciseType: "compound" });
+  const increment = toUnitIncrement(getIncrement(exercise || { name: exerciseName, exerciseType: "compound" }), unit);
   const { workingSets, topWeight, topSets } = getTopWeightSets(latestWorkoutExercise.sets || []);
+  const previousTop = previousWorkoutExercises[0] ? getTopWeightSets(previousWorkoutExercises[0].sets || []) : null;
+  const lastReps = topSets.map((set) => Number(set.reps) || 0);
+  const nextWeight = increment ? roundOne(topWeight + increment) : topWeight;
   const isBodyweightExercise = exercise?.exerciseType === "bodyweight" || latestWorkoutExercise.exerciseType === "bodyweight";
   const hasAddedLoad = workingSets.some((set) => Number(set.addedLoad) > 0);
   const failedSets = (latestWorkoutExercise.sets || []).filter((set) => set.completed === false);
@@ -203,12 +224,19 @@ export const generateOverloadRecommendation = ({
       : "For bodyweight work, build reps and control before adding external load.";
   } else if (previousWorkoutExercises.length === 0) {
     recommendationType = "repeat_weight";
-    reason = `Build baseline. Repeat ${topWeight}kg and improve control or reps before increasing.`;
+    reason = `Build a baseline. Repeat ${topWeight} ${unit} and add reps where you can.`;
   }
 
   if (recovery.warning) warnings.push(recovery.warning);
 
   const allAtTop = topSets.length >= 2 && topSets.every((set) => (set.reps || 0) >= repMax);
+  // Hitting the top of the range at the same weight two sessions running is enough proof, RPE or not.
+  const previousAllAtTop = Boolean(
+    previousTop &&
+      previousTop.topWeight === topWeight &&
+      previousTop.topSets.length >= 2 &&
+      previousTop.topSets.every((set) => (set.reps || 0) >= repMax)
+  );
   const hasTopSetRPE = topSets.some((set) => set.rpe);
   const mostInsideRange = topSets.filter((set) => (set.reps || 0) >= repMin && (set.reps || 0) <= repMax).length >= Math.ceil(topSets.length * 0.6);
   const mostBelowMin = topSets.filter((set) => (set.reps || 0) < repMin).length >= Math.ceil(topSets.length * 0.5);
@@ -221,11 +249,11 @@ export const generateOverloadRecommendation = ({
 
   if (plateauState.deloadFlag) {
     recommendationType = "deload_flag";
-    recommendedWeight = roundOne(topWeight * 0.9);
+    recommendedWeight = roundToPlate(topWeight * 0.9, unit);
     recommendedRepTarget = `${repMin}-${Math.max(repMin, repMax - 2)} easy reps`;
     reason = "Possible deload needed. Full deload recommendation will be handled by the Deload system.";
     warnings.push("Repeated high-RPE sessions with no improvement detected.");
-  } else if (plateauState.plateau) {
+  } else if (plateauState.plateau && !allAtTop) {
     recommendationType = "plateau_warning";
     recommendedWeight = topWeight;
     reason = "Last 3 sessions show no estimated 1RM or volume improvement.";
@@ -236,7 +264,7 @@ export const generateOverloadRecommendation = ({
     reason = "Do not increase load yet because relevant muscle recovery is low.";
   } else if (repeatedFailure || averageRPE >= 9.5 || mostBelowMin) {
     recommendationType = "reduce_weight";
-    recommendedWeight = roundOne(topWeight * 0.95);
+    recommendedWeight = roundToPlate(topWeight * 0.95, unit);
     recommendedRepTarget = `${repMin}-${repMax} cleaner reps`;
     reason = "Reduce weight slightly because set quality or RPE indicates the current load is too heavy.";
   } else if (isBodyweightExercise && allAtTop && (!hasTopSetRPE || averageRPE <= rpeIncreaseLimit)) {
@@ -248,24 +276,28 @@ export const generateOverloadRecommendation = ({
     reason = hasAddedLoad
       ? "You are ready to progress weighted bodyweight work conservatively. Add reps first, then increase external load in small jumps."
       : "You completed the top of the rep range. Add reps first, or add a small external load if form is strong.";
-  } else if (!isBodyweightExercise && realSessionCount >= 3 && allAtTop && hasTopSetRPE && averageRPE <= rpeIncreaseLimit && !conservativeMode) {
+  } else if (!isBodyweightExercise && allAtTop && (!hasTopSetRPE || averageRPE <= rpeIncreaseLimit) && (conservativeMode ? previousAllAtTop : hasTopSetRPE || previousAllAtTop)) {
     recommendationType = "increase_weight";
-    recommendedWeight = roundOne(topWeight + increment);
+    recommendedWeight = nextWeight;
     recommendedRepTarget = user?.goalPath === "Strength Warrior" ? `${repMin}-${Math.max(repMin, repMax - 2)} reps` : `${repMin}-${repMax} reps`;
-    reason = `Increase to ${recommendedWeight}kg next time. You completed all target sets at the top of the rep range with controlled difficulty.`;
-  } else if (allAtTop && conservativeMode) {
+    reason = previousAllAtTop
+      ? `Go up to ${recommendedWeight} ${unit}. You hit ${repMax} reps on every set two sessions in a row.`
+      : `Go up to ${recommendedWeight} ${unit}. You hit ${repMax} reps on every set and it felt manageable.`;
+  } else if (!isBodyweightExercise && allAtTop) {
     recommendationType = "repeat_weight";
     recommendedWeight = topWeight;
-    reason = "Repeat the same weight once more before increasing because your overload mode is conservative.";
-  } else if (allAtTop && !hasTopSetRPE) {
-    recommendationType = "repeat_weight";
-    recommendedWeight = topWeight;
-    reason = "Repeat the same weight with RPE logged before increasing so ForgeLift can judge difficulty.";
+    recommendedRepTarget = `${repMax} reps on every set`;
+    reason =
+      hasTopSetRPE && averageRPE > rpeIncreaseLimit
+        ? `You hit ${repMax} reps on every set, but it was hard (RPE ${roundOne(averageRPE)}). Repeat ${topWeight} ${unit} until it feels easier, then go up to ${nextWeight} ${unit}.`
+        : `You hit ${repMax} reps on every set. Do it once more at ${topWeight} ${unit} and the weight goes up to ${nextWeight} ${unit}.`;
   } else if (mostInsideRange && averageRPE <= 9) {
-    recommendationType = user?.goalPath === "Muscle Builder" ? "increase_reps" : "repeat_weight";
+    recommendationType = "increase_reps";
     recommendedWeight = topWeight;
-    recommendedRepTarget = `${topSets.length || 3} sets aiming for ${repMax} reps`;
-    reason = `Stay at ${topWeight}kg and aim to bring all working sets to ${repMax} reps.`;
+    recommendedRepTarget = `${topSets.length || 3} sets of ${repMax} reps`;
+    reason = isBodyweightExercise
+      ? `Add reps: you did ${lastReps.join(", ")}. Work every set up to ${repMax} reps.`
+      : `Stay at ${topWeight} ${unit} and add reps: you did ${lastReps.join(", ")}. Once every set reaches ${repMax}, the weight goes up to ${nextWeight} ${unit}.`;
   } else if (repDrop || failedSets.length || averageRPE >= 9) {
     recommendationType = "repeat_weight";
     recommendedWeight = topWeight;
@@ -290,10 +322,17 @@ export const generateOverloadRecommendation = ({
         : "Bodyweight exercise detected. ForgeLift prioritizes reps and control before external load."
     );
   }
-  detailedReasons.push(`Top working weight was ${topWeight}kg with average RPE ${roundOne(averageRPE) || "not logged"}.`);
+  detailedReasons.push(
+    `Last time: ${topSets.length} working set${topSets.length === 1 ? "" : "s"} at ${topWeight} ${unit} for ${lastReps.join(", ") || "no"} reps, RPE ${roundOne(averageRPE) || "not logged"}.`
+  );
+  if (!isBodyweightExercise && increment) {
+    detailedReasons.push(`ForgeLift adds weight once every working set reaches ${repMax} reps. The next step is +${increment} ${unit}.`);
+  }
   detailedReasons.push(recovery.context);
   if (realSessionCount < 3) {
-    detailedReasons.unshift(`Only ${realSessionCount} logged session${realSessionCount === 1 ? "" : "s"} exists for this exercise. Confidence is limited.`);
+    detailedReasons.unshift(`Only ${realSessionCount} logged session${realSessionCount === 1 ? "" : "s"} for this exercise so far, so confidence is limited.`);
+  }
+  if (realSessionCount < 2) {
     if (recommendationType === "increase_weight") {
       recommendationType = "repeat_weight";
       recommendedWeight = topWeight;
@@ -308,6 +347,10 @@ export const generateOverloadRecommendation = ({
     recommendationType,
     currentWeight: topWeight,
     recommendedWeight,
+    lastReps,
+    targetReps: repMax,
+    nextWeight: isBodyweightExercise ? 0 : nextWeight,
+    unit,
     currentRepTarget,
     recommendedRepTarget,
     recommendedSets,

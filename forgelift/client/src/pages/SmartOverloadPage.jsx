@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
+import { useAuth } from "../hooks/useAuth.js";
 import AdviceHero from "../components/advice/AdviceHero.jsx";
 import EmptyPanel from "../components/advice/EmptyPanel.jsx";
 import Explainer from "../components/advice/Explainer.jsx";
@@ -20,6 +21,8 @@ const chip = (selected) =>
   }`;
 
 const SmartOverloadPage = () => {
+  const { user } = useAuth();
+  const unit = user?.preferredUnits === "imperial" ? "lb" : "kg";
   const [recommendations, setRecommendations] = useState([]);
   const [baselineRecommendations, setBaselineRecommendations] = useState([]);
   const [deloadRecommendations, setDeloadRecommendations] = useState([]);
@@ -202,7 +205,7 @@ const SmartOverloadPage = () => {
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="min-w-0 truncate font-bold text-white">{item.exerciseName}</p>
                     <p className="shrink-0 text-sm font-bold tabular-nums text-orange-200">
-                      {item.recommendedWeight}kg × {item.recommendedRepTarget}
+                      {item.recommendedWeight} {unit} × {item.recommendedRepTarget}
                     </p>
                   </div>
                   <p className="mt-1 text-xs text-zinc-500">

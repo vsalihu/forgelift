@@ -52,6 +52,23 @@ const overloadRecommendationSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    lastReps: {
+      type: [Number],
+      default: []
+    },
+    targetReps: {
+      type: Number,
+      default: 0
+    },
+    nextWeight: {
+      type: Number,
+      default: 0
+    },
+    unit: {
+      type: String,
+      enum: ["kg", "lb"],
+      default: "kg"
+    },
     recommendedRepTarget: {
       type: String,
       default: ""

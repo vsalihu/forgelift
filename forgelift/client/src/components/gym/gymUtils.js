@@ -54,7 +54,13 @@ export const setPlaceholder = (exercise, setIndex, history) => {
 // A suggestion for this exercise: Smart Overload first, then the strength baseline.
 export const exerciseSuggestion = (recommendation, baseline) => {
   if (recommendation?.recommendedWeight > 0) {
-    const reps = String(recommendation.recommendedRepTarget || "").match(/\d+/)?.[0] || "";
+    // Prefer the explicit rep goal; otherwise the number right before "reps" ("3 sets of 15 reps" means 15, not 3).
+    const reps =
+      recommendation.recommendationType === "deload_flag" && recommendation.lastReps?.length
+        ? String(Math.min(...recommendation.lastReps))
+        : ["increase_reps", "repeat_weight"].includes(recommendation.recommendationType) && recommendation.targetReps
+        ? String(recommendation.targetReps)
+        : String(recommendation.recommendedRepTarget || "").match(/(\d+)(?:-\d+)?\s*reps?\b/i)?.[1] || String(recommendation.recommendedRepTarget || "").match(/\d+/)?.[0] || "";
     return {
       weight: recommendation.recommendedWeight,
       reps,

@@ -436,7 +436,7 @@ const DashboardPage = () => {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-semibold text-white">{item.exerciseName}</span>
-                            <span className="block truncate text-sm text-zinc-400">{item.recommendedRepTarget ? `${item.recommendedRepTarget} reps` : item.reason}</span>
+                            <span className="block truncate text-sm text-zinc-400">{item.recommendedRepTarget ? (/rep/i.test(item.recommendedRepTarget) ? item.recommendedRepTarget : `${item.recommendedRepTarget} reps`) : item.reason}</span>
                           </span>
                           {item.recommendedWeight ? (
                             <span className="shrink-0 text-right">

@@ -3,7 +3,8 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import StatusChip from "../advice/StatusChip.jsx";
-import { ErrorIcon, SuccessIcon } from "../icons/featureIcons.jsx";
+import { ErrorIcon, SuccessIcon, TrendingUpIcon } from "../icons/featureIcons.jsx";
+import { useAuth } from "../../hooks/useAuth.js";
 import { DeloadIcon } from "../icons/navIcons.jsx";
 import { overloadType } from "./overloadTypes.js";
 
@@ -11,6 +12,7 @@ const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFraction
 
 const OverloadCard = ({ recommendation, activeDeload, index = 0, onStatusChange }) => {
   const reduce = useReducedMotion();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const meta = overloadType(recommendation.recommendationType);
   const delta = (recommendation.recommendedWeight || 0) - (recommendation.currentWeight || 0);
@@ -21,6 +23,16 @@ const OverloadCard = ({ recommendation, activeDeload, index = 0, onStatusChange 
     ["Weak point", recommendation.weakPointContext]
   ].filter(([, text]) => text);
   const detailsId = `overload-${recommendation._id}`;
+  const unit = recommendation.unit || (user?.preferredUnits === "imperial" ? "lb" : "kg");
+  // Older recommendations say "reps" in the target already; don't double it.
+  const repTarget = recommendation.recommendedRepTarget
+    ? /rep/i.test(recommendation.recommendedRepTarget)
+      ? recommendation.recommendedRepTarget
+      : `${recommendation.recommendedRepTarget} reps`
+    : "";
+  const target = repTarget && recommendation.recommendedSets && !/set/i.test(repTarget) ? `${recommendation.recommendedSets} sets · ${repTarget}` : repTarget;
+  // The deload banner already says this.
+  const warnings = (recommendation.warnings || []).filter((warning) => !(activeDeload && /deload recommendation active/i.test(warning)));
 
   return (
     <motion.article
@@ -33,7 +45,7 @@ const OverloadCard = ({ recommendation, activeDeload, index = 0, onStatusChange 
         <div className="mb-4 flex gap-2.5 rounded-2xl border border-red-400/25 bg-red-500/[0.08] p-3 text-sm text-red-100">
           <DeloadIcon className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            A deload is active here. Hold this target until it's done.{" "}
+            A deload is running for this. Train lighter until it's done.{" "}
             <Link className="font-bold underline underline-offset-2" to="/deload">
               See the deload
             </Link>
@@ -52,31 +64,68 @@ const OverloadCard = ({ recommendation, activeDeload, index = 0, onStatusChange 
       </div>
 
       {hasWeights ? (
-        <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-1 rounded-2xl bg-black/25 px-4 py-3">
-          <span className="text-lg font-bold tabular-nums text-zinc-400">{formatNumber(recommendation.currentWeight)}kg</span>
-          <ArrowRight aria-hidden="true" className="mb-1.5 h-4 w-4 text-orange-300" />
-          <span className="font-display text-3xl leading-none tabular-nums text-white">
-            {formatNumber(recommendation.recommendedWeight)}
-            <span className="text-lg text-zinc-400">kg</span>
-          </span>
-          {delta ? (
-            <span className={`mb-0.5 text-sm font-bold tabular-nums ${delta > 0 ? "text-emerald-300" : "text-amber-200"}`}>
-              {delta > 0 ? "+" : ""}
-              {formatNumber(delta)}kg
+        delta || !recommendation.targetReps ? (
+          <div className="mt-4 flex flex-wrap items-end gap-x-3 gap-y-1 rounded-2xl bg-black/25 px-4 py-3">
+            {delta ? (
+              <>
+                <span className="text-lg font-bold tabular-nums text-zinc-400">
+                  {formatNumber(recommendation.currentWeight)} {unit}
+                </span>
+                <ArrowRight aria-hidden="true" className="mb-1.5 h-4 w-4 text-orange-300" />
+              </>
+            ) : null}
+            <span className="font-display text-3xl leading-none tabular-nums text-white">
+              {formatNumber(recommendation.recommendedWeight)}
+              <span className="ml-1 text-lg text-zinc-400">{unit}</span>
             </span>
-          ) : null}
-          <span className="ml-auto mb-0.5 text-sm text-zinc-400">
-            {recommendation.recommendedRepTarget ? <span className="font-semibold text-zinc-100">{recommendation.recommendedRepTarget} reps</span> : null}
-            {recommendation.recommendedSets ? ` · ${recommendation.recommendedSets} sets` : ""}
-          </span>
-        </div>
+            {delta ? (
+              <span className={`mb-0.5 text-sm font-bold tabular-nums ${delta > 0 ? "text-emerald-300" : "text-amber-200"}`}>
+                {delta > 0 ? "+" : ""}
+                {formatNumber(delta)} {unit}
+              </span>
+            ) : (
+              <span className="mb-0.5 text-sm text-zinc-400">same weight</span>
+            )}
+            {target ? <span className="ml-auto mb-0.5 text-sm font-semibold text-zinc-100">{target}</span> : null}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl bg-black/25 px-4 py-3">
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+              {recommendation.lastReps?.length ? (
+                <>
+                  <span className="text-lg font-bold tabular-nums text-zinc-400">
+                    {recommendation.lastReps.join(" · ")}
+                    <span className="sr-only"> reps last time</span>
+                  </span>
+                  <ArrowRight aria-hidden="true" className="mb-1.5 h-4 w-4 text-orange-300" />
+                </>
+              ) : null}
+              <span className="font-display text-3xl leading-none tabular-nums text-white">
+                {recommendation.targetReps}
+                <span className="ml-1 text-lg text-zinc-400">reps</span>
+              </span>
+              <span className="mb-0.5 text-sm text-zinc-400">
+                on every set at {formatNumber(recommendation.currentWeight)} {unit}
+              </span>
+            </div>
+            {recommendation.nextWeight > recommendation.currentWeight ? (
+              <p className="mt-2 flex items-center gap-1.5 border-t border-white/[0.06] pt-2 text-sm text-zinc-300">
+                <TrendingUpIcon aria-hidden="true" className="h-4 w-4 text-emerald-300" />
+                Then the weight goes up to{" "}
+                <span className="font-bold tabular-nums text-white">
+                  {formatNumber(recommendation.nextWeight)} {unit}
+                </span>
+              </p>
+            ) : null}
+          </div>
+        )
       ) : null}
 
       <p className="mt-3 text-sm leading-6 text-zinc-300">{recommendation.reason}</p>
 
-      {recommendation.warnings?.length ? (
+      {warnings.length ? (
         <ul className="mt-3 space-y-1 rounded-2xl border border-amber-300/20 bg-amber-300/[0.05] p-3 text-sm text-amber-100">
-          {recommendation.warnings.map((warning) => (
+          {warnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
         </ul>

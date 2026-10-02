@@ -5,7 +5,7 @@ import RecoveryScore from "../models/RecoveryScore.js";
 import TrainingBalance from "../models/TrainingBalance.js";
 import WeakPoint from "../models/WeakPoint.js";
 import Workout from "../models/Workout.js";
-import { generateOverloadRecommendation } from "./generateOverloadRecommendation.js";
+import { generateOverloadRecommendation, roundToPlate } from "./generateOverloadRecommendation.js";
 
 const getPreviousWorkoutExercises = async ({ userId, exerciseName, workoutId }) => {
   const workouts = await Workout.find({
@@ -66,20 +66,28 @@ export const updateOverloadRecommendations = async ({ user, workout = null }) =>
     );
 
     if (matchingDeload) {
-      recommendation.warnings = [
-        ...(recommendation.warnings || []),
-        "Deload recommendation active. Do not follow aggressive overload until deload is completed."
-      ];
-      recommendation.detailedReasons = [
-        ...(recommendation.detailedReasons || []),
-        `${matchingDeload.reason}`
-      ];
+      // Follow the deload instead of pushing progression on top of it.
+      const unit = recommendation.unit || "kg";
+      const current = recommendation.currentWeight || 0;
+      const reduction = Number(matchingDeload.reductionPercentage) || 0;
+      const isVolumeDeload = matchingDeload.recommendationType === "volume_deload";
+      const deloadWeight =
+        matchingDeload.exerciseName === recommendation.exerciseName && matchingDeload.recommendedWeight > 0
+          ? matchingDeload.recommendedWeight
+          : !isVolumeDeload && reduction > 0 && current > 0
+            ? roundToPlate(current * (1 - reduction / 100), unit)
+            : current;
+      const sets = recommendation.recommendedSets || 3;
 
-      if (recommendation.recommendationType === "increase_weight") {
-        recommendation.recommendationType = "repeat_weight";
-        recommendation.recommendedWeight = recommendation.currentWeight;
-        recommendation.reason = "Repeat or reduce load because an active deload recommendation is present.";
-      }
+      recommendation.recommendationType = "deload_flag";
+      recommendation.recommendedWeight = deloadWeight;
+      recommendation.recommendedSets = isVolumeDeload && reduction > 0 ? Math.max(1, Math.round(sets * (1 - reduction / 100))) : sets;
+      recommendation.recommendedRepTarget = "Easy reps, 2-3 left in the tank";
+      recommendation.reason =
+        deloadWeight < current
+          ? `Deload in progress: use ${deloadWeight} ${unit} instead of ${current} ${unit} and keep every set easy. Progression picks up again when the deload ends.`
+          : `Deload in progress: keep ${current} ${unit} with fewer, easier sets. Progression picks up again when the deload ends.`;
+      recommendation.detailedReasons = [...(recommendation.detailedReasons || []), matchingDeload.reason].filter(Boolean);
     }
 
     await OverloadRecommendation.updateMany(

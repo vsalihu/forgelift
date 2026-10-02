@@ -7,7 +7,7 @@ import { FriendsIcon } from "../icons/navIcons.jsx";
 const repsLabel = (item) =>
   item.targetRepMin && item.targetRepMax ? (item.targetRepMin === item.targetRepMax ? `${item.targetRepMin}` : `${item.targetRepMin}-${item.targetRepMax}`) : "";
 
-const TemplateCard = ({ template, index = 0, topMuscles = [], busy, onStart, onEdit, onToggleVisibility, onSend, onDelete }) => {
+const TemplateCard = ({ template, index = 0, topMuscles = [], coverage = null, busy, onStart, onEdit, onToggleVisibility, onSend, onDelete }) => {
   const reduce = useReducedMotion();
   const exercises = template.exercises || [];
   const totalSets = exercises.reduce((total, item) => total + (Number(item.targetSets) || 0), 0);
@@ -49,7 +49,22 @@ const TemplateCard = ({ template, index = 0, topMuscles = [], busy, onStart, onE
 
       {template.description ? <p className="mt-2 line-clamp-2 text-sm leading-6 text-zinc-400">{template.description}</p> : null}
 
-      {topMuscles.length ? (
+      {coverage ? (
+        <div className="mt-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
+          <div className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate font-semibold text-zinc-200">{coverage.label}</span>
+            <span className={`shrink-0 text-xs font-bold tabular-nums ${coverage.overall >= 0.9 ? "text-emerald-300" : "text-orange-200"}`}>
+              {Math.round(coverage.overall * 100)}% covered
+            </span>
+          </div>
+          <span aria-hidden="true" className="mt-2 block h-1.5 overflow-clip rounded-full bg-white/[0.07]">
+            <span
+              className={`block h-full rounded-full ${coverage.overall >= 0.9 ? "bg-gradient-to-r from-orange-400 to-forge-ember" : "bg-orange-500/70"}`}
+              style={{ width: `${Math.min(coverage.overall, 1) * 100}%` }}
+            />
+          </span>
+        </div>
+      ) : topMuscles.length ? (
         <p className="mt-3 flex flex-wrap gap-1.5">
           {topMuscles.map((muscle) => (
             <span className="rounded-full border border-forge-ember/20 bg-forge-ember/[0.07] px-2.5 py-0.5 text-xs font-semibold text-orange-200" key={muscle}>

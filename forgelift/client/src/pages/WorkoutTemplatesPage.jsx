@@ -6,6 +6,10 @@ import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
 import { setsPerMuscle } from "../components/exercises/exerciseMeta.js";
 import BuilderExerciseRow from "../components/templates/BuilderExerciseRow.jsx";
 import MuscleCoverage from "../components/templates/MuscleCoverage.jsx";
+import CoveragePanel from "../components/templates/coverage/CoveragePanel.jsx";
+import MusclePicker from "../components/templates/coverage/MusclePicker.jsx";
+import PartSheet from "../components/templates/coverage/PartSheet.jsx";
+import BottomSheet from "../components/ui/BottomSheet.jsx";
 import SendToFriendSheet from "../components/templates/SendToFriendSheet.jsx";
 import TemplateCard from "../components/templates/TemplateCard.jsx";
 import { DesignWorkoutIcon, DumbbellIcon } from "../components/icons/navIcons.jsx";
@@ -19,8 +23,22 @@ import { friendService } from "../services/friendService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { gymDraftInProgress, startInGymMode } from "../utils/gymHandoff.js";
 import { getTemplateSuggestions } from "../utils/templateSuggestions.js";
+import { autoBuild, bestGapFill, computeCoverage, groupLabelList } from "../utils/muscleMap.js";
 
-const emptyForm = { name: "", description: "", exercises: [] };
+const emptyForm = { name: "", description: "", exercises: [], targetMuscleGroups: [] };
+
+const useIsDesktop = () => {
+  const query = "(min-width: 1024px)";
+  const [matches, setMatches] = useState(() => (typeof window !== "undefined" ? window.matchMedia?.(query).matches : false));
+  useEffect(() => {
+    const list = window.matchMedia?.(query);
+    if (!list) return undefined;
+    const onChange = () => setMatches(list.matches);
+    list.addEventListener("change", onChange);
+    return () => list.removeEventListener("change", onChange);
+  }, []);
+  return matches;
+};
 const primaryButton =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-6 text-sm font-black text-[#160a02] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-40";
 const secondaryButton =
@@ -49,6 +67,12 @@ const WorkoutTemplatesPage = () => {
   const [saving, setSaving] = useState(false);
   const [builderError, setBuilderError] = useState("");
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [startStep, setStartStep] = useState(false);
+  const [musclesOpen, setMusclesOpen] = useState(false);
+  const [partSheetId, setPartSheetId] = useState("");
+  const [builderNotice, setBuilderNotice] = useState("");
+  const isDesktop = useIsDesktop();
+  const experience = user?.trainingExperience || "";
 
   const [pendingDeleteId, setPendingDeleteId] = useState("");
   const [pendingStart, setPendingStart] = useState(null);
@@ -81,6 +105,12 @@ const WorkoutTemplatesPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!builderNotice) return undefined;
+    const timer = setTimeout(() => setBuilderNotice(""), 4000);
+    return () => clearTimeout(timer);
+  }, [builderNotice]);
+
+  useEffect(() => {
     if (!notice) return undefined;
     const timer = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(timer);
@@ -89,6 +119,19 @@ const WorkoutTemplatesPage = () => {
   const findExercise = (item) => exercises.find((exercise) => exercise._id === item.exerciseId || exercise.name === item.exerciseName);
   const topMusclesFor = (template) => setsPerMuscle(template.exercises || [], findExercise).slice(0, 3).map((entry) => entry.muscle);
   const coverage = useMemo(() => setsPerMuscle(form.exercises, findExercise), [form.exercises, exercises]);
+  const builderItems = useMemo(
+    () => form.exercises.map((item) => ({ exercise: findExercise(item), sets: Number(item.targetSets) || 0 })),
+    [form.exercises, exercises]
+  );
+  const targetGroups = form.targetMuscleGroups || [];
+  const groupCoverage = useMemo(() => computeCoverage(builderItems, targetGroups, experience), [builderItems, targetGroups, experience]);
+  const inWorkout = useMemo(() => new Set(form.exercises.flatMap((item) => [item.exerciseId, item.exerciseName].filter(Boolean))), [form.exercises]);
+  const templateCoverage = (template) => {
+    const groups = template.targetMuscleGroups || [];
+    if (!groups.length) return null;
+    const items = (template.exercises || []).map((item) => ({ exercise: findExercise(item), sets: Number(item.targetSets) || 0 }));
+    return { label: groupLabelList(groups), overall: computeCoverage(items, groups, experience).overall };
+  };
   const totalSets = form.exercises.reduce((total, item) => total + (Number(item.targetSets) || 0), 0);
   const dirty = builderOpen && snapshot(form) !== initialRef.current;
   const badRow = form.exercises.some((item) => item.targetRepMin !== "" && item.targetRepMax !== "" && Number(item.targetRepMin) > Number(item.targetRepMax));
@@ -98,12 +141,19 @@ const WorkoutTemplatesPage = () => {
 
   const openBuilder = (template) => {
     const next = template
-      ? { name: template.name, description: template.description || "", exercises: (template.exercises || []).map(withKey) }
+      ? {
+          name: template.name,
+          description: template.description || "",
+          exercises: (template.exercises || []).map(withKey),
+          targetMuscleGroups: template.targetMuscleGroups || []
+        }
       : emptyForm;
     setEditingId(template?._id || "");
     setForm(next);
     initialRef.current = snapshot(next);
     setBuilderError("");
+    setBuilderNotice("");
+    setStartStep(!template);
     setBuilderOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -111,6 +161,9 @@ const WorkoutTemplatesPage = () => {
   const closeBuilder = () => {
     setBuilderOpen(false);
     setConfirmDiscard(false);
+    setStartStep(false);
+    setPartSheetId("");
+    setMusclesOpen(false);
     setEditingId("");
     setForm(emptyForm);
     window.scrollTo({ top: 0 });
@@ -134,6 +187,39 @@ const WorkoutTemplatesPage = () => {
       ]
     }));
     if (exercise._id && !exercises.some((item) => item._id === exercise._id)) setExercises((current) => [...current, exercise]);
+  };
+
+  const setTargets = (targetMuscleGroups) => setForm((current) => ({ ...current, targetMuscleGroups }));
+
+  const finishStartStep = () => {
+    setStartStep(false);
+    // A sensible default name the lifter can still change.
+    if (!form.name.trim() && targetGroups.length) setForm((current) => ({ ...current, name: groupLabelList(current.targetMuscleGroups) }));
+  };
+
+  const addFromCoverage = (exercise) => {
+    addExercise(exercise);
+    setBuilderNotice(`Added ${exercise.name}.`);
+  };
+
+  const fillNextGap = () => {
+    const gap = bestGapFill(groupCoverage, exercises, { experience, inWorkout });
+    if (!gap) {
+      setBuilderNotice("Nothing in the library would fill the remaining gaps. Try adding sets.");
+      return;
+    }
+    addExercise(gap.exercise);
+    setBuilderNotice(`Added ${gap.exercise.name} for ${gap.part.label.toLowerCase()}.`);
+  };
+
+  const fillEveryGap = () => {
+    const added = autoBuild(targetGroups, exercises, { experience, startWith: builderItems.filter((item) => item.exercise) });
+    if (!added.length) {
+      setBuilderNotice("Nothing in the library would fill the remaining gaps. Try adding sets.");
+      return;
+    }
+    added.forEach(({ exercise }) => addExercise(exercise));
+    setBuilderNotice(`Added ${added.length} exercise${added.length === 1 ? "" : "s"}: ${added.map(({ exercise }) => exercise.name).join(", ")}.`);
   };
 
   const changeExercise = (index, field, value) =>
@@ -161,6 +247,7 @@ const WorkoutTemplatesPage = () => {
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
+      targetMuscleGroups: targetGroups,
       exercises: form.exercises.map(({ _key, ...item }) => ({
         ...item,
         targetSets: Number(item.targetSets) || 3,
@@ -247,6 +334,21 @@ const WorkoutTemplatesPage = () => {
   const dialogs = (
     <>
       <ExercisePicker exercises={exercises} open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={addExercise} />
+      <PartSheet
+        coverage={groupCoverage}
+        experience={experience}
+        inWorkout={inWorkout}
+        library={exercises}
+        partId={partSheetId}
+        onAdd={addFromCoverage}
+        onClose={() => setPartSheetId("")}
+      />
+      <BottomSheet open={musclesOpen} title="What should this workout train?" onClose={() => setMusclesOpen(false)}>
+        <MusclePicker value={targetGroups} onChange={setTargets} />
+        <button className={`${primaryButton} mt-6 w-full`} type="button" onClick={() => setMusclesOpen(false)}>
+          Done
+        </button>
+      </BottomSheet>
       <SendToFriendSheet friends={friends} sending={sending} template={sendTemplate} onClose={() => setSendTemplate(null)} onSend={sendToFriend} />
       {pendingStart ? (
         <ConfirmModal
@@ -281,7 +383,83 @@ const WorkoutTemplatesPage = () => {
     </>
   );
 
+  if (builderOpen && startStep) {
+    return (
+      <Layout>
+        {dialogs}
+        <div className="mx-auto max-w-4xl">
+          <button className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-full pr-3 text-sm font-semibold text-zinc-400 hover:text-white" type="button" onClick={closeBuilder}>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            Your workouts
+          </button>
+          <p className="text-sm font-semibold text-orange-300">New workout</p>
+          <h1 className="font-display mt-1 text-3xl text-white sm:text-4xl">What are you training?</h1>
+          <p className="mt-2 max-w-2xl text-zinc-400">
+            Pick the muscles this workout is for. As you add exercises, meters show how well each part of them is covered, and what to add next.
+          </p>
+          <div className="mt-6 rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-6">
+            <MusclePicker value={targetGroups} onChange={setTargets} />
+          </div>
+          <div className="mt-5 flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <button className="min-h-12 rounded-full px-4 text-sm font-semibold text-zinc-400 hover:text-white" type="button" onClick={() => setStartStep(false)}>
+              Skip, I'll just pick exercises
+            </button>
+            <button className={primaryButton} disabled={!targetGroups.length} type="button" onClick={finishStartStep}>
+              {targetGroups.length ? `Continue with ${groupLabelList(targetGroups)}` : "Pick at least one"}
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (builderOpen) {
+    const coverageBlock = targetGroups.length ? (
+      <CoveragePanel
+        compact={!isDesktop}
+        coverage={groupCoverage}
+        experience={experience}
+        groupIds={targetGroups}
+        hasExercises={form.exercises.length > 0}
+        onChangeTargets={() => setMusclesOpen(true)}
+        onFillAll={fillEveryGap}
+        onFillNext={fillNextGap}
+        onOpenPart={setPartSheetId}
+      />
+    ) : (
+      <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-5">
+        <h2 className="font-display text-lg text-white">Muscle coverage</h2>
+        <p className="mt-1 text-sm text-zinc-400">Pick the muscles you're aiming for to see which parts this workout covers and what's missing.</p>
+        <button className={`${secondaryButton} mt-3 w-full`} type="button" onClick={() => setMusclesOpen(true)}>
+          Pick target muscles
+        </button>
+        {form.exercises.length ? (
+          <>
+            <h3 className="mb-3 mt-5 text-sm font-semibold text-zinc-300">Sets per muscle</h3>
+            <MuscleCoverage entries={coverage} />
+          </>
+        ) : null}
+      </section>
+    );
+    const saveBlock = (
+      <div className="space-y-2">
+        {builderError ? (
+          <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+            {builderError}
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-2">
+          <button className={primaryButton} disabled={saving} type="submit">
+            {saving ? "Saving..." : editingId ? "Save changes" : "Save workout"}
+          </button>
+          {missing && !builderError ? <p className="text-center text-xs text-zinc-500">{missing}</p> : null}
+          <button className={secondaryButton} type="button" onClick={requestClose}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+
     return (
       <Layout>
         {dialogs}
@@ -291,7 +469,7 @@ const WorkoutTemplatesPage = () => {
             Your workouts
           </button>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
             <div className="min-w-0 space-y-5">
               <div>
                 <p className="text-sm font-semibold text-orange-300">{editingId ? "Edit workout" : "New workout"}</p>
@@ -319,7 +497,16 @@ const WorkoutTemplatesPage = () => {
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
                 />
+                <p className="mt-3 text-sm text-zinc-500">
+                  {form.exercises.length} exercise{form.exercises.length === 1 ? "" : "s"} · {totalSets} sets
+                </p>
               </div>
+
+              {isDesktop ? null : coverageBlock}
+
+              <p aria-live="polite" className={`text-sm font-semibold text-emerald-300 ${builderNotice ? "" : "sr-only"}`}>
+                {builderNotice}
+              </p>
 
               {form.exercises.length ? (
                 <ol className="space-y-2.5">
@@ -357,43 +544,22 @@ const WorkoutTemplatesPage = () => {
                   <>
                     <DumbbellIcon aria-hidden="true" className="h-8 w-8 text-orange-300" />
                     <span className="font-display text-xl text-white">Add your first exercise</span>
-                    <span className="font-normal text-zinc-400">Search the library or filter by muscle.</span>
+                    <span className="font-normal text-zinc-400">
+                      {targetGroups.length ? "Search the library, or tap a muscle part to see what trains it." : "Search the library or filter by muscle."}
+                    </span>
                   </>
                 )}
               </button>
+
+              {isDesktop ? null : saveBlock}
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-              <section className="rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.045] to-white/[0.01] p-4 sm:p-5">
-                <dl className="grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl bg-white/[0.04] px-3 py-2.5">
-                    <dt className="text-xs text-zinc-500">Exercises</dt>
-                    <dd className="font-display text-2xl tabular-nums text-white">{form.exercises.length}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-white/[0.04] px-3 py-2.5">
-                    <dt className="text-xs text-zinc-500">Sets</dt>
-                    <dd className="font-display text-2xl tabular-nums text-white">{totalSets}</dd>
-                  </div>
-                </dl>
-                <h2 className="font-display mb-3 mt-5 text-lg text-white">Sets per muscle</h2>
-                <MuscleCoverage entries={coverage} />
-              </section>
-
-              {builderError ? (
-                <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
-                  {builderError}
-                </p>
-              ) : null}
-              <div className="flex flex-col gap-2">
-                <button className={primaryButton} disabled={saving} type="submit">
-                  {saving ? "Saving..." : editingId ? "Save changes" : "Save workout"}
-                </button>
-                {missing && !builderError ? <p className="text-center text-xs text-zinc-500">{missing}</p> : null}
-                <button className={secondaryButton} type="button" onClick={requestClose}>
-                  Cancel
-                </button>
-              </div>
-            </aside>
+            {isDesktop ? (
+              <aside className="scrollbar-none space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
+                {coverageBlock}
+                {saveBlock}
+              </aside>
+            ) : null}
           </div>
         </form>
       </Layout>
@@ -442,6 +608,7 @@ const WorkoutTemplatesPage = () => {
               index={index}
               key={template._id}
               template={template}
+              coverage={templateCoverage(template)}
               topMuscles={topMusclesFor(template)}
               onDelete={setPendingDeleteId}
               onEdit={openBuilder}

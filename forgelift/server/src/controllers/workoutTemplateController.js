@@ -2,6 +2,9 @@ import Exercise from "../models/Exercise.js";
 import WorkoutTemplate from "../models/WorkoutTemplate.js";
 import { getFriendIds } from "./friendController.js";
 
+// Muscle groups the workout builder can aim at (see client utils/muscleMap.js).
+const TARGET_GROUPS = ["chest", "back", "shoulders", "biceps", "triceps", "forearms", "quads", "hamstrings", "glutes", "calves", "core"];
+
 const normalizeExercise = async (exercise) => {
   let libraryExercise = null;
 
@@ -40,6 +43,9 @@ const buildTemplateData = async (payload, user) => ({
   name: payload.name.trim(),
   description: payload.description || "",
   goalPath: payload.goalPath || user.goalPath || "",
+  targetMuscleGroups: Array.isArray(payload.targetMuscleGroups)
+    ? [...new Set(payload.targetMuscleGroups.filter((group) => TARGET_GROUPS.includes(group)))]
+    : [],
   exercises: await Promise.all((payload.exercises || []).map(normalizeExercise))
 });
 

@@ -50,6 +50,10 @@ const workoutTemplateSchema = new mongoose.Schema(
       trim: true,
       default: ""
     },
+    targetMuscleGroups: {
+      type: [String],
+      default: []
+    },
     goalPath: {
       type: String,
       default: ""

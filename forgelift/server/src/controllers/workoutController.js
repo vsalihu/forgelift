@@ -211,7 +211,7 @@ const settle = async (label, task, fallback) => {
   try {
     return await task();
   } catch (error) {
-    console.error(`Workout save: ${label} failed:`, error.message);
+    console.error(`Workout change: skipped ${label}:`, error.message);
     return fallback;
   }
 };
@@ -483,23 +483,32 @@ export const deleteWorkout = async (req, res) => {
       return res.status(404).json({ message: "Workout not found." });
     }
 
-    await PersonalRecord.deleteMany({ userId: req.user._id, workoutId: workout._id });
-    await ActivityFeedItem.deleteMany({ userId: req.user._id, workoutId: workout._id });
+    // The workout is gone; from here on everything is derived data. As with saving, a failed step is
+    // logged and skipped so the user never sees an error for a delete that already happened.
+    await Promise.all([
+      settle("personal records", () => PersonalRecord.deleteMany({ userId: req.user._id, workoutId: workout._id }), null),
+      settle("activity feed", () => ActivityFeedItem.deleteMany({ userId: req.user._id, workoutId: workout._id }), null),
+      settle(
+        "expire overload",
+        () => OverloadRecommendation.updateMany({ userId: req.user._id, workoutId: workout._id, status: "active" }, { $set: { status: "expired" } }),
+        null
+      )
+    ]);
     req.user.lifetimeVolume = Math.max(0, (req.user.lifetimeVolume || 0) - (workout.totalVolume || 0));
     req.user.lifetimeReps = Math.max(0, (req.user.lifetimeReps || 0) - (workout.totalReps || 0));
     req.user.lifetimeSets = Math.max(0, (req.user.lifetimeSets || 0) - (workout.totalSets || 0));
     req.user.lifetimeWorkoutCount = Math.max(0, (req.user.lifetimeWorkoutCount || 0) - 1);
-    await recalculateUserRanks(req.user);
-    const recentWorkouts = await getRecentWorkouts(req.user._id);
-    await recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts });
-    await updateWeakPoints(req.user);
-    await OverloadRecommendation.updateMany(
-      { userId: req.user._id, workoutId: workout._id, status: "active" },
-      { $set: { status: "expired" } }
-    );
-    await updateOverloadRecommendations({ user: req.user });
-    await updateDeloadRecommendations(req.user);
-    await updateWeeklyMissions({ user: req.user });
+
+    const [rankResult, recentWorkouts] = await Promise.all([
+      settle("ranks", () => recalculateUserRanks(req.user), null),
+      settle("recent workouts", () => getRecentWorkouts(req.user._id), [])
+    ]);
+    if (!rankResult) await settle("user totals", () => req.user.save(), null);
+    await settle("recovery", () => recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts }), null);
+    await settle("weak points", () => updateWeakPoints(req.user), null);
+    await settle("overload", () => updateOverloadRecommendations({ user: req.user }), null);
+    await settle("deload", () => updateDeloadRecommendations(req.user), null);
+    await settle("missions", () => updateWeeklyMissions({ user: req.user }), null);
 
     return res.json({ message: "Workout deleted." });
   } catch (error) {

@@ -645,7 +645,7 @@ const WorkoutLoggerPage = () => {
 
       {saveState ? (
         <SavingWorkoutOverlay
-          editing={isEditMode}
+          mode={isEditMode ? "edit" : "save"}
           error={saveState.error}
           status={saveState.status}
           summary={`${totals.sets} ${totals.sets === 1 ? "set" : "sets"}`}

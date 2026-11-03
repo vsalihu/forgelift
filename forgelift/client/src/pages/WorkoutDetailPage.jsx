@@ -6,6 +6,7 @@ import Layout from "../components/Layout.jsx";
 import { formatNumber, recordLabels, recordUnit } from "../components/gym/gymUtils.js";
 import { FirstPlaceIcon, RepeatIcon } from "../components/icons/featureIcons.jsx";
 import { BalanceIcon } from "../components/icons/navIcons.jsx";
+import SavingWorkoutOverlay from "../components/gym/SavingWorkoutOverlay.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import RowMenu from "../components/ui/RowMenu.jsx";
@@ -63,7 +64,8 @@ const WorkoutDetailPage = () => {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmRepeat, setConfirmRepeat] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  // null, or { status: "saving" | "done" | "error", error } while the workout is deleted.
+  const [deleteState, setDeleteState] = useState(null);
 
   useEffect(() => {
     const loadWorkout = async () => {
@@ -93,15 +95,15 @@ const WorkoutDetailPage = () => {
   };
 
   const deleteWorkout = async () => {
-    setDeleting(true);
+    setConfirmDelete(false);
+    setDeleteState({ status: "saving" });
     try {
       await workoutService.deleteWorkout(id);
-      navigate("/workouts");
+      setDeleteState({ status: "done" });
+      await new Promise((resolve) => window.setTimeout(resolve, reduce ? 300 : 800));
+      navigate("/workouts", { replace: true });
     } catch (err) {
-      setError(err.message);
-      setConfirmDelete(false);
-    } finally {
-      setDeleting(false);
+      setDeleteState({ status: "error", error: err.message });
     }
   };
 
@@ -127,10 +129,20 @@ const WorkoutDetailPage = () => {
         <ConfirmModal
           confirmLabel="Delete workout"
           description="Its PRs will be removed and your ranks and recovery recalculated. This can't be undone."
-          loading={deleting}
           title="Delete this workout?"
           onCancel={() => setConfirmDelete(false)}
           onConfirm={deleteWorkout}
+        />
+      ) : null}
+      {deleteState ? (
+        <SavingWorkoutOverlay
+          error={deleteState.error}
+          mode="delete"
+          status={deleteState.status}
+          summary={workout?.totalSets ? `${workout.totalSets} ${workout.totalSets === 1 ? "set" : "sets"}` : ""}
+          title={workout?.title || "Workout"}
+          onBack={() => setDeleteState(null)}
+          onRetry={deleteWorkout}
         />
       ) : null}
       {confirmRepeat ? (

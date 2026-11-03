@@ -7,6 +7,7 @@ import ConsistencyStrip, { buildWeeks, weekStreak } from "../components/history/
 import { formatNumber } from "../components/gym/gymUtils.js";
 import { RepeatIcon } from "../components/icons/featureIcons.jsx";
 import { GymModeIcon, HistoryIcon, LogWorkoutIcon } from "../components/icons/navIcons.jsx";
+import SavingWorkoutOverlay from "../components/gym/SavingWorkoutOverlay.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
@@ -107,6 +108,8 @@ const WorkoutHistoryPage = () => {
   const [query, setQuery] = useState("");
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [pendingDelete, setPendingDelete] = useState(null);
+  // null, or { status: "saving" | "done" | "error", workout, error } while a workout is deleted.
+  const [deleteState, setDeleteState] = useState(null);
   const [pendingRepeat, setPendingRepeat] = useState(null);
 
   const loadWorkouts = async () => {
@@ -181,17 +184,23 @@ const WorkoutHistoryPage = () => {
     startInGymMode(template, navigate);
   };
 
-  const confirmDeleteWorkout = () => {
-    if (!pendingDelete) return;
-    const workoutToDelete = pendingDelete;
+  // The row stays until the server confirms, so a failed delete never makes a workout vanish and come back.
+  const deleteWorkout = async (workoutToDelete) => {
     setPendingDelete(null);
-    setError("");
-    setWorkouts((current) => current.filter((item) => item._id !== workoutToDelete._id));
+    setDeleteState({ status: "saving", workout: workoutToDelete });
+    try {
+      await workoutService.deleteWorkout(workoutToDelete._id);
+      setDeleteState({ status: "done", workout: workoutToDelete });
+      await new Promise((resolve) => window.setTimeout(resolve, reduce ? 300 : 800));
+      setWorkouts((current) => current.filter((item) => item._id !== workoutToDelete._id));
+      setDeleteState(null);
+    } catch (err) {
+      setDeleteState({ status: "error", workout: workoutToDelete, error: err.message });
+    }
+  };
 
-    workoutService.deleteWorkout(workoutToDelete._id).catch((err) => {
-      setError(err.message);
-      setWorkouts((current) => [...current, workoutToDelete].sort((a, b) => new Date(b.date) - new Date(a.date)));
-    });
+  const confirmDeleteWorkout = () => {
+    if (pendingDelete) deleteWorkout(pendingDelete);
   };
 
   const isEmpty = !loading && !error && workouts.length === 0;
@@ -205,6 +214,17 @@ const WorkoutHistoryPage = () => {
           title="Delete this workout?"
           onCancel={() => setPendingDelete(null)}
           onConfirm={confirmDeleteWorkout}
+        />
+      ) : null}
+      {deleteState ? (
+        <SavingWorkoutOverlay
+          error={deleteState.error}
+          mode="delete"
+          status={deleteState.status}
+          summary={deleteState.workout.totalSets ? `${deleteState.workout.totalSets} ${deleteState.workout.totalSets === 1 ? "set" : "sets"}` : ""}
+          title={deleteState.workout.title || "Workout"}
+          onBack={() => setDeleteState(null)}
+          onRetry={() => deleteWorkout(deleteState.workout)}
         />
       ) : null}
       {pendingRepeat ? (

@@ -33,6 +33,7 @@ const MobileNav = ({ unreadMessages = 0, competePlace = null }) => {
     <>
       <nav
         aria-label="Main"
+        data-bottom-nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.07] bg-[#0a0b0e]/85 px-2 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden"
       >
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">

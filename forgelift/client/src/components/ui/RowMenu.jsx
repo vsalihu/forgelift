@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { MoreIcon } from "../icons/navIcons.jsx";
 
@@ -9,7 +9,21 @@ const itemClass =
 // className may position the menu (e.g. absolute); without it the menu is relative.
 const RowMenu = ({ label, items, className = "" }) => {
   const [open, setOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const ref = useRef(null);
+  const menuRef = useRef(null);
+
+  // Open upwards when the menu would end up under the phone's bottom bar or off screen
+  // (the last row of a short list can't scroll far enough to reveal it).
+  useLayoutEffect(() => {
+    if (!open || !menuRef.current || !ref.current) return;
+    const bar = document.querySelector("[data-bottom-nav]");
+    const barTop = bar && bar.offsetParent !== null ? bar.getBoundingClientRect().top : window.innerHeight;
+    const limit = Math.min(window.innerHeight, barTop) - 8;
+    const anchor = ref.current.getBoundingClientRect();
+    const height = menuRef.current.offsetHeight;
+    setDropUp(anchor.bottom + 4 + height > limit && anchor.top - 4 - height > 8);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -39,7 +53,11 @@ const RowMenu = ({ label, items, className = "" }) => {
         <MoreIcon className="h-5 w-5" />
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-30 mt-1 w-52 rounded-2xl border border-white/10 bg-[#0e1014]/95 p-1.5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl" role="menu">
+        <div
+          className={`absolute right-0 z-30 w-52 ${dropUp ? "bottom-full mb-1" : "top-full mt-1"} rounded-2xl border border-white/10 bg-[#0e1014]/95 p-1.5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl`}
+          ref={menuRef}
+          role="menu"
+        >
           {items.map(({ label: itemLabel, icon: Icon, to, onClick, tone }) => {
             const classes = `${itemClass} ${tone === "danger" ? "text-red-200 hover:bg-red-500/10" : "text-zinc-200 hover:bg-white/[0.06] hover:text-white"}`;
             const content = (

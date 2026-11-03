@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { ErrorIcon } from "../icons/featureIcons.jsx";
@@ -9,12 +9,36 @@ const EASE = [0.16, 1, 0.3, 1];
 
 // The server does all of this in one request, in this order. The steps advance on a timer while
 // it works and only all tick once it has answered.
-const STEPS = [
-  { at: 0, label: "Saving your sets" },
-  { at: 1400, label: "Checking for personal records" },
-  { at: 3000, label: "Updating ranks and recovery" },
-  { at: 4800, label: "Adding it to your history" }
-];
+const COPY = {
+  save: {
+    steps: ["Saving your sets", "Checking for personal records", "Updating ranks and recovery", "Adding it to your history"],
+    working: "Saving your workout",
+    done: "Saved to your history",
+    failed: "Not saved yet",
+    reassure: "Your workout is still on this device, nothing is lost. Trying again is safe: it is only ever saved once.",
+    back: "Back to workout",
+    Icon: HistoryIcon
+  },
+  edit: {
+    steps: ["Saving your sets", "Checking for personal records", "Updating ranks and recovery", "Updating your history"],
+    working: "Saving your changes",
+    done: "Changes saved",
+    failed: "Not saved yet",
+    reassure: "Your changes are still on this screen, nothing is lost. Trying again is safe.",
+    back: "Back to editing",
+    Icon: HistoryIcon
+  },
+  delete: {
+    steps: ["Removing the workout", "Removing its personal records", "Updating ranks and recovery", "Updating your history"],
+    working: "Deleting workout",
+    done: "Workout deleted",
+    failed: "Not deleted yet",
+    reassure: "The workout is still in your history. Trying again is safe: if it was already removed, that counts as done.",
+    back: "Keep it",
+    Icon: Trash2
+  }
+};
+const STEP_AT = [0, 1400, 3000, 4800];
 const SLOW_AFTER = 8000;
 const VERY_SLOW_AFTER = 30000;
 
@@ -30,7 +54,7 @@ const useElapsed = (running) => {
   return elapsed;
 };
 
-const Ring = ({ status, reduce }) => {
+const Ring = ({ status, reduce, Icon }) => {
   const r = 44;
   const circumference = 2 * Math.PI * r;
   const tone = status === "error" ? "#f87171" : "#f97316";
@@ -81,7 +105,7 @@ const Ring = ({ status, reduce }) => {
             ) : status === "done" ? (
               <Check className="h-11 w-11 text-orange-300" strokeWidth={2.5} />
             ) : (
-              <HistoryIcon className="h-10 w-10 text-orange-200" />
+              <Icon className="h-10 w-10 text-orange-200" />
             )}
           </motion.span>
         </AnimatePresence>
@@ -114,9 +138,10 @@ const StepMark = ({ state, reduce }) => {
   );
 };
 
-// Full-screen state while a finished workout is saved: progress, a heads-up when the server is
-// slow to wake, and a safe retry when it fails. status: "saving" | "done" | "error".
-const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, onRetry, onBack }) => {
+// Full-screen state while a workout is saved or deleted: progress, a heads-up when the server is
+// slow to wake, and a safe retry when it fails. status: "saving" | "done" | "error"; mode: "save" | "edit" | "delete".
+const SavingWorkoutOverlay = ({ status, error, title, summary, mode = "save", onRetry, onBack }) => {
+  const copy = COPY[mode] || COPY.save;
   const reduce = useReducedMotion();
   const elapsed = useElapsed(status === "saving");
   const headingRef = useRef(null);
@@ -128,7 +153,7 @@ const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, 
     else headingRef.current?.focus();
   }, [status]);
 
-  const steps = editing ? [...STEPS.slice(0, 3), { at: 4800, label: "Updating your history" }] : STEPS;
+  const steps = copy.steps.map((label, index) => ({ label, at: STEP_AT[index] }));
   const activeIndex = steps.reduce((last, step, index) => (elapsed >= step.at ? index : last), 0);
   const stepState = (index) => {
     if (status === "done") return "done";
@@ -137,8 +162,7 @@ const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, 
     return "pending";
   };
 
-  const heading =
-    status === "error" ? "Not saved yet" : status === "done" ? (editing ? "Changes saved" : "Saved to your history") : editing ? "Saving your changes" : "Saving your workout";
+  const heading = status === "error" ? copy.failed : status === "done" ? copy.done : copy.working;
 
   return (
     <motion.div
@@ -157,7 +181,7 @@ const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, 
         initial={reduce ? false : { opacity: 0, y: 16 }}
         transition={{ duration: 0.4, ease: EASE }}
       >
-        <Ring reduce={reduce} status={status} />
+        <Ring Icon={copy.Icon} reduce={reduce} status={status} />
 
         <h2 className="font-display mt-6 text-2xl text-white outline-none" id="saving-workout-title" ref={headingRef} tabIndex={-1}>
           {heading}
@@ -173,7 +197,7 @@ const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, 
           <div className="mt-6 text-left">
             <p className="rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-100" role="alert">{error || "Something went wrong."}</p>
             <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Your workout is still on this device, nothing is lost. Trying again is safe: it is only ever saved once.
+              {copy.reassure}
             </p>
             <div className="mt-6 grid grid-cols-2 gap-2">
               <button
@@ -181,7 +205,7 @@ const SavingWorkoutOverlay = ({ status, error, title, summary, editing = false, 
                 type="button"
                 onClick={onBack}
               >
-                {editing ? "Back to editing" : "Back to workout"}
+                {copy.back}
               </button>
               <button
                 className="min-h-12 rounded-full bg-gradient-to-b from-orange-400 to-forge-ember px-4 text-sm font-black text-[#160a02] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"

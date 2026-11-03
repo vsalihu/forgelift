@@ -31,9 +31,14 @@ export const workoutService = {
       body: JSON.stringify(payload),
       timeoutMs: 90000
     }),
+  // A 404 means it is already gone (an earlier try got through), which is what the user asked for.
   deleteWorkout: (id) =>
     request(`/workouts/${id}`, {
-      method: "DELETE"
+      method: "DELETE",
+      timeoutMs: 90000
+    }).catch((error) => {
+      if (error.status === 404) return { message: "Workout deleted.", alreadyDeleted: true };
+      throw error;
     })
 };
 

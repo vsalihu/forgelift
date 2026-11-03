@@ -13,7 +13,8 @@ export const wakeServer = () => {
   });
 };
 
-export const request = async (endpoint, options = {}) => {
+// timeoutMs: give up after this long instead of waiting forever on a dropped connection.
+export const request = async (endpoint, { timeoutMs, ...options } = {}) => {
   const token = getToken();
   const headers = {
     "Content-Type": "application/json",
@@ -24,10 +25,25 @@ export const request = async (endpoint, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
+  let response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      ...(controller ? { signal: controller.signal } : {})
+    });
+  } catch (fetchError) {
+    const error = new Error(
+      fetchError?.name === "AbortError" ? "The server took too long to answer." : "Couldn't reach the server. Check your connection and try again."
+    );
+    error.status = 0;
+    error.network = true;
+    throw error;
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
 
   const data = await response.json().catch(() => ({}));
 

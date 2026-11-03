@@ -13,6 +13,7 @@ import GymMenu from "../components/gym/GymMenu.jsx";
 import GymStart from "../components/gym/GymStart.jsx";
 import RestDock, { REST_PRESETS, restRemaining } from "../components/gym/RestDock.jsx";
 import SessionClock from "../components/gym/SessionClock.jsx";
+import SavingWorkoutOverlay from "../components/gym/SavingWorkoutOverlay.jsx";
 import SessionSummary from "../components/gym/SessionSummary.jsx";
 import { exerciseSuggestion, exerciseVolume, isBodyweightExercise, isLogged, setPlaceholder } from "../components/gym/gymUtils.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -21,7 +22,7 @@ import { coopSessionService } from "../services/coopSessionService.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { overloadService } from "../services/overloadService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
-import { workoutService } from "../services/workoutService.js";
+import { newClientRequestId, workoutService } from "../services/workoutService.js";
 import { workoutTemplateService } from "../services/workoutTemplateService.js";
 import { createEmptySet, isSetValid, normalizeSetForSave } from "../utils/workoutSetUtils.js";
 import { getTutorialSteps } from "../tutorials/tutorialConfig.js";
@@ -145,7 +146,9 @@ const GymModePage = () => {
   const [savedResult, setSavedResult] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [saving, setSaving] = useState(false);
+  // null, or { status: "saving" | "done" | "error", source, error } while a finished workout is saved.
+  const [saveState, setSaveState] = useState(null);
+  const saving = saveState?.status === "saving" || saveState?.status === "done";
   const [restSeconds, setRestSeconds] = useState(initialRestSeconds);
   const [rest, setRest] = useState(null);
   const [invalidSet, setInvalidSet] = useState(null);
@@ -476,22 +479,25 @@ const GymModePage = () => {
 
   const saveWorkout = async (source) => {
     setDialog(null);
-    setSaving(true);
     setError("");
+    // The id is kept in the draft, so a retry (even after a reload) is recognised by the server.
+    const toSave = source.clientRequestId ? source : { ...source, clientRequestId: newClientRequestId() };
+    if (toSave !== source) setWorkout(toSave);
+    setSaveState({ status: "saving", source: toSave });
     try {
-      const data = await workoutService.createWorkout(buildPayload(source));
+      const data = await workoutService.createWorkout(buildPayload(toSave));
       writeStorage(DRAFT_KEY, null);
       setRest(null);
-      setSavedResult({ ...data, finishedAt: Date.now(), title: source.title, startedAt: source.startedAt });
-
       if (activeCoopSession?._id) {
         coopSessionService.finish(activeCoopSession._id, data.workout._id).catch(() => {});
         setActiveCoopSession(null);
       }
+      setSaveState({ status: "done", source: toSave });
+      await new Promise((resolve) => window.setTimeout(resolve, reduce ? 300 : 800));
+      setSavedResult({ ...data, finishedAt: Date.now(), title: toSave.title, startedAt: toSave.startedAt });
+      setSaveState(null);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+      setSaveState({ status: "error", source: toSave, error: err.message });
     }
   };
 
@@ -621,6 +627,7 @@ const GymModePage = () => {
                   : "border border-white/12 bg-white/[0.05] text-zinc-300"
               }`}
               data-tour-id="gym-finish-workout"
+              disabled={saving}
               type="button"
               onClick={finishWorkout}
             >
@@ -826,6 +833,17 @@ const GymModePage = () => {
       </BottomSheet>
 
       {dialog ? <GymDialog {...dialog} onClose={() => setDialog(null)} /> : null}
+
+      {saveState ? (
+        <SavingWorkoutOverlay
+          error={saveState.error}
+          status={saveState.status}
+          summary={`${loggedCount} ${loggedCount === 1 ? "set" : "sets"}`}
+          title={saveState.source.title}
+          onBack={() => setSaveState(null)}
+          onRetry={() => saveWorkout(saveState.source)}
+        />
+      ) : null}
 
       {savedResult ? (
         <SessionSummary

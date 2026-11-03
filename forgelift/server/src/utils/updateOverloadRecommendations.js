@@ -38,17 +38,22 @@ export const updateOverloadRecommendations = async ({ user, workout = null }) =>
     DeloadRecommendation.find({ userId: user._id, status: "active" })
   ]);
 
-  const savedRecommendations = [];
+  // One recommendation per exercise name (the last entry wins if a workout lists it twice), so the
+  // exercises can be worked out in parallel without two of them racing on the same recommendation.
+  const byName = new Map();
+  (latestWorkout.exercises || []).forEach((workoutExercise) => {
+    if (workoutExercise.exerciseName) byName.set(workoutExercise.exerciseName, workoutExercise);
+  });
 
-  for (const workoutExercise of latestWorkout.exercises || []) {
-    const exercise = workoutExercise.exerciseId
-      ? await Exercise.findById(workoutExercise.exerciseId)
-      : await Exercise.findOne({ name: workoutExercise.exerciseName });
-    const previousWorkoutExercises = await getPreviousWorkoutExercises({
-      userId: user._id,
-      exerciseName: workoutExercise.exerciseName,
-      workoutId: latestWorkout._id
-    });
+  const buildOne = async (workoutExercise) => {
+    const [exercise, previousWorkoutExercises] = await Promise.all([
+      workoutExercise.exerciseId ? Exercise.findById(workoutExercise.exerciseId) : Exercise.findOne({ name: workoutExercise.exerciseName }),
+      getPreviousWorkoutExercises({
+        userId: user._id,
+        exerciseName: workoutExercise.exerciseName,
+        workoutId: latestWorkout._id
+      })
+    ]);
     const recommendation = generateOverloadRecommendation({
       user,
       exercise,
@@ -95,14 +100,13 @@ export const updateOverloadRecommendations = async ({ user, workout = null }) =>
       { $set: { status: "expired" } }
     );
 
-    const savedRecommendation = await OverloadRecommendation.create({
+    return OverloadRecommendation.create({
       userId: user._id,
       workoutId: latestWorkout._id,
       ...recommendation,
       status: "active"
     });
-    savedRecommendations.push(savedRecommendation);
-  }
+  };
 
-  return savedRecommendations;
+  return Promise.all([...byName.values()].map(buildOne));
 };

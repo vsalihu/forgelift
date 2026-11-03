@@ -118,6 +118,12 @@ const workoutExerciseSchema = new mongoose.Schema(
 
 const workoutSchema = new mongoose.Schema(
   {
+    // Set by the app once per session, so a retried save returns the first workout instead of a copy.
+    clientRequestId: {
+      type: String,
+      trim: true,
+      maxlength: 64
+    },
     leaderboardEligible: {
       type: Boolean,
       default: true
@@ -200,6 +206,11 @@ const workoutSchema = new mongoose.Schema(
     }
   },
   { timestamps: true }
+);
+
+workoutSchema.index(
+  { userId: 1, clientRequestId: 1 },
+  { unique: true, partialFilterExpression: { clientRequestId: { $type: "string" } } }
 );
 
 export default mongoose.model("Workout", workoutSchema);

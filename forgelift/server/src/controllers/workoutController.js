@@ -202,6 +202,22 @@ const getRecentWorkouts = (userId) => {
   return Workout.find({ userId, date: { $gte: since } }).sort({ date: -1, createdAt: -1 });
 };
 
+const cleanClientRequestId = (value) => (typeof value === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(value) ? value : undefined);
+
+// The workout is the only part of a save that must succeed. Everything after it (ranks, recovery,
+// recommendations, missions) is derived data that can be rebuilt later, so a failure there is logged
+// and skipped instead of turning a saved workout into an error the user would retry.
+const settle = async (label, task, fallback) => {
+  try {
+    return await task();
+  } catch (error) {
+    console.error(`Workout save: ${label} failed:`, error.message);
+    return fallback;
+  }
+};
+
+const emptyRanks = (user) => ({ overallRank: user.currentOverallRank, overallScore: user.overallRankScore, xp: user.xp || 0, muscleRanks: [], rankPromotions: [] });
+
 export const createWorkout = async (req, res) => {
   try {
     const errors = validateWorkoutPayload(req.body);
@@ -210,15 +226,62 @@ export const createWorkout = async (req, res) => {
       return res.status(400).json({ message: errors[0], errors });
     }
 
+    const clientRequestId = cleanClientRequestId(req.body.clientRequestId);
+    const replay = async () => {
+      const existing = await Workout.findOne({ userId: req.user._id, clientRequestId });
+      if (!existing) return null;
+      const personalRecords = await PersonalRecord.find({ userId: req.user._id, workoutId: existing._id });
+      return res.status(200).json({
+        workout: existing,
+        duplicate: true,
+        analysis: { ...generateWorkoutAnalysis({ workout: existing, newPersonalRecords: personalRecords }), xpEarned: 0 }
+      });
+    };
+
+    // A retry of a save that already went through (a dropped connection, a second tap): hand back the first one.
+    if (clientRequestId) {
+      const replayed = await replay();
+      if (replayed) return replayed;
+    }
+
     const oneRepMaxLookup = await buildOneRepMaxLookup(req.user._id, req.user.strengthBaselines);
     const workoutData = await buildWorkoutData(req.body, oneRepMaxLookup);
     const eligibility = await getLeaderboardEligibility({ user: req.user, workoutData });
-    const workout = await Workout.create({
-      userId: req.user._id,
-      ...workoutData,
-      ...eligibility
-    });
-    const newPersonalRecords = await detectPersonalRecords({ userId: req.user._id, workout });
+    let workout;
+    try {
+      workout = await Workout.create({
+        userId: req.user._id,
+        ...(clientRequestId ? { clientRequestId } : {}),
+        ...workoutData,
+        ...eligibility
+      });
+    } catch (createError) {
+      // Two copies of the same save raced each other; the other one won.
+      if (createError?.code === 11000 && clientRequestId) {
+        const replayed = await replay();
+        if (replayed) return replayed;
+      }
+      throw createError;
+    }
+
+    const feedItem = settle(
+      "activity feed",
+      () =>
+        ActivityFeedItem.create({
+          userId: req.user._id,
+          type: "workout_completed",
+          workoutId: workout._id,
+          title: workout.title,
+          totalVolume: workout.totalVolume,
+          totalSets: workout.totalSets,
+          totalReps: workout.totalReps,
+          exerciseCount: workout.exercises?.length || 0,
+          bestEstimated1RM: workout.bestEstimated1RM
+        }),
+      null
+    );
+
+    const newPersonalRecords = await settle("personal records", () => detectPersonalRecords({ userId: req.user._id, workout }), []);
     const xpEarned = calculateXP({ workout, newPersonalRecords });
     req.user.xp = (req.user.xp || 0) + xpEarned;
     req.user.lifetimeVolume = (req.user.lifetimeVolume || 0) + (workout.totalVolume || 0);
@@ -226,33 +289,25 @@ export const createWorkout = async (req, res) => {
     req.user.lifetimeSets = (req.user.lifetimeSets || 0) + (workout.totalSets || 0);
     req.user.lifetimeWorkoutCount = (req.user.lifetimeWorkoutCount || 0) + 1;
 
-    try {
-      await ActivityFeedItem.create({
-        userId: req.user._id,
-        type: "workout_completed",
-        workoutId: workout._id,
-        title: workout.title,
-        totalVolume: workout.totalVolume,
-        totalSets: workout.totalSets,
-        totalReps: workout.totalReps,
-        exerciseCount: workout.exercises?.length || 0,
-        bestEstimated1RM: workout.bestEstimated1RM
-      });
-    } catch (feedError) {
-      console.error("Failed to create activity feed item:", feedError.message);
-    }
+    // Ranks save the user (with the XP and totals above); recent workouts are an independent read.
+    const [rankResult, recentWorkouts] = await Promise.all([
+      settle("ranks", () => recalculateUserRanks(req.user), null),
+      settle("recent workouts", () => getRecentWorkouts(req.user._id), [])
+    ]);
+    if (!rankResult) await settle("user totals", () => req.user.save(), null);
+    let updatedRanks = rankResult || emptyRanks(req.user);
 
-    let updatedRanks = await recalculateUserRanks(req.user);
-    const recentWorkouts = await getRecentWorkouts(req.user._id);
-    const recoveryScores = await recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts });
+    const recoveryScores = await settle("recovery", () => recalculateRecoveryFromWorkouts({ user: req.user, recentWorkouts }), []);
     const recoverySummary = recoveryScores.filter((score) => workout.muscleLoadSummary?.[score.muscleGroup]);
-    const weakPointResult = await updateWeakPoints(req.user);
-    const overloadRecommendations = await updateOverloadRecommendations({ user: req.user, workout });
-    const deloadResult = await updateDeloadRecommendations(req.user);
-    const missionResult = await updateWeeklyMissions({ user: req.user });
-    if (missionResult.newlyCompletedMissions.length) {
-      updatedRanks = await recalculateUserRanks(req.user);
+    const weakPointResult = await settle("weak points", () => updateWeakPoints(req.user), { trainingBalance: null, weakPoints: [] });
+    const overloadRecommendations = await settle("overload", () => updateOverloadRecommendations({ user: req.user, workout }), []);
+    const deloadResult = await settle("deload", () => updateDeloadRecommendations(req.user), {});
+    const missionResult = await settle("missions", () => updateWeeklyMissions({ user: req.user }), { newlyCompletedMissions: [] });
+    if (missionResult.newlyCompletedMissions?.length) {
+      updatedRanks = (await settle("ranks after missions", () => recalculateUserRanks(req.user), null)) || updatedRanks;
     }
+    await feedItem;
+
     const analysis = {
       ...generateWorkoutAnalysis({ workout, newPersonalRecords }),
       xpEarned,
@@ -264,10 +319,10 @@ export const createWorkout = async (req, res) => {
       fatigueSummary: deloadResult.fatigueSummary,
       deloadSummary: deloadResult.deloadRecommendations,
       missionSummary: missionResult.missionSummary,
-      newlyCompletedMissions: missionResult.newlyCompletedMissions,
+      newlyCompletedMissions: missionResult.newlyCompletedMissions || [],
       weeklyTargetProgress: missionResult.weeklyTarget,
       trainingBalanceSummary: weakPointResult.trainingBalance,
-      weakPointsSummary: weakPointResult.weakPoints.slice(0, 5)
+      weakPointsSummary: (weakPointResult.weakPoints || []).slice(0, 5)
     };
 
     return res.status(201).json({ workout, analysis });

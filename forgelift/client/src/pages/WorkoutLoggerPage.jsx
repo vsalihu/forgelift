@@ -1,9 +1,10 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
 import ExercisePicker from "../components/exercises/ExercisePicker.jsx";
+import SavingWorkoutOverlay from "../components/gym/SavingWorkoutOverlay.jsx";
 import SessionSummary from "../components/gym/SessionSummary.jsx";
 import { exerciseSuggestion, exerciseVolume, formatNumber, isBodyweightExercise } from "../components/gym/gymUtils.js";
 import { GymModeIcon } from "../components/icons/navIcons.jsx";
@@ -15,7 +16,7 @@ import { useAuth } from "../hooks/useAuth.js";
 import { exerciseService } from "../services/exerciseService.js";
 import { overloadService } from "../services/overloadService.js";
 import { strengthBaselineService } from "../services/strengthBaselineService.js";
-import { workoutService } from "../services/workoutService.js";
+import { newClientRequestId, workoutService } from "../services/workoutService.js";
 import { copySetForNext, createEmptySet, isSetValid, normalizeSetForSave } from "../utils/workoutSetUtils.js";
 
 const DRAFT_KEY = "forgeliftWorkoutLoggerDraft";
@@ -80,6 +81,7 @@ const WorkoutLoggerPage = () => {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const isEditMode = Boolean(id);
   const bodyweight = Number(user?.bodyweight) || 0;
   const initialDraft = useMemo(() => (isEditMode ? { form: emptyForm(), restored: false } : loadInitialDraft()), [isEditMode]);
@@ -90,7 +92,9 @@ const WorkoutLoggerPage = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(true);
   const [loadingWorkout, setLoadingWorkout] = useState(isEditMode);
-  const [submitting, setSubmitting] = useState(false);
+  // null, or { status: "saving" | "done" | "error", payload, error } while the workout is saved.
+  const [saveState, setSaveState] = useState(null);
+  const submitting = saveState?.status === "saving" || saveState?.status === "done";
   const [error, setError] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const [savedResult, setSavedResult] = useState(null);
@@ -388,11 +392,15 @@ const WorkoutLoggerPage = () => {
 
     setError("");
     setShowErrors(false);
-    setSubmitting(true);
 
-    const { date: _day, ...rest } = form;
+    // Kept in the draft so a retry, even after a reload, is recognised by the server and saved once.
+    const clientRequestId = isEditMode ? undefined : form.clientRequestId || newClientRequestId();
+    if (clientRequestId && clientRequestId !== form.clientRequestId) setForm((current) => ({ ...current, clientRequestId }));
+
+    const { date: _day, clientRequestId: _id, ...rest } = form;
     const payload = {
       ...rest,
+      ...(clientRequestId ? { clientRequestId } : {}),
       date: dateForSave(),
       exercises: form.exercises.map(({ _key: _ignored, ...exercise }) => ({
         ...exercise,
@@ -400,20 +408,29 @@ const WorkoutLoggerPage = () => {
       }))
     };
 
+    persist(payload);
+  };
+
+  const persist = async (payload) => {
+    setSaveState({ status: "saving", payload });
+    const pause = () => new Promise((resolve) => window.setTimeout(resolve, reduce ? 300 : 800));
     try {
       if (isEditMode) {
         await workoutService.updateWorkout(id, payload);
+        setSaveState({ status: "done", payload });
+        await pause();
         navigate(`/workouts/${id}`);
         return;
       }
 
       const data = await workoutService.createWorkout(payload);
       storage.set(DRAFT_KEY, null);
-      setSavedResult({ ...data, title: form.title || "Workout" });
+      setSaveState({ status: "done", payload });
+      await pause();
+      setSavedResult({ ...data, title: payload.title || "Workout" });
+      setSaveState(null);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
+      setSaveState({ status: "error", payload, error: err.message });
     }
   };
 
@@ -625,6 +642,18 @@ const WorkoutLoggerPage = () => {
         onClose={() => setPickerOpen(false)}
         onSelect={addExerciseObject}
       />
+
+      {saveState ? (
+        <SavingWorkoutOverlay
+          editing={isEditMode}
+          error={saveState.error}
+          status={saveState.status}
+          summary={`${totals.sets} ${totals.sets === 1 ? "set" : "sets"}`}
+          title={saveState.payload.title || "Workout"}
+          onBack={() => setSaveState(null)}
+          onRetry={() => persist(saveState.payload)}
+        />
+      ) : null}
 
       {savedResult ? (
         <SessionSummary

@@ -81,6 +81,11 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(payload)
     }),
+  markReleaseSeen: (releaseId) =>
+    request("/users/whats-new", {
+      method: "PUT",
+      body: JSON.stringify({ releaseId })
+    }),
   completeOnboarding: (payload) =>
     request("/users/onboarding", {
       method: "PUT",

@@ -285,6 +285,21 @@ export const getPublicProfile = async (req, res) => {
   }
 };
 
+// Marks a "What's new" note as seen. Ids are set by the app (e.g. "2026-11-04").
+export const markReleaseSeen = async (req, res) => {
+  const releaseId = typeof req.body?.releaseId === "string" ? req.body.releaseId.trim() : "";
+  if (!/^[a-z0-9][a-z0-9.-]{0,39}$/i.test(releaseId)) {
+    return res.status(400).json({ message: "A valid releaseId is required.", field: "releaseId" });
+  }
+  try {
+    req.user.lastSeenReleaseId = releaseId;
+    await req.user.save();
+    return res.json({ user: req.user.toJSON() });
+  } catch (_error) {
+    return res.status(500).json({ message: "Unable to save that." });
+  }
+};
+
 export const completeOnboarding = async (req, res) => {
   try {
     const payload = {

@@ -190,6 +190,11 @@ const userSchema = new mongoose.Schema(
       type: locationSchema,
       default: () => ({})
     },
+    // Id of the newest "What's new" note this user has seen, so each one is shown once across devices.
+    lastSeenReleaseId: {
+      type: String,
+      default: ""
+    },
     // IANA time zone from the browser at sign-up, e.g. "Europe/Belgrade".
     timezone: {
       type: String,

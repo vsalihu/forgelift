@@ -84,6 +84,14 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
+  const markReleaseSeen = async (releaseId) => {
+    // Update locally first so the note can't reappear while the request is in flight.
+    setUser((current) => (current ? { ...current, lastSeenReleaseId: releaseId } : current));
+    const data = await api.markReleaseSeen(releaseId);
+    setUser(data.user);
+    return data.user;
+  };
+
   const updateProfile = async (payload) => {
     const data = await api.updateProfile(payload);
     setUser(data.user);
@@ -101,6 +109,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       refreshUser,
       completeOnboarding,
+      markReleaseSeen,
       updateProfile
     }),
     [user, token, loading]

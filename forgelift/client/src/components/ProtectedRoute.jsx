@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import ServerWakeScreen from "./auth/ServerWakeScreen.jsx";
+import WhatsNewGate from "./whatsnew/WhatsNewGate.jsx";
 
 const ProtectedRoute = ({ requireOnboarding = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -32,7 +33,12 @@ const ProtectedRoute = ({ requireOnboarding = true }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {requireOnboarding ? <WhatsNewGate /> : null}
+    </>
+  );
 };
 
 export default ProtectedRoute;

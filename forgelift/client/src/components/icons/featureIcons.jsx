@@ -315,3 +315,26 @@ export const MacroIcon = createIcon("MacroIcon", (
   </>
 ));
 
+
+export const StepsIcon = createIcon("StepsIcon", (
+  <>
+    <path d="M7 3.5c1.9 0 3 1.9 3 4.5 0 2.2-.7 3.5-.7 5.5H5.2C5.2 11.5 4 10 4 8c0-2.6 1.1-4.5 3-4.5z" />
+    <path d="M5.3 16h4v1.5a2 2 0 0 1-4 0z" />
+    <path d="M17 7.5c1.9 0 3 1.9 3 4.5 0 2-1.2 3.5-1.2 5.5h-4.1c0-2-.7-3.3-.7-5.5 0-2.6 1.1-4.5 3-4.5z" />
+    <path d="M14.7 20h4v.5a2 2 0 0 1-4 0z" />
+  </>
+));
+
+export const BookIcon = createIcon("BookIcon", (
+  <>
+    <path d="M12 6.5C10.5 5 8 4.5 3.5 4.5v14c4.5 0 7 .5 8.5 2 1.5-1.5 4-2 8.5-2v-14C16 4.5 13.5 5 12 6.5z" />
+    <path d="M12 6.5v14" />
+  </>
+));
+
+export const StretchIcon = createIcon("StretchIcon", (
+  <>
+    <circle cx="15" cy="4.5" r="2" />
+    <path d="M3 21l5-5.5 3 1.5 1.5-6L17 13l4-2.5M12.5 11 9 8.5 5 9.5" />
+  </>
+));

@@ -3,6 +3,9 @@ import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import Layout from "../components/Layout.jsx";
 import AmountSheet from "../components/daily/AmountSheet.jsx";
+import CustomTodosCard from "../components/daily/CustomTodosCard.jsx";
+import TodoEditorSheet from "../components/daily/TodoEditorSheet.jsx";
+import { countStep } from "../components/daily/customTodoMeta.js";
 import DailyCheckInModal from "../components/daily/DailyCheckInModal.jsx";
 import DailySetupFlow from "../components/daily/DailySetupFlow.jsx";
 import ProgressRing from "../components/daily/ProgressRing.jsx";
@@ -43,9 +46,11 @@ const WeekStrip = ({ week, today }) => (
 const TodayPage = () => {
   const reduce = useReducedMotion();
   const { user } = useAuth();
-  const { data, loading, error, load, update, saveProfile } = useDaily() || {};
+  const { data, loading, error, load, update, saveProfile, createTodo, updateTodo, deleteTodo } = useDaily() || {};
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [todoEditor, setTodoEditor] = useState(null);
+  const [customAmount, setCustomAmount] = useState(null);
   const [actionError, setActionError] = useState("");
   const imperial = user?.preferredUnits === "imperial";
 
@@ -167,6 +172,22 @@ const TodayPage = () => {
           </motion.div>
         ) : null}
 
+        <motion.div {...rise(0.09)} className="mb-5">
+          <CustomTodosCard
+            definitions={data.profile?.customTodos || []}
+            limit={data.customTodoLimit}
+            todos={todos}
+            onAdd={() => setTodoEditor({ existing: null })}
+            onEdit={(definition) => definition && setTodoEditor({ existing: definition })}
+            onEditAmount={setCustomAmount}
+            onQuickAdd={(suggestion) => {
+              setActionError("");
+              createTodo(suggestion).catch((err) => setActionError(err.message));
+            }}
+            onSetValue={(id, value) => run({ custom: { [id]: value } })}
+          />
+        </motion.div>
+
         <div className="grid gap-5 lg:grid-cols-2">
           <motion.div {...rise(0.1)} className="min-w-0">
             {plan.macros ? (
@@ -222,6 +243,36 @@ const TodayPage = () => {
           const key = editing;
           setEditing(null);
           run({ intake: { [key === "water" ? "waterMl" : key]: key === "water" ? fromDisplayWater(value, imperial) : value } });
+        }}
+      />
+
+      <AmountSheet
+        open={Boolean(customAmount)}
+        steps={customAmount ? [-countStep(customAmount.target), countStep(customAmount.target)] : []}
+        target={customAmount?.target || 0}
+        title={customAmount?.label || ""}
+        unit={customAmount?.unit || ""}
+        value={customAmount?.value || 0}
+        onClose={() => setCustomAmount(null)}
+        onSave={(value) => {
+          const id = customAmount.id;
+          setCustomAmount(null);
+          run({ custom: { [id]: value } });
+        }}
+      />
+
+      <TodoEditorSheet
+        existing={todoEditor?.existing || null}
+        open={Boolean(todoEditor)}
+        onClose={() => setTodoEditor(null)}
+        onDelete={async () => {
+          await deleteTodo(String(todoEditor.existing._id));
+          setTodoEditor(null);
+        }}
+        onSave={async (body) => {
+          if (todoEditor.existing) await updateTodo(String(todoEditor.existing._id), body);
+          else await createTodo(body);
+          setTodoEditor(null);
         }}
       />
 

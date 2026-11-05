@@ -74,6 +74,20 @@ export const DailyProvider = ({ children }) => {
     [data?.day, load, refreshUser]
   );
 
+  // The user's own to-dos. Each call answers with the full day, which replaces what's shown.
+  const todoAction = useCallback(
+    async (action) => {
+      const sequence = ++sequenceRef.current;
+      const next = await action(data?.day || localDayKey());
+      if (sequence === sequenceRef.current) setData(next);
+      return next;
+    },
+    [data?.day]
+  );
+  const createTodo = useCallback((todo) => todoAction((day) => dailyService.createTodo(day, todo)), [todoAction]);
+  const updateTodo = useCallback((id, todo) => todoAction((day) => dailyService.updateTodo(day, id, todo)), [todoAction]);
+  const deleteTodo = useCallback((id) => todoAction((day) => dailyService.deleteTodo(day, id)), [todoAction]);
+
   const saveProfile = useCallback(
     async (body) => {
       const result = await dailyService.updateProfile({ ...body, today: localDayKey() });
@@ -83,7 +97,10 @@ export const DailyProvider = ({ children }) => {
     [load, refreshUser]
   );
 
-  const value = useMemo(() => ({ data, loading, error, load, update, saveProfile, ready }), [data, loading, error, load, update, saveProfile, ready]);
+  const value = useMemo(
+    () => ({ data, loading, error, load, update, saveProfile, createTodo, updateTodo, deleteTodo, ready }),
+    [data, loading, error, load, update, saveProfile, createTodo, updateTodo, deleteTodo, ready]
+  );
   return <DailyContext.Provider value={value}>{children}</DailyContext.Provider>;
 };
 

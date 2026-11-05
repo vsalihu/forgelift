@@ -139,6 +139,22 @@ const locationSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// A to-do the user made themselves, shown on the days its repeat rule matches.
+const customTodoSchema = new mongoose.Schema(
+  {
+    label: { type: String, required: true, trim: true, maxlength: 60 },
+    kind: { type: String, enum: ["check", "count"], default: "check" },
+    target: { type: Number, default: 1 },
+    unit: { type: String, trim: true, maxlength: 16, default: "" },
+    repeat: { type: String, enum: ["daily", "training", "rest", "days", "once"], default: "daily" },
+    days: { type: [Number], default: [] },
+    onDay: String,
+    icon: { type: String, default: "check" },
+    color: { type: String, default: "ember" }
+  },
+  { timestamps: true }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -202,6 +218,7 @@ const userSchema = new mongoose.Schema(
       sleepTargetHours: Number,
       // Ask the daily check-in after the first login of the day. Off: it lives on the Today page only.
       checkInPrompt: { type: Boolean, default: true },
+      customTodos: { type: [customTodoSchema], default: [] },
       completedAt: Date,
       skippedAt: Date
     },

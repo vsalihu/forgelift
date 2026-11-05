@@ -2,7 +2,18 @@ import BodyweightEntry from "../models/BodyweightEntry.js";
 import CalendarEntry from "../models/CalendarEntry.js";
 import DailyLog from "../models/DailyLog.js";
 import Workout from "../models/Workout.js";
-import { GOALS, SUPPLEMENTS, SUPPLEMENT_KEYS, WHEY_PROTEIN_PER_SCOOP, buildDailyPlan, buildTodos } from "../utils/dailyPlan.js";
+import {
+  CUSTOM_TODO_COLORS,
+  CUSTOM_TODO_ICONS,
+  CUSTOM_TODO_LIMIT,
+  GOALS,
+  SUPPLEMENTS,
+  SUPPLEMENT_KEYS,
+  WHEY_PROTEIN_PER_SCOOP,
+  buildDailyPlan,
+  buildTodos,
+  sanitizeCustomTodo
+} from "../utils/dailyPlan.js";
 
 const DAY_MS = 86400000;
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -76,6 +87,9 @@ const respond = async ({ req, res, day, offset, log }) => {
     completion,
     week,
     wheyProteinPerScoop: WHEY_PROTEIN_PER_SCOOP,
+    customTodoLimit: CUSTOM_TODO_LIMIT,
+    customTodoIcons: CUSTOM_TODO_ICONS,
+    customTodoColors: CUSTOM_TODO_COLORS,
     supplementOptions: SUPPLEMENT_KEYS.map((key) => ({ key, label: SUPPLEMENTS[key].label, trainingOnly: Boolean(SUPPLEMENTS[key].trainingOnly) }))
   });
 };
@@ -154,6 +168,19 @@ export const updateDay = async (req, res) => {
       }
       log.supplements = next;
       log.markModified("supplements");
+    }
+
+    if (body.custom && typeof body.custom === "object") {
+      const known = new Map((plainProfile(req.user).customTodos || []).map((todo) => [String(todo._id), todo]));
+      const next = { ...(log.custom || {}) };
+      for (const [id, value] of Object.entries(body.custom)) {
+        const todo = known.get(id);
+        if (!todo) continue;
+        const amount = inRange(value, 0, todo.kind === "count" ? Math.max(todo.target * 10, 1000) : 1);
+        if (amount !== null) next[id] = Math.round(amount);
+      }
+      log.custom = next;
+      log.markModified("custom");
     }
 
     // Amounts arrive as the totals the user wants to see; store the part they added themselves.
@@ -261,3 +288,63 @@ export const updateProfile = async (req, res) => {
     return res.status(500).json({ message: "Unable to save your plan settings." });
   }
 };
+
+// ---- The user's own to-dos. Each change answers with the day's full plan (?day=&offset=). ----
+const respondWithDay = async (req, res) => {
+  const day = parseDay(req.query.day) || new Date().toISOString().slice(0, 10);
+  const log = await DailyLog.findOne({ userId: req.user._id, day });
+  return respond({ req, res, day, offset: parseOffset(req.query.offset), log });
+};
+
+export const createCustomTodo = async (req, res) => {
+  try {
+    const profile = { ...plainProfile(req.user) };
+    const todos = profile.customTodos || [];
+    if (todos.length >= CUSTOM_TODO_LIMIT) return res.status(400).json({ message: `You can have up to ${CUSTOM_TODO_LIMIT} to-dos. Delete one to add another.` });
+    const { todo, error, field } = sanitizeCustomTodo(req.body, { today: parseDay(req.query.day) });
+    if (error) return res.status(400).json({ message: error, field });
+    profile.customTodos = [...todos, todo];
+    req.user.dailyProfile = profile;
+    await req.user.save();
+    return respondWithDay(req, res);
+  } catch (error) {
+    console.error("Custom to-do create failed:", error.message);
+    return res.status(500).json({ message: "Unable to add that to-do." });
+  }
+};
+
+export const updateCustomTodo = async (req, res) => {
+  try {
+    const profile = { ...plainProfile(req.user) };
+    const todos = profile.customTodos || [];
+    const index = todos.findIndex((todo) => String(todo._id) === req.params.id);
+    if (index === -1) return res.status(404).json({ message: "That to-do no longer exists." });
+    const { todo, error, field } = sanitizeCustomTodo({ ...todos[index], ...req.body }, { today: parseDay(req.query.day) });
+    if (error) return res.status(400).json({ message: error, field });
+    profile.customTodos = todos.map((item, i) => (i === index ? { ...item, ...todo, _id: item._id } : item));
+    req.user.dailyProfile = profile;
+    await req.user.save();
+    return respondWithDay(req, res);
+  } catch (error) {
+    console.error("Custom to-do update failed:", error.message);
+    return res.status(500).json({ message: "Unable to save that to-do." });
+  }
+};
+
+// Deleting is safe to retry: an id that's already gone just returns the current day.
+export const deleteCustomTodo = async (req, res) => {
+  try {
+    const profile = { ...plainProfile(req.user) };
+    const todos = profile.customTodos || [];
+    if (todos.some((todo) => String(todo._id) === req.params.id)) {
+      profile.customTodos = todos.filter((todo) => String(todo._id) !== req.params.id);
+      req.user.dailyProfile = profile;
+      await req.user.save();
+    }
+    return respondWithDay(req, res);
+  } catch (error) {
+    console.error("Custom to-do delete failed:", error.message);
+    return res.status(500).json({ message: "Unable to delete that to-do." });
+  }
+};
+

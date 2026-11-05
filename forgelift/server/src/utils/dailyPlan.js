@@ -167,6 +167,75 @@ const supplementPlan = ({ profile, day, inputs, isTrainingDay, sleepHours }) =>
       return { ...base, note: "Follow the dose on the label." };
     });
 
+// ---- Custom to-dos ----
+export const CUSTOM_TODO_LIMIT = 30;
+export const CUSTOM_TODO_ICONS = ["check", "steps", "book", "stretch", "flame", "water", "meal", "sleep", "supplement", "dumbbell", "goal", "heart"];
+export const CUSTOM_TODO_COLORS = ["ember", "amber", "emerald", "sky", "violet", "rose"];
+export const CUSTOM_TODO_REPEATS = ["daily", "training", "rest", "days", "once"];
+
+const weekday = (day) => new Date(`${day}T12:00:00Z`).getUTCDay();
+
+// Cleans a to-do from the app. Returns { todo } or { error, field }.
+export const sanitizeCustomTodo = (input = {}, { today } = {}) => {
+  const label = typeof input.label === "string" ? input.label.trim().replace(/\s+/g, " ") : "";
+  if (!label) return { error: "Give the to-do a name.", field: "label" };
+  if (label.length > 60) return { error: "Keep the name under 60 characters.", field: "label" };
+  const kind = input.kind === "count" ? "count" : "check";
+  let target = 1;
+  let unit = "";
+  if (kind === "count") {
+    target = Number(input.target);
+    if (!Number.isFinite(target) || target < 1 || target > 100000) return { error: "Set a target between 1 and 100,000.", field: "target" };
+    target = Math.round(target);
+    unit = typeof input.unit === "string" ? input.unit.trim().slice(0, 16) : "";
+  }
+  const repeat = CUSTOM_TODO_REPEATS.includes(input.repeat) ? input.repeat : "daily";
+  let days = [];
+  let onDay;
+  if (repeat === "days") {
+    days = [...new Set((Array.isArray(input.days) ? input.days : []).map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
+    if (!days.length) return { error: "Pick at least one day.", field: "days" };
+  }
+  if (repeat === "once") {
+    onDay = typeof input.onDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.onDay) ? input.onDay : today;
+    if (!onDay) return { error: "Pick the day.", field: "onDay" };
+  }
+  return {
+    todo: {
+      label,
+      kind,
+      target,
+      unit,
+      repeat,
+      days,
+      onDay,
+      icon: CUSTOM_TODO_ICONS.includes(input.icon) ? input.icon : "check",
+      color: CUSTOM_TODO_COLORS.includes(input.color) ? input.color : "ember"
+    }
+  };
+};
+
+export const isCustomTodoActive = (todo, { day, isTrainingDay }) => {
+  if (!todo || todo.archived) return false;
+  switch (todo.repeat) {
+    case "training":
+      return Boolean(isTrainingDay);
+    case "rest":
+      return !isTrainingDay;
+    case "days":
+      return (todo.days || []).includes(weekday(day));
+    case "once":
+      return todo.onDay === day;
+    default:
+      return true;
+  }
+};
+
+const plainTodo = (todo) => {
+  const value = todo?.toObject ? todo.toObject() : todo;
+  return { ...value, id: String(value._id || value.id) };
+};
+
 // The whole day: targets, supplements, sleep, and short tips that explain the numbers.
 export const buildDailyPlan = ({ user = {}, profile = {}, day, isTrainingDay = false, trainingSource = "none", checkIn = {} }) => {
   const sleepHours = num(checkIn.sleepHours);
@@ -236,7 +305,9 @@ export const buildDailyPlan = ({ user = {}, profile = {}, day, isTrainingDay = f
     reasons.push({ key: "water", title: "Water", text: `About 35 ml per kg${isTrainingDay ? ", plus 500 ml for training" : ""}${creatine?.phase === "loading" ? ", plus a little extra while loading creatine" : ""}.` });
   }
 
-  return { day, isTrainingDay, trainingSource, inputs, macros, waterMl, meals, supplements, sleep, tips, reasons };
+  const customTodos = (profile.customTodos || []).map(plainTodo).filter((todo) => isCustomTodoActive(todo, { day, isTrainingDay }));
+
+  return { day, isTrainingDay, trainingSource, inputs, macros, waterMl, meals, supplements, sleep, tips, reasons, customTodos };
 };
 
 // Totals as the user sees them: their own entries plus ticked meals and whey scoops.
@@ -270,6 +341,22 @@ export const buildTodos = (plan, log = {}) => {
   for (const supplement of plan.supplements) {
     const taken = Math.min(supplement.doses, Number(log.supplements?.[supplement.key]) || 0);
     todos.push({ key: `supplement:${supplement.key}`, kind: "supplement", label: supplement.label, target: supplement.doses, value: taken, done: taken >= supplement.doses });
+  }
+  for (const custom of plan.customTodos || []) {
+    const value = Math.max(0, Number(log.custom?.[custom.id]) || 0);
+    todos.push({
+      key: `custom:${custom.id}`,
+      kind: "custom",
+      id: custom.id,
+      label: custom.label,
+      type: custom.kind,
+      target: custom.target,
+      unit: custom.unit,
+      icon: custom.icon,
+      color: custom.color,
+      value,
+      done: value >= custom.target
+    });
   }
   const done = todos.filter((todo) => todo.done).length;
   return { todos, totals, completion: { done, total: todos.length } };

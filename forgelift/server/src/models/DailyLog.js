@@ -35,6 +35,8 @@ const dailyLogSchema = new mongoose.Schema(
     meals: { type: [mealSchema], default: [] },
     // Doses taken per supplement key, e.g. { creatine: 2 }.
     supplements: { type: Object, default: {} },
+    // Progress on the user's own to-dos by id: 1 for a ticked one, the count for a counted one.
+    custom: { type: Object, default: {} },
     completion: {
       done: { type: Number, default: 0 },
       total: { type: Number, default: 0 }

@@ -11,6 +11,7 @@ const describe = (todo, imperial) => {
     return `${units.format(todo.value)} / ${units.format(todo.target)}`;
   }
   if (todo.kind === "meals" || (todo.kind === "supplement" && todo.target > 1)) return `${todo.value} / ${todo.target}`;
+  if (todo.kind === "custom" && todo.type === "count") return `${Math.round(todo.value).toLocaleString("en-US")} / ${todo.target.toLocaleString("en-US")}${todo.unit ? ` ${todo.unit}` : ""}`;
   return "";
 };
 

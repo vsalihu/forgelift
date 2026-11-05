@@ -71,6 +71,10 @@ export const buildTodos = (plan, log = {}) => {
     const taken = Math.min(supplement.doses, Number(log?.supplements?.[supplement.key]) || 0);
     todos.push({ key: `supplement:${supplement.key}`, kind: "supplement", label: supplement.label, target: supplement.doses, value: taken, done: taken >= supplement.doses });
   }
+  for (const custom of plan.customTodos || []) {
+    const value = Math.max(0, Number(log?.custom?.[custom.id]) || 0);
+    todos.push({ key: `custom:${custom.id}`, kind: "custom", id: custom.id, label: custom.label, type: custom.kind, target: custom.target, unit: custom.unit, icon: custom.icon, color: custom.color, value, done: value >= custom.target });
+  }
   return { todos, totals, completion: { done: todos.filter((todo) => todo.done).length, total: todos.length } };
 };
 
@@ -81,6 +85,7 @@ export const previewUpdate = (data, body) => {
   log.intake = log.intake || {};
   log.supplements = log.supplements || {};
   if (body.supplements) Object.assign(log.supplements, body.supplements);
+  if (body.custom) log.custom = { ...(log.custom || {}), ...body.custom };
   if (Array.isArray(body.meals)) {
     log.meals = body.meals.map((done, index) => {
       if (!done) return { done: false, protein: 0, carbs: 0, fat: 0 };

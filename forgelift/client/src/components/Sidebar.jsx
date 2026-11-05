@@ -3,13 +3,14 @@ import { useAuth } from "../hooks/useAuth.js";
 import { rankSrc } from "./landing/shared.jsx";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
-import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon, ChatIcon, CompeteIcon, DashboardIcon, DataIcon, DeloadIcon, DesignWorkoutIcon, ExerciseLibraryIcon, FriendsIcon, GymModeIcon, HistoryIcon, LogWorkoutIcon, MissionsIcon, OverloadIcon, PrTimelineIcon, ProfileIcon, ProgressIcon, RanksIcon, RecoveryIcon, ReportsIcon, TrainingLoadIcon, WeakPointsIcon } from "./icons/navIcons.jsx";
+import { AnalyticsIcon, AssessmentIcon, BalanceIcon, BaselinesIcon, CalendarIcon, ChatIcon, CompeteIcon, DashboardIcon, DataIcon, DeloadIcon, DesignWorkoutIcon, ExerciseLibraryIcon, FriendsIcon, GymModeIcon, HistoryIcon, LogWorkoutIcon, MissionsIcon, OverloadIcon, PrTimelineIcon, ProfileIcon, ProgressIcon, RanksIcon, RecoveryIcon, ReportsIcon, TodayIcon, TrainingLoadIcon, WeakPointsIcon } from "./icons/navIcons.jsx";
 
 const navItems = [
   {
     section: "Main",
     items: [
       { to: "/dashboard", label: "Dashboard", icon: DashboardIcon },
+      { to: "/today", label: "Today", icon: TodayIcon },
       { to: "/gym-mode", label: "Gym Mode", icon: GymModeIcon },
       { to: "/workouts/new", label: "Log Workout", icon: LogWorkoutIcon },
       { to: "/compete", label: "Compete", icon: CompeteIcon }

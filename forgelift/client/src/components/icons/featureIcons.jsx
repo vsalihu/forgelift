@@ -276,3 +276,42 @@ export const PauseIcon = createIcon("PauseIcon", (
 export const ResetIcon = createIcon("ResetIcon", (
   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" />
 ));
+
+// Daily plan
+
+export const WaterDropIcon = createIcon("WaterDropIcon", (
+  <>
+    <path d="M12 2.5S5.5 9.5 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 9.5 12 2.5 12 2.5z" />
+    <path d="M9 15a3 3 0 0 0 3 3" />
+  </>
+));
+
+export const MealIcon = createIcon("MealIcon", (
+  <>
+    <circle cx="13" cy="13" r="7.5" />
+    <circle cx="13" cy="13" r="4" />
+    <path d="M3 3v6a2 2 0 0 0 2 2v10M5 3v4M7 3v6" />
+  </>
+));
+
+export const SupplementIcon = createIcon("SupplementIcon", (
+  <>
+    <rect height="8" rx="4" transform="rotate(-45 12 12)" width="18" x="3" y="8" />
+    <path d="m9.2 9.2 5.6 5.6" />
+  </>
+));
+
+export const SleepIcon = createIcon("SleepIcon", (
+  <>
+    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
+    <path d="M15 3h3.5L15 7h3.5" />
+  </>
+));
+
+export const MacroIcon = createIcon("MacroIcon", (
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 3v9l6.4 6.4M12 12H3" />
+  </>
+));
+

@@ -8,6 +8,7 @@ import LoadingSkeleton from "../components/ui/LoadingSkeleton.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import DataReadinessCard from "../components/readiness/DataReadinessCard.jsx";
 import BodyweightCheckInCard from "../components/bodyweight/BodyweightCheckInCard.jsx";
+import TodaySummaryCard from "../components/daily/TodaySummaryCard.jsx";
 import TutorialLauncher from "../components/tutorial/TutorialLauncher.jsx";
 import WeakPointCard from "../components/weakPoints/WeakPointCard.jsx";
 import { rankSrc } from "../components/landing/shared.jsx";
@@ -333,6 +334,10 @@ const DashboardPage = () => {
           </Link>
         </div>
       </motion.section>
+
+      <section className="mb-6">
+        <TodaySummaryCard imperial={user?.preferredUnits === "imperial"} />
+      </section>
 
       {!loading && !error && bodyweight?.isCheckInDue ? (
         <section className="mb-6">

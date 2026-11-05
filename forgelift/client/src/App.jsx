@@ -34,6 +34,7 @@ const RanksPage = lazy(() => import("./pages/RanksPage.jsx"));
 const RecoveryPage = lazy(() => import("./pages/RecoveryPage.jsx"));
 const SmartOverloadPage = lazy(() => import("./pages/SmartOverloadPage.jsx"));
 const StrengthBaselinesPage = lazy(() => import("./pages/StrengthBaselinesPage.jsx"));
+const TodayPage = lazy(() => import("./pages/TodayPage.jsx"));
 const TrainingBalancePage = lazy(() => import("./pages/TrainingBalancePage.jsx"));
 const TrainingLoadPage = lazy(() => import("./pages/TrainingLoadPage.jsx"));
 const WeakPointsPage = lazy(() => import("./pages/WeakPointsPage.jsx"));
@@ -57,6 +58,7 @@ const App = () => {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={withTransition(<DashboardPage />)} />
+          <Route path="/today" element={withTransition(<TodayPage />)} />
           <Route path="/assessment" element={withTransition(<AssessmentPage />)} />
           <Route path="/calendar" element={withTransition(<CalendarPage />)} />
           <Route path="/chat" element={withTransition(<ChatListPage />)} />

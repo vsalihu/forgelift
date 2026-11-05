@@ -1,7 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import ServerWakeScreen from "./auth/ServerWakeScreen.jsx";
+import DailyGate from "./daily/DailyGate.jsx";
 import WhatsNewGate from "./whatsnew/WhatsNewGate.jsx";
+import { DailyProvider } from "../context/DailyContext.jsx";
 
 const ProtectedRoute = ({ requireOnboarding = true }) => {
   const { isAuthenticated, loading, user } = useAuth();
@@ -33,11 +35,14 @@ const ProtectedRoute = ({ requireOnboarding = true }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  if (!requireOnboarding) return <Outlet />;
+
   return (
-    <>
+    <DailyProvider>
       <Outlet />
-      {requireOnboarding ? <WhatsNewGate /> : null}
-    </>
+      <WhatsNewGate />
+      <DailyGate />
+    </DailyProvider>
   );
 };
 

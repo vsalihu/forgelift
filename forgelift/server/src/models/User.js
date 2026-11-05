@@ -190,6 +190,21 @@ const userSchema = new mongoose.Schema(
       type: locationSchema,
       default: () => ({})
     },
+    // Answers from the daily plan setup. Height, weight and age live on the user itself.
+    dailyProfile: {
+      goal: { type: String, enum: ["cut", "maintain", "gain", ""], default: "" },
+      sex: { type: String, enum: ["male", "female", ""], default: "" },
+      trainingDaysPerWeek: Number,
+      mealsPerDay: Number,
+      supplements: { type: [String], default: [] },
+      creatineMode: { type: String, enum: ["maintain", "load", ""], default: "" },
+      creatineStartedOn: String,
+      sleepTargetHours: Number,
+      // Ask the daily check-in after the first login of the day. Off: it lives on the Today page only.
+      checkInPrompt: { type: Boolean, default: true },
+      completedAt: Date,
+      skippedAt: Date
+    },
     // Id of the newest "What's new" note this user has seen, so each one is shown once across devices.
     lastSeenReleaseId: {
       type: String,

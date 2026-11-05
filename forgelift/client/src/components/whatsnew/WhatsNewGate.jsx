@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LATEST_RELEASE } from "../../content/releases.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import { claimModal, releaseModal, useModalHolder } from "../../utils/modalQueue.js";
 
 const WhatsNewModal = lazy(() => import("./WhatsNewModal.jsx"));
 
@@ -36,6 +37,7 @@ const WhatsNewGate = () => {
   const settledRef = useRef(false);
   const pendingLinkRef = useRef(null);
   const release = LATEST_RELEASE;
+  const holder = useModalHolder();
 
   useEffect(() => {
     if (!user?._id || !release || settledRef.current) return undefined;
@@ -61,13 +63,16 @@ const WhatsNewGate = () => {
       return undefined;
     }
     if (QUIET_PATHS.some((path) => location.pathname.startsWith(path))) return undefined;
+    // Another after-login popup is open; wait for it to close.
+    if (holder && holder !== "whats-new") return undefined;
 
     const timer = window.setTimeout(() => {
+      if (!claimModal("whats-new")) return;
       remember();
       setOpen(true);
     }, SHOW_DELAY);
     return () => window.clearTimeout(timer);
-  }, [user, release, location.pathname, markReleaseSeen]);
+  }, [user, release, location.pathname, markReleaseSeen, holder]);
 
   // A link in the note closes it first and goes to the page once it has animated out. Navigating
   // straight away can suspend the route tree mid-exit (lazy pages) and leave the note stuck on screen.
@@ -76,6 +81,7 @@ const WhatsNewGate = () => {
     setOpen(false);
   };
   const onExitComplete = () => {
+    releaseModal("whats-new");
     const to = pendingLinkRef.current;
     pendingLinkRef.current = null;
     if (to) navigate(to);

@@ -51,6 +51,14 @@ export const CompeteIcon = createIcon("CompeteIcon", (
   </>
 ));
 
+// Today: a clipboard checklist with one item ticked.
+export const TodayIcon = createIcon("TodayIcon", (
+  <>
+    <ClipboardFrame />
+    <path d="m8 11.5 1.5 1.5 3-3M14.5 11.5H16M8 17h8" />
+  </>
+));
+
 export const CalendarIcon = createIcon("CalendarIcon", (
   <>
     <rect height="17" rx="2" width="18" x="3" y="4.5" />

@@ -3,13 +3,13 @@ import { NavLink, useLocation } from "react-router-dom";
 import MobileMoreMenu, { moreMenuGroups } from "./layout/MobileMoreMenu.jsx";
 import PlaceBadge from "./compete/PlaceBadge.jsx";
 import UnreadBadge from "./ui/UnreadBadge.jsx";
-import { CalendarIcon, CompeteIcon, DashboardIcon, GymModeIcon, MoreIcon } from "./icons/navIcons.jsx";
+import { CompeteIcon, DashboardIcon, GymModeIcon, MoreIcon, TodayIcon } from "./icons/navIcons.jsx";
 
 const items = [
   { to: "/dashboard", label: "Home", icon: DashboardIcon },
   { to: "/gym-mode", label: "Gym", icon: GymModeIcon },
   { to: "/compete", label: "Compete", icon: CompeteIcon },
-  { to: "/calendar", label: "Calendar", icon: CalendarIcon }
+  { to: "/today", label: "Today", icon: TodayIcon }
 ];
 
 // Pages already on the bottom bar don't also light up "More".

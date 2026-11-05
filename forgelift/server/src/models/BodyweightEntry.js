@@ -25,7 +25,7 @@ const bodyweightEntrySchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ["manual", "weekly_prompt", "profile_update"],
+      enum: ["manual", "weekly_prompt", "profile_update", "daily_checkin"],
       default: "manual"
     },
     notes: {
